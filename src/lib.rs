@@ -9,3 +9,4 @@ pub mod rsi;
 pub mod roc;
 pub mod normalizer;
 pub mod echo;
+pub mod laguerre_filter;

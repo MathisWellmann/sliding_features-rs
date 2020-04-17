@@ -19,3 +19,23 @@ impl View for Echo {
         return self.out;
     }
 }
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+    extern crate rust_timeseries_generator;
+    use rust_timeseries_generator::{plt, gaussian_process};
+
+    # [test]
+    fn test_echo_graph() {
+        let vals = gaussian_process::gen(1024, 100.0);
+        let mut echo = new();
+        let mut out: Vec<f64> = Vec::new();
+        for v in &vals {
+            echo.update(*v);
+            out.push(echo.last());
+        }
+        let filename = "img/echo.png";
+        plt::plt(out, filename);
+    }
+}

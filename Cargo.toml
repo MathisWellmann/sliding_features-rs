@@ -10,3 +10,4 @@ edition = "2018"
 
 [dev-dependencies]
 rust_timeseries_generator = { git = "https://github.com/MathisWellmann/rust_timeseries_generator"}
+rand = "0.7.3"

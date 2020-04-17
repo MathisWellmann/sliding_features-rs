@@ -19,10 +19,6 @@ impl SlidingWindow {
         let mut out: Vec<f64> = Vec::new();
         for i in 0..self.views.len() {
             let mut last = self.views[i].last();
-            if last.is_nan() {
-                println!("last is nan. i: {}", i);
-                last = 0.0;
-            }
             out.push(last)
         }
         return out
