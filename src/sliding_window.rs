@@ -18,7 +18,7 @@ impl SlidingWindow {
     pub fn last(&self) -> Vec<f64> {
         let mut out: Vec<f64> = Vec::new();
         for i in 0..self.views.len() {
-            let mut last = self.views[i].last();
+            let last = self.views[i].last();
             out.push(last)
         }
         return out

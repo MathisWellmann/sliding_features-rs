@@ -1,7 +1,6 @@
 use super::sliding_window::View;
 
 pub struct RoofingFilter {
-    count: usize,
     val1: f64,
     val2: f64,
     hps0: f64,
@@ -14,7 +13,6 @@ pub struct RoofingFilter {
 
 pub fn new() -> RoofingFilter {
     return RoofingFilter{
-        count: 0,
         val1: 0.0,
         val2: 0.0,
         hps0: 0.0,
