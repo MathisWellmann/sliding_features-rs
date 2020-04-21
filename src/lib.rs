@@ -11,3 +11,4 @@ pub mod normalizer;
 pub mod echo;
 pub mod laguerre_filter;
 pub mod alma;
+pub mod std_dev;
