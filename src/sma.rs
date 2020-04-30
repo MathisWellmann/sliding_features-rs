@@ -10,12 +10,14 @@ pub struct SMA {
     last: f64,
 }
 
-pub fn new(window_len: usize) -> SMA {
-    return SMA{
-        window_len,
-        q_vals: VecDeque::new(),
-        sma: 0.0,
-        last: 0.0,
+impl SMA {
+    pub fn new(window_len: usize) -> SMA {
+        return SMA{
+            window_len,
+            q_vals: VecDeque::new(),
+            sma: 0.0,
+            last: 0.0,
+        }
     }
 }
 
@@ -48,7 +50,7 @@ mod tests {
     #[test]
     fn test_sma() {
         let mut rng = thread_rng();
-        let mut sma = new(16);
+        let mut sma = SMA::new(16);
         for i in 0..1024 {
             let r = rng.gen::<f64>();
             sma.update(r);
@@ -61,7 +63,7 @@ mod tests {
     #[test]
     fn test_sma_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut sma = new(128);
+        let mut sma = SMA::new(128);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             sma.update(*v);

@@ -12,16 +12,18 @@ pub struct LaguerreRSI {
     l3s: VecDeque<f64>,
 }
 
-// laguerre_rsi with default gamma value of 0.5
-pub fn new(window_len: usize) -> LaguerreRSI {
-    return LaguerreRSI{
-        window_len: window_len,
-        value: 0.0,
-        gamma: 0.5,
-        l0s: VecDeque::new(),
-        l1s: VecDeque::new(),
-        l2s: VecDeque::new(),
-        l3s: VecDeque::new(),
+impl LaguerreRSI {
+    // laguerre_rsi with default gamma value of 0.5
+    pub fn new(window_len: usize) -> LaguerreRSI {
+        return LaguerreRSI{
+            window_len,
+            value: 0.0,
+            gamma: 0.5,
+            l0s: VecDeque::new(),
+            l1s: VecDeque::new(),
+            l2s: VecDeque::new(),
+            l3s: VecDeque::new(),
+        }
     }
 }
 
@@ -79,14 +81,14 @@ impl View for LaguerreRSI {
 #[cfg(test)]
 mod tests {
     extern crate rust_timeseries_generator;
-    use crate::laguerre_rsi::tests::rust_timeseries_generator::gaussian_process::gen;
     use self::rust_timeseries_generator::plt;
     use super::*;
+    use self::rust_timeseries_generator::gaussian_process::gen;
 
     #[test]
     fn test_range() {
         let vals = gen(1024, 100.0);
-        let mut lrsi = new(16);
+        let mut lrsi = LaguerreRSI::new(16);
         for i in 0..vals.len() {
             lrsi.update(vals[i]);
             let last = lrsi.last();
@@ -98,7 +100,7 @@ mod tests {
     #[test]
     fn graph_laguerre_rsi() {
         let vals = gen(1024, 100.0);
-        let mut lrsi = new(16);
+        let mut lrsi = LaguerreRSI::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             lrsi.update(vals[i]);
@@ -106,6 +108,6 @@ mod tests {
         }
         // graph the resutls
         let filename = "img/laguerre_rsi.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

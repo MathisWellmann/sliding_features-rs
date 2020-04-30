@@ -10,12 +10,14 @@ pub struct CyberCycle {
     out: VecDeque<f64>,
 }
 
-pub fn new(window_len: usize) -> CyberCycle {
-    return CyberCycle{
-        window_len: window_len,
-        alpha: 2.0 / (window_len as f64 + 1.0),
-        vals: VecDeque::new(),
-        out: VecDeque::new(),
+impl CyberCycle {
+    pub fn new(window_len: usize) -> CyberCycle {
+        return CyberCycle{
+            window_len,
+            alpha: 2.0 / (window_len as f64 + 1.0),
+            vals: VecDeque::new(),
+            out: VecDeque::new(),
+        }
     }
 }
 
@@ -34,7 +36,7 @@ impl View for CyberCycle {
         let mut smooth: Vec<f64> = vec![0.0; self.vals.len()];
         let last = self.vals.len() - 1;
         for i in 3..self.vals.len() {
-            smooth[i] = (val + 2.0*self.vals.get(i - 1).unwrap() + 2.0*self.vals.get(i - 2).unwrap() + self.vals.get(i - 3).unwrap()) / 6.0
+            smooth[i] = (val + 2.0*self.vals.get(i - 1).unwrap() + 2.0*self.vals.get(i - 2).unwrap() + *self.vals.get(i - 3).unwrap()) / 6.0
         }
         let cc = (1.0 - 0.5 * self.alpha).powi(2)
             * (smooth[last] - 2.0 * smooth[last - 1] + smooth[last - 2])
@@ -57,13 +59,13 @@ mod tests {
     #[test]
     fn graph_cyber_cycle() {
         let vals = gen(1024, 100.0);
-        let mut cc = new(16);
+        let mut cc = CyberCycle::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             cc.update(vals[i]);
             out.push(cc.last());
         }
         let filename = "img/cyber_cycle.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

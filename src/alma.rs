@@ -14,23 +14,25 @@ pub struct ALMA {
     q_out: VecDeque<f64>,
 }
 
-pub fn new(window_len: usize, sigma: f64, offset: f64) -> ALMA {
-    let m = offset * (window_len as f64  + 1.0);
-    let s = window_len as f64 / sigma;
-    return ALMA {
-        window_len,
-        wtd_sum: 0.0,
-        cum_wt: 0.0,
-        m,
-        s,
-        q_vals: VecDeque::new(),
-        q_wtd: VecDeque::new(),
-        q_out: VecDeque::new(),
+impl ALMA {
+    pub fn new(window_len: usize, sigma: f64, offset: f64) -> ALMA {
+        let m = offset * (window_len as f64  + 1.0);
+        let s = window_len as f64 / sigma;
+        return ALMA {
+            window_len,
+            wtd_sum: 0.0,
+            cum_wt: 0.0,
+            m,
+            s,
+            q_vals: VecDeque::new(),
+            q_wtd: VecDeque::new(),
+            q_out: VecDeque::new(),
+        }
     }
-}
 
-pub fn default(window_len: usize) -> ALMA {
-    return new(window_len, 6.0, 0.85)
+    pub fn default(window_len: usize) -> ALMA {
+        return ALMA::new(window_len, 6.0, 0.85)
+    }
 }
 
 impl View for ALMA {
@@ -77,8 +79,8 @@ mod tests {
     #[test]
     fn test_alma() {
         let mut rng = thread_rng();
-        let mut alma = default(16);
-        for i in 0..1_000_000 {
+        let mut alma = ALMA::default(16);
+        for _i in 0..1_000_000 {
             let r = rng.gen::<f64>();
             alma.update(r);
             let last = alma.last();
@@ -91,13 +93,13 @@ mod tests {
     #[test]
     fn test_alma_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut alma = default(16);
+        let mut alma = ALMA::default(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             alma.update(*v);
             out.push(alma.last())
         }
         let filename = "img/alma.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

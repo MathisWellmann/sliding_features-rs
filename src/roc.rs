@@ -9,12 +9,14 @@ pub struct ROC {
     out: f64,
 }
 
-pub fn new(window_len: usize) -> ROC {
-    return ROC{
-        window_len: window_len,
-        oldest: 0.0,
-        q_vals: VecDeque::new(),
-        out: 0.0,
+impl ROC {
+    pub fn new(window_len: usize) -> ROC {
+        return ROC{
+            window_len,
+            oldest: 0.0,
+            q_vals: VecDeque::new(),
+            out: 0.0,
+        }
     }
 }
 
@@ -49,13 +51,13 @@ mod tests {
     #[test]
     fn graph_roc() {
         let vals = gen(1024, 100.0);
-        let mut r = new(16);
+        let mut r = ROC::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             r.update(vals[i]);
             out.push(r.last());
         }
         let filename = "img/roc.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

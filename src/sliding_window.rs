@@ -2,13 +2,13 @@ pub struct SlidingWindow {
     pub views: Vec<Box<dyn View>>,
 }
 
-pub fn new() -> SlidingWindow {
-    return SlidingWindow{
-        views: Vec::new(),
-    }
-}
-
 impl SlidingWindow {
+    pub fn new() -> SlidingWindow {
+        return SlidingWindow{
+            views: Vec::new(),
+        }
+    }
+
     // update propagates the newly observed candle through all views
     pub fn update(&mut self, val: f64) {
         for i in 0..self.views.len() {

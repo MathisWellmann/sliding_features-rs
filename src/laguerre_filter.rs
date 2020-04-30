@@ -10,21 +10,24 @@ pub struct LaguerreFilter {
     init: bool,
 }
 
-pub fn new(gamma: f64) -> LaguerreFilter {
-    return LaguerreFilter {
-        gamma,
-        l0s: Vec::new(),
-        l1s: Vec::new(),
-        l2s: Vec::new(),
-        l3s: Vec::new(),
-        filts: Vec::new(),
-        init: true,
+impl LaguerreFilter {
+    pub fn new(gamma: f64) -> LaguerreFilter {
+        return LaguerreFilter {
+            gamma,
+            l0s: Vec::new(),
+            l1s: Vec::new(),
+            l2s: Vec::new(),
+            l3s: Vec::new(),
+            filts: Vec::new(),
+            init: true,
+        }
+    }
+
+    pub fn default() -> LaguerreFilter {
+        return LaguerreFilter::new(0.8)
     }
 }
 
-pub fn default() -> LaguerreFilter {
-    return new(0.8)
-}
 
 impl View for LaguerreFilter {
     fn update(&mut self, val: f64) {
@@ -61,8 +64,8 @@ mod tests {
     #[test]
     fn test_laguerre_filter() {
         let mut rng = thread_rng();
-        let mut laguerre = default();
-        for i in 0..1_000 {
+        let mut laguerre = LaguerreFilter::default();
+        for _i in 0..1_000 {
             let r = rng.gen::<f64>();
             laguerre.update(r);
             let last = laguerre.last();
@@ -75,13 +78,13 @@ mod tests {
     #[test]
     fn test_laguerre_filter_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut laguerre = default();
+        let mut laguerre = LaguerreFilter::default();
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             laguerre.update(*v);
             out.push(laguerre.last());
         }
         let filename = "img/laguerre_filter.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

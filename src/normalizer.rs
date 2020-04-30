@@ -12,15 +12,19 @@ pub struct Normalizer {
     init: bool,
 }
 
-pub fn new(view: Box<dyn View>, window_len: usize) -> Normalizer {
-    return Normalizer {
-        view: view,
-        window_len: window_len,
-        q_vals: VecDeque::new(),
-        min: 0.0,
-        max: 0.0,
-        last: 0.0,
-        init: true,
+
+
+impl Normalizer {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Normalizer {
+        return Normalizer {
+            view,
+            window_len,
+            q_vals: VecDeque::new(),
+            min: 0.0,
+            max: 0.0,
+            last: 0.0,
+            init: true,
+        }
     }
 }
 
@@ -82,15 +86,21 @@ impl View for Normalizer {
 mod tests {
     extern crate rust_timeseries_generator;
 
-    use crate::*;
     use self::rust_timeseries_generator::gaussian_process::gen;
     use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::trend_flex::TrendFlex;
+    use crate::center_of_gravity::CenterOfGravity;
+    use crate::cyber_cycle::CyberCycle;
+    use crate::re_flex::ReFlex;
+    use crate::roc::ROC;
+    use crate::rsi::RSI;
+    use crate::echo::Echo;
 
     #[test]
     fn normalizer() {
         let vals = gen(1024, 100.0);
-        let mut n = new(Box::new(echo::new()), 16);
+        let mut n = Normalizer::new(Box::new(Echo::new()), 16);
         for i in 0..vals.len() {
             n.update(vals[i]);
             let last = n.last();
@@ -103,8 +113,8 @@ mod tests {
     fn normalizer_center_of_gravity() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut cgo = center_of_gravity::new(window_len);
-        let mut n = new(Box::new(cgo), vals.len());
+        let cgo = CenterOfGravity::new(window_len);
+        let mut n = Normalizer::new(Box::new(cgo), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -113,15 +123,15 @@ mod tests {
         }
 
         let filename = "img/center_of_gravity_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn normalizer_cyber_cycle() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut cc = cyber_cycle::new(window_len);
-        let mut n = new(Box::new(cc), vals.len());
+        let cc = CyberCycle::new(window_len);
+        let mut n = Normalizer::new(Box::new(cc), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -130,15 +140,15 @@ mod tests {
         }
 
         let filename = "img/cyber_cycle_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn normalizer_re_flex() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut rf = re_flex::new(window_len);
-        let mut n = new(Box::new(rf), vals.len());
+        let rf = ReFlex::new(window_len);
+        let mut n = Normalizer::new(Box::new(rf), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -147,15 +157,15 @@ mod tests {
         }
 
         let filename = "img/re_flex_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn normalizer_roc() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut r = roc::new(window_len);
-        let mut n = new(Box::new(r), vals.len());
+        let r = ROC::new(window_len);
+        let mut n = Normalizer::new(Box::new(r), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -164,15 +174,15 @@ mod tests {
         }
 
         let filename = "img/roc_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn normalizer_rsi() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut r = rsi::new(window_len);
-        let mut n = new(Box::new(r), vals.len());
+        let r = RSI::new(window_len);
+        let mut n = Normalizer::new(Box::new(r), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -181,15 +191,15 @@ mod tests {
         }
 
         let filename = "img/rsi_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn normalizer_trend_flex() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let mut tf = trend_flex::new(window_len);
-        let mut n = new(Box::new(tf), vals.len());
+        let tf = TrendFlex::new(window_len);
+        let mut n = Normalizer::new(Box::new(tf), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -198,6 +208,6 @@ mod tests {
         }
 
         let filename = "img/trend_flex_normalized.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

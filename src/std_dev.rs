@@ -9,12 +9,14 @@ pub struct StdDev {
     q_vals: VecDeque<f64>,
 }
 
-pub fn new(window_len: usize) -> StdDev {
-    return StdDev {
-        window_len,
-        mean: 0.0,
-        s: 0.0,
-        q_vals: VecDeque::new(),
+impl StdDev {
+    pub fn new(window_len: usize) -> StdDev {
+        return StdDev {
+            window_len,
+            mean: 0.0,
+            s: 0.0,
+            q_vals: VecDeque::new(),
+        }
     }
 }
 
@@ -62,7 +64,7 @@ mod tests {
     #[test]
     fn test_std_dev_graph() {
         let vals = gaussian_process::gen(10_000, 100.0);
-        let mut std_dev = new(64);
+        let mut std_dev = StdDev::new(64);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             std_dev.update(*v);

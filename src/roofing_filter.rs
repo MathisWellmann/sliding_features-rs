@@ -11,16 +11,18 @@ pub struct RoofingFilter {
     filt2: f64,
 }
 
-pub fn new() -> RoofingFilter {
-    return RoofingFilter{
-        val1: 0.0,
-        val2: 0.0,
-        hps0: 0.0,
-        hps1: 0.0,
-        hps2: 0.0,
-        filt0: 0.0,
-        filt1: 0.0,
-        filt2: 0.0,
+impl RoofingFilter {
+    pub fn new() -> RoofingFilter {
+        return RoofingFilter{
+            val1: 0.0,
+            val2: 0.0,
+            hps0: 0.0,
+            hps1: 0.0,
+            hps2: 0.0,
+            filt0: 0.0,
+            filt1: 0.0,
+            filt2: 0.0,
+        }
     }
 }
 
@@ -64,13 +66,13 @@ mod tests {
     #[test]
     fn graph_roofing_filter() {
         let vals = gen(1024, 100.0);
-        let mut rf = new();
+        let mut rf = RoofingFilter::new();
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rf.update(vals[i]);
             out.push(rf.last());
         }
         let filename = "img/roofing_filter.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

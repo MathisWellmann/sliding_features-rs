@@ -8,11 +8,13 @@ pub struct CenterOfGravity {
     out: f64,
 }
 
-pub fn new(window_len: usize) -> CenterOfGravity {
-    return CenterOfGravity{
-        window_len: window_len,
-        q_vals: VecDeque::new(),
-        out: 0.0,
+impl CenterOfGravity {
+    pub fn new(window_len: usize) -> CenterOfGravity {
+        return CenterOfGravity{
+            window_len,
+            q_vals: VecDeque::new(),
+            out: 0.0,
+        }
     }
 }
 
@@ -34,7 +36,7 @@ impl View for CenterOfGravity {
                 let weight = q_len - i;
                 let val_i = self.q_vals.get(i).unwrap();
                 num += weight as f64 * val_i;
-                denom += val_i;
+                denom += *val_i;
             }
             if denom != 0.0 {
                 self.out = -num / denom + (self.window_len as f64 + 1.0) / 2.0
@@ -58,13 +60,13 @@ mod tests {
     #[test]
     fn graph_center_of_gravity() {
         let vals = gen(1024, 100.0);
-        let mut cgo = new(16);
+        let mut cgo = CenterOfGravity::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             cgo.update(vals[i]);
             out.push(cgo.last());
         }
         let filename = "img/center_of_gravity.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

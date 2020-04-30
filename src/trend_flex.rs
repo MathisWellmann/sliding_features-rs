@@ -11,13 +11,15 @@ pub struct TrendFlex {
     out: f64,
 }
 
-pub fn new(window_len: usize) -> TrendFlex {
-    return TrendFlex {
-        window_len: window_len,
-        last_val: 0.0,
-        last_m: 0.0,
-        q_filts: VecDeque::new(),
-        out: 0.0,
+impl TrendFlex {
+    pub fn new(window_len: usize) -> TrendFlex {
+        return TrendFlex {
+            window_len,
+            last_val: 0.0,
+            last_m: 0.0,
+            q_filts: VecDeque::new(),
+            out: 0.0,
+        }
     }
 }
 
@@ -49,11 +51,11 @@ impl View for TrendFlex {
         self.last_val = val;
         self.q_filts.push_back(filt);
 
-        // sum the differenceslet mut d_sum: f64 = 0.0;
+        // sum the differences
         let mut d_sum: f64 = 0.0;
         for i in 0..self.q_filts.len() {
             let index = self.q_filts.len() - 1 - i;
-            d_sum += filt - self.q_filts.get(index).unwrap();
+            d_sum += filt - *self.q_filts.get(index).unwrap();
         }
         d_sum /= self.window_len as f64;
 
@@ -85,13 +87,13 @@ mod tests {
     #[test]
     fn graph_trend_flex() {
         let vals = gen(1024, 100.0);
-        let mut tf = new(16);
+        let mut tf = TrendFlex::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             tf.update(vals[i]);
             out.push(tf.last());
         }
         let filename = "img/trend_flex.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

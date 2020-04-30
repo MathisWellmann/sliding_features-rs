@@ -2,13 +2,15 @@ extern crate rust_timeseries_generator;
 
 use sliding_features;
 use rust_timeseries_generator::gaussian_process::gen;
+use sliding_features::rsi::RSI;
+use sliding_features::sliding_window::SlidingWindow;
 
 fn main() {
     // new sliding window
-    let mut sf = sliding_features::sliding_window::new();
+    let mut sf = SlidingWindow::new();
 
     // view with rsi function
-    let rsi = Box::new(sliding_features::rsi::new(14));
+    let rsi = Box::new(RSI::new(14));
     sf.register_view(rsi);
 
     // generate dummy values

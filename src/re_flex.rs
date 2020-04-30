@@ -10,13 +10,15 @@ pub struct ReFlex {
     out: f64,
 }
 
-pub fn new(window_len: usize) -> ReFlex {
-    return ReFlex {
-        window_len: window_len,
-        last_val: 0.0,
-        last_m: 0.0,
-        q_vals: VecDeque::new(),
-        out: 0.0,
+impl ReFlex {
+    pub fn new(window_len: usize) -> ReFlex {
+        return ReFlex {
+            window_len,
+            last_val: 0.0,
+            last_m: 0.0,
+            q_vals: VecDeque::new(),
+            out: 0.0,
+        }
     }
 }
 
@@ -54,7 +56,7 @@ impl View for ReFlex {
         let mut d_sum: f64 = 0.0;
         for i in 0..self.q_vals.len() {
             let index = self.q_vals.len() - 1 - i;
-            d_sum += (filt + i as f64 * slope) - self.q_vals.get(index).unwrap();
+            d_sum += (filt + i as f64 * slope) - *self.q_vals.get(index).unwrap();
         }
         d_sum /= self.window_len as f64;
 
@@ -85,13 +87,13 @@ mod tests {
     #[test]
     fn graph_re_flex() {
         let vals = gen(1024, 100.0);
-        let mut rf = new(16);
+        let mut rf = ReFlex::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rf.update(vals[i]);
             out.push(rf.last());
         }
         let filename = "img/re_flex.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }

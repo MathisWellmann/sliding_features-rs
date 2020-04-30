@@ -12,15 +12,17 @@ pub struct RSI {
     out: f64,
 }
 
-pub fn new(window_len: usize) -> RSI {
-    return RSI{
-        window_len: window_len,
-        avg_gain: 0.0,
-        avg_loss: 0.0,
-        old_ref: 0.0,
-        last_val: 0.0,
-        q_vals: VecDeque::new(),
-        out: 0.0,
+impl RSI {
+    pub fn new(window_len: usize) -> RSI {
+        return RSI{
+            window_len,
+            avg_gain: 0.0,
+            avg_loss: 0.0,
+            old_ref: 0.0,
+            last_val: 0.0,
+            q_vals: VecDeque::new(),
+            out: 0.0,
+        }
     }
 }
 
@@ -79,20 +81,20 @@ mod tests {
     #[test]
     fn graph_rsi() {
         let vals = gen(1024, 100.0);
-        let mut rsi = new(16);
+        let mut rsi = RSI::new(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rsi.update(vals[i]);
             out.push(rsi.last());
         }
         let filename = "img/rsi.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 
     #[test]
     fn test_range() {
         let vals = gen(1024, 100.0);
-        let mut rsi = new(16);
+        let mut rsi = RSI::new(16);
         for i in 0..vals.len() {
             rsi.update(vals[i]);
             let last = rsi.last();

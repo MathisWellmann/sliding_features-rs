@@ -4,9 +4,11 @@ pub struct Echo {
     out: f64,
 }
 
-pub fn new() -> Echo {
-    return Echo{
-        out: 0.0,
+impl Echo {
+    pub fn new() -> Echo {
+        return Echo{
+            out: 0.0,
+        }
     }
 }
 
@@ -29,13 +31,13 @@ mod tests{
     # [test]
     fn test_echo_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut echo = new();
+        let mut echo = Echo::new();
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             echo.update(*v);
             out.push(echo.last());
         }
         let filename = "img/echo.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }
