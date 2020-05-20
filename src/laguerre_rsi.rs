@@ -18,7 +18,7 @@ impl LaguerreRSI {
         return LaguerreRSI{
             window_len,
             value: 0.0,
-            gamma: 0.5,
+            gamma: 2.0 / (window_len as f64 + 1.0),
             l0s: VecDeque::new(),
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
@@ -29,7 +29,7 @@ impl LaguerreRSI {
 
 impl View for LaguerreRSI {
     fn update(&mut self, val: f64) {
-        if self.l0s.len() >= self.window_len {
+        if self.l0s.len() >= 3 {
             self.l0s.pop_front();
             self.l1s.pop_front();
             self.l2s.pop_front();
