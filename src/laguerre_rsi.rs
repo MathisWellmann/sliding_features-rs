@@ -3,7 +3,6 @@ use std::collections::VecDeque;
 use super::sliding_window::View;
 
 pub struct LaguerreRSI {
-    window_len: usize,
     pub value: f64,
     gamma: f64,
     l0s: VecDeque<f64>,
@@ -16,7 +15,6 @@ impl LaguerreRSI {
     // laguerre_rsi with default gamma value of 0.5
     pub fn new(window_len: usize) -> LaguerreRSI {
         return LaguerreRSI{
-            window_len,
             value: 0.0,
             gamma: 2.0 / (window_len as f64 + 1.0),
             l0s: VecDeque::new(),
