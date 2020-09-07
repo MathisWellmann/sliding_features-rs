@@ -30,7 +30,7 @@ impl SlidingWindow {
     }
 }
 
-pub trait View {
+pub trait View: Send {
     fn update(&mut self, val: f64);
     fn last(&self) -> f64;
 }
