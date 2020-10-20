@@ -1,17 +1,18 @@
-pub mod center_of_gravity;
-pub mod cyber_cycle;
-pub mod laguerre_rsi;
-pub mod re_flex;
-pub mod trend_flex;
-pub mod sliding_window;
-pub mod roofing_filter;
-pub mod rsi;
-pub mod roc;
-pub mod normalizer;
-pub mod echo;
-pub mod laguerre_filter;
-pub mod alma;
-pub mod std_dev;
+mod center_of_gravity;
+mod cyber_cycle;
+mod laguerre_rsi;
+mod re_flex;
+mod trend_flex;
+mod sliding_window;
+mod roofing_filter;
+mod rsi;
+mod roc;
+mod normalizer;
+mod echo;
+mod laguerre_filter;
+mod alma;
+mod std_dev;
+mod welford_online;
 
 pub use center_of_gravity::CenterOfGravity;
 pub use cyber_cycle::CyberCycle;
@@ -26,3 +27,5 @@ pub use normalizer::Normalizer;
 pub use echo::Echo;
 pub use alma::ALMA;
 pub use std_dev::StdDev;
+pub use welford_online::WelfordOnline;
+
