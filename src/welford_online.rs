@@ -34,8 +34,6 @@ impl View for WelfordOnline {
 
     fn last(&self) -> f64 {
         let std_dev = self.variance().sqrt();
-        println!("self.s: {:?}, self.n: {:?}", self.s, self.n);
-        assert!(!std_dev.is_nan());
         std_dev
     }
 }
