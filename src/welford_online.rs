@@ -17,7 +17,7 @@ impl WelfordOnline {
 
     fn variance(&self) -> f64 {
         return if self.n > 1 {
-            self.s / self.n as f64 - 1.0
+            self.s / (self.n as f64 - 1.0)
         } else {
             0.0
         }
@@ -33,7 +33,10 @@ impl View for WelfordOnline {
     }
 
     fn last(&self) -> f64 {
-        self.variance().sqrt()
+        let std_dev = self.variance().sqrt();
+        println!("self.s: {:?}, self.n: {:?}", self.s, self.n);
+        assert!(!std_dev.is_nan());
+        std_dev
     }
 }
 
@@ -48,6 +51,7 @@ mod tests {
         let mut wo = WelfordOnline::new();
         for v in &vals {
             wo.update(*v);
+            assert!(!wo.last().is_nan());
         }
         let w_std_dev = wo.last();
         let avg: f64 = vals.iter().sum::<f64>() / vals.len() as f64;
