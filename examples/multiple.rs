@@ -2,19 +2,18 @@ extern crate rust_timeseries_generator;
 
 use sliding_features::*;
 use rust_timeseries_generator::gaussian_process::gen;
-use sliding_features::sliding_window::SlidingWindow;
 
 fn main() {
     // new sliding window
     let mut sf = SlidingWindow::new();
 
     // lets register alot of views
-    sf.register_view(Box::new(rsi::RSI::new(14)));
-    sf.register_view(Box::new(roc::ROC::new(14)));
-    sf.register_view(Box::new(re_flex::ReFlex::new(14)));
-    sf.register_view(Box::new(trend_flex::TrendFlex::new(14)));
-    sf.register_view(Box::new(center_of_gravity::CenterOfGravity::new(14)));
-    sf.register_view(Box::new(cyber_cycle::CyberCycle::new(14)));
+    sf.register_view(Box::new(RSI::new(14)));
+    sf.register_view(Box::new(ROC::new(14)));
+    sf.register_view(Box::new(ReFlex::new(14)));
+    sf.register_view(Box::new(TrendFlex::new(14)));
+    sf.register_view(Box::new(CenterOfGravity::new(14)));
+    sf.register_view(Box::new(CyberCycle::new(14)));
 
     // generate dummy values
     let vals = gen(1024, 100.0);

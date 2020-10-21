@@ -1,9 +1,7 @@
 extern crate rust_timeseries_generator;
 
-use sliding_features;
+use sliding_features::*;
 use rust_timeseries_generator::gaussian_process::gen;
-use sliding_features::rsi::RSI;
-use sliding_features::sliding_window::SlidingWindow;
 
 fn main() {
     // new sliding window

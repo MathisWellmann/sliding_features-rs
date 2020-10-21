@@ -12,8 +12,6 @@ pub struct Normalizer {
     init: bool,
 }
 
-
-
 impl Normalizer {
     pub fn new(view: Box<dyn View>, window_len: usize) -> Normalizer {
         return Normalizer {

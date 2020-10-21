@@ -28,7 +28,6 @@ impl LaguerreFilter {
     }
 }
 
-
 impl View for LaguerreFilter {
     fn update(&mut self, val: f64) {
         if self.init {
