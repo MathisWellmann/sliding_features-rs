@@ -30,4 +30,6 @@ pub use alma::ALMA;
 pub use std_dev::StdDev;
 pub use welford_online::WelfordOnline;
 pub use variance_stabilizing_transformation::VST;
+pub use laguerre_filter::LaguerreFilter;
+pub use roofing_filter::RoofingFilter;
 
