@@ -14,6 +14,7 @@ mod alma;
 mod std_dev;
 mod welford_online;
 mod variance_stabilizing_transformation;
+mod entropy;
 
 pub use center_of_gravity::CenterOfGravity;
 pub use cyber_cycle::CyberCycle;
@@ -31,3 +32,5 @@ pub use std_dev::StdDev;
 pub use welford_online::WelfordOnline;
 pub use variance_stabilizing_transformation::VST;
 
+// Does not impl View
+pub use entropy::Entropy;
