@@ -22,6 +22,8 @@ A View defines the function which processes value updates. They currently includ
 - RSI
 - ALMA (Arnaux Legoux Moving Average)
 
+- Entropy (acts on a bit stream, thus does not impl View trait)
+
 ### How to use
 See examples folder.
 Run the examples using

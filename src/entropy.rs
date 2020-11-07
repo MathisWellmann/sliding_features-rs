@@ -22,7 +22,9 @@ impl Entropy {
             let _ = self.q_vals.pop_back().unwrap();
         }
         self.q_vals.push_front(val);
+    }
 
+    fn last(&self) -> f64 {
         // count of all values
         let c: f64 = self.q_vals.len() as f64;
         // probability of true value
@@ -36,11 +38,7 @@ impl Entropy {
         if value.is_nan() {
             value = 0.0
         }
-        self.value = value;
-    }
-
-    fn last(&self) -> f64 {
-        -self.value
+        -value
     }
 }
 
