@@ -1,7 +1,5 @@
 use std::collections::VecDeque;
 
-use crate::View;
-
 /// Compute the shannon entropy of a bit stream over a window
 pub struct Entropy {
     pub value: f64,

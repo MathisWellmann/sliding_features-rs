@@ -21,6 +21,7 @@ A View defines the function which processes value updates. They currently includ
 - ROC
 - RSI
 - ALMA (Arnaux Legoux Moving Average)
+- Correlation Trend Indicator (CTI)
 
 - Entropy (acts on a bit stream, thus does not impl View trait)
 
@@ -47,6 +48,7 @@ Note that each run is differently seeded by default.
 ![roc](img/roc.png)
 ![rsi](img/rsi.png)
 ![alma](img/alma.png)
+![cti](img/plot_correlation_trend_indicator_cti.png)
 
 ### TODOs:
 - SMA
