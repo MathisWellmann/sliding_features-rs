@@ -1,6 +1,8 @@
 use crate::View;
 use std::collections::VecDeque;
 
+// from https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
+#[derive(Debug, Clone)]
 pub struct CorrelationTrendIndicator {
     window_len: usize,
     q_vals: VecDeque<f64>,

@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct RSI {
     window_len: usize,
     avg_gain: f64,

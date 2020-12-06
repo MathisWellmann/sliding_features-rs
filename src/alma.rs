@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use crate::sliding_window::View;
 
 // ALMA - Arnaud Legoux Moving Average
+#[derive(Debug, Clone)]
 pub struct ALMA {
     window_len: usize,
     wtd_sum: f64,

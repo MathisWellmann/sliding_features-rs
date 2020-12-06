@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct ReFlex {
     window_len: usize,
     last_val: f64,

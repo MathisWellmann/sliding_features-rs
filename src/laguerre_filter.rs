@@ -1,5 +1,6 @@
 use crate::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct LaguerreFilter {
     gamma: f64,
     l0s: Vec<f64>,

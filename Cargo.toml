@@ -1,6 +1,6 @@
 [package]
 name = "sliding_features"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2018"
 
@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 rulinalg = "0.4.2"
+dyn-clone = "^1.0.3"
 
 [dev-dependencies]
 rust_timeseries_generator = { git = "https://github.com/MathisWellmann/rust_timeseries_generator"}

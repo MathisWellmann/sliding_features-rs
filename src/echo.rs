@@ -1,5 +1,6 @@
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct Echo {
     out: f64,
 }

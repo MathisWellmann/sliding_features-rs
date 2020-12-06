@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 /// Compute the shannon entropy of a bit stream over a window
+#[derive(Debug, Clone)]
 pub struct Entropy {
     pub value: f64,
     window_len: usize,

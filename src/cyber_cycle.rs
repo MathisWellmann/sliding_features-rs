@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use super::sliding_window::View;
 
 // CyberCycle with alpha set to default value of 2.0 / (windowLen + 1)
+#[derive(Debug, Clone)]
 pub struct CyberCycle {
     window_len: usize,
     alpha: f64,

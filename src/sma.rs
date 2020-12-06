@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use crate::sliding_window::View;
 
 // SMA - Simple Moving Average
+#[derive(Debug, Clone)]
 pub struct SMA {
     window_len: usize,
     q_vals: VecDeque<f64>,
