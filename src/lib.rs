@@ -16,7 +16,7 @@ mod welford_online;
 mod variance_stabilizing_transformation;
 mod entropy;
 mod correlation_trend_indicator;
-mod zero_lag;
+// mod zero_lag;
 
 pub use center_of_gravity::CenterOfGravity;
 pub use cyber_cycle::CyberCycle;
