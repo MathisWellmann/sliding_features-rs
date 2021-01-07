@@ -2,6 +2,7 @@ use crate::sliding_window::View;
 use std::collections::VecDeque;
 
 
+#[derive(Debug, Clone)]
 pub struct StdDev {
     window_len: usize,
     mean: f64,

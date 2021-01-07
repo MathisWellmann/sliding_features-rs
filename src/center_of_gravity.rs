@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct CenterOfGravity {
     window_len: usize,
     q_vals: VecDeque<f64>,

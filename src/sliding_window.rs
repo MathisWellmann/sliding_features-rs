@@ -1,3 +1,13 @@
+use dyn_clone::DynClone;
+
+pub trait View: Send + DynClone {
+    fn update(&mut self, val: f64);
+    fn last(&self) -> f64;
+}
+
+dyn_clone::clone_trait_object!(View);
+
+#[derive(Clone)]
 pub struct SlidingWindow {
     pub views: Vec<Box<dyn View>>,
 }
@@ -28,9 +38,4 @@ impl SlidingWindow {
     pub fn register_view(&mut self, view: Box<dyn View>) {
         self.views.push(view);
     }
-}
-
-pub trait View: Send {
-    fn update(&mut self, val: f64);
-    fn last(&self) -> f64;
 }

@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Clone)]
 pub struct Normalizer {
     view: Box<dyn View>,
     window_len: usize,

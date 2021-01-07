@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TrendFlex {
     window_len: usize,
     last_val: f64,

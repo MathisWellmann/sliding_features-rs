@@ -14,6 +14,8 @@ mod alma;
 mod std_dev;
 mod welford_online;
 mod variance_stabilizing_transformation;
+mod entropy;
+mod correlation_trend_indicator;
 
 pub use center_of_gravity::CenterOfGravity;
 pub use cyber_cycle::CyberCycle;
@@ -32,4 +34,7 @@ pub use welford_online::WelfordOnline;
 pub use variance_stabilizing_transformation::VST;
 pub use laguerre_filter::LaguerreFilter;
 pub use roofing_filter::RoofingFilter;
+pub use correlation_trend_indicator::CorrelationTrendIndicator;
 
+// Does not impl View
+pub use entropy::Entropy;

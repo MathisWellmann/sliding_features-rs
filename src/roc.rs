@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct ROC {
     window_len: usize,
     oldest: f64,

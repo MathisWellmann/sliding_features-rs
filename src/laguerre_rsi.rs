@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct LaguerreRSI {
     pub value: f64,
     gamma: f64,

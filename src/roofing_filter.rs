@@ -1,5 +1,6 @@
 use super::sliding_window::View;
 
+#[derive(Debug, Clone)]
 pub struct RoofingFilter {
     val1: f64,
     val2: f64,

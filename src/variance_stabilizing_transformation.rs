@@ -3,6 +3,7 @@ use crate::WelfordOnline;
 
 // Variance Stabilizing Transform uses the standard deviation to normalize values and applies an
 // area hyperbolic sine with the natural logarithm
+#[derive(Clone)]
 pub struct VST {
     view: Box<dyn View>,
     last: f64,
