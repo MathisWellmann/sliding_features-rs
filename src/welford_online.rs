@@ -2,7 +2,7 @@ use crate::sliding_window::View;
 
 #[derive(Debug, Clone)]
 pub struct WelfordOnline {
-    mean: f64,
+    pub(crate) mean: f64,
     s: f64,
     n: usize,
 }
