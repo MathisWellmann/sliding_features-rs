@@ -15,7 +15,7 @@ pub struct RSI {
 
 impl RSI {
     pub fn new(window_len: usize) -> RSI {
-        return RSI{
+        return RSI {
             window_len,
             avg_gain: 0.0,
             avg_loss: 0.0,
@@ -23,7 +23,7 @@ impl RSI {
             last_val: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        };
     }
 }
 

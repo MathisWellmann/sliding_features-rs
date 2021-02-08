@@ -13,9 +13,9 @@ pub struct VST {
 impl VST {
     pub fn new(view: Box<dyn View>) -> Self {
         Self {
-           view,
-           last: 0.0,
-           welford_online: WelfordOnline::new(),
+            view,
+            last: 0.0,
+            welford_online: WelfordOnline::new(),
         }
     }
 }
@@ -32,7 +32,7 @@ impl View for VST {
     fn last(&self) -> f64 {
         let std_dev = self.welford_online.last();
         if std_dev == 0.0 {
-            return 0.0
+            return 0.0;
         }
         (self.last / std_dev).asinh()
     }

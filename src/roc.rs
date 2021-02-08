@@ -12,12 +12,12 @@ pub struct ROC {
 
 impl ROC {
     pub fn new(window_len: usize) -> ROC {
-        return ROC{
+        return ROC {
             window_len,
             oldest: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        };
     }
 }
 
@@ -33,7 +33,7 @@ impl View for ROC {
         }
         self.q_vals.push_back(val);
 
-        let roc = ((val - self.oldest)  / self.oldest) * 100.0;
+        let roc = ((val - self.oldest) / self.oldest) * 100.0;
         self.out = roc;
     }
 

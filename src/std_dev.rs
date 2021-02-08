@@ -1,7 +1,6 @@
 use crate::sliding_window::View;
 use std::collections::VecDeque;
 
-
 #[derive(Debug, Clone)]
 pub struct StdDev {
     window_len: usize,
@@ -17,7 +16,7 @@ impl StdDev {
             mean: 0.0,
             s: 0.0,
             q_vals: VecDeque::new(),
-        }
+        };
     }
 }
 
@@ -32,17 +31,17 @@ impl View for StdDev {
             self.s -= (old_val - self.mean) * (old_val - old_mean);
 
             self.q_vals.pop_front();
-            return
+            return;
         }
         self.q_vals.push_back(val);
 
         let old_mean = self.mean;
         self.mean += (val - old_mean) / self.q_vals.len() as f64;
-        self.s += (val - old_mean) * (val -self.mean);
+        self.s += (val - old_mean) * (val - self.mean);
     }
 
     fn last(&self) -> f64 {
-        return self.variance().sqrt()
+        return self.variance().sqrt();
     }
 }
 
@@ -51,7 +50,7 @@ impl StdDev {
         if self.q_vals.len() > 1 {
             return self.s / (self.q_vals.len() as f64 - 1.0);
         }
-        return 0.0
+        return 0.0;
     }
 }
 
@@ -59,8 +58,7 @@ impl StdDev {
 mod tests {
     use super::*;
     extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{plt, gaussian_process};
-
+    use rust_timeseries_generator::{gaussian_process, plt};
 
     #[test]
     fn test_std_dev_graph() {

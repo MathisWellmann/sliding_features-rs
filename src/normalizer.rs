@@ -23,7 +23,7 @@ impl Normalizer {
             max: 0.0,
             last: 0.0,
             init: true,
-        }
+        };
     }
 }
 
@@ -40,7 +40,7 @@ pub fn extent_queue(q: &VecDeque<f64>) -> (f64, f64) {
             min = val;
         }
     }
-    return (*min, *max)
+    return (*min, *max);
 }
 
 impl View for Normalizer {
@@ -77,7 +77,7 @@ impl View for Normalizer {
         if self.last == self.min && self.last == self.max {
             return 0.0;
         }
-        return -1.0 + (((self.last - self.min) * 2.0) / (self.max - self.min))
+        return -1.0 + (((self.last - self.min) * 2.0) / (self.max - self.min));
     }
 }
 
@@ -88,13 +88,13 @@ mod tests {
     use self::rust_timeseries_generator::gaussian_process::gen;
     use self::rust_timeseries_generator::plt;
     use super::*;
-    use crate::trend_flex::TrendFlex;
     use crate::center_of_gravity::CenterOfGravity;
     use crate::cyber_cycle::CyberCycle;
+    use crate::echo::Echo;
     use crate::re_flex::ReFlex;
     use crate::roc::ROC;
     use crate::rsi::RSI;
-    use crate::echo::Echo;
+    use crate::trend_flex::TrendFlex;
 
     #[test]
     fn normalizer() {

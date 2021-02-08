@@ -19,7 +19,7 @@ impl TrendFlex {
             last_m: 0.0,
             q_filts: VecDeque::new(),
             out: 0.0,
-        }
+        };
     }
 }
 

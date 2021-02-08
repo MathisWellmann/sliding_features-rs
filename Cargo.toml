@@ -1,8 +1,14 @@
 [package]
 name = "sliding_features"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2018"
+license-file = "LICENSE"
+description = "Modular sliding window with various signal processing functions and technical indicators"
+repository = "https://www.github.com/MathisWellmann/sliding_features-rs"
+readme = "README.md"
+keywords = ["sliding-window", "signal-processing", "modular", "ta", "technical-analysis", "trading", "ta-lib", "indicators"]
+categories = ["algorithms", "mathematics"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,3 +19,4 @@ dyn-clone = "^1.0.3"
 [dev-dependencies]
 rust_timeseries_generator = { git = "https://github.com/MathisWellmann/rust_timeseries_generator"}
 rand = "0.7.3"
+round = "0.1"

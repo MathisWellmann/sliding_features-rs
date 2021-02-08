@@ -15,14 +15,14 @@ pub struct LaguerreRSI {
 impl LaguerreRSI {
     // laguerre_rsi with default gamma value of 0.5
     pub fn new(window_len: usize) -> LaguerreRSI {
-        return LaguerreRSI{
+        return LaguerreRSI {
             value: 0.0,
             gamma: 2.0 / (window_len as f64 + 1.0),
             l0s: VecDeque::new(),
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
             l3s: VecDeque::new(),
-        }
+        };
     }
 }
 
@@ -40,13 +40,26 @@ impl View for LaguerreRSI {
             self.l1s.push_back(0.0);
             self.l2s.push_back(0.0);
             self.l3s.push_back(0.0);
-            return
+            return;
         } else {
             let last = self.l0s.len() - 1;
-            self.l0s.push_back((1.0 - self.gamma) * val + self.gamma * self.l0s.get(last - 1).unwrap());
-            self.l1s.push_back(-self.gamma * self.l0s.get(last).unwrap() + self.l0s.get(last - 1).unwrap() + self.gamma * self.l1s.get(last - 1).unwrap());
-            self.l2s.push_back(-self.gamma * self.l1s.get(last).unwrap() + self.l1s.get(last - 1).unwrap() + self.gamma * self.l2s.get(last - 1).unwrap());
-            self.l3s.push_back(-self.gamma * self.l2s.get(last).unwrap() + self.l2s.get(last - 1).unwrap() + self.gamma * self.l3s.get(last - 1).unwrap());
+            self.l0s
+                .push_back((1.0 - self.gamma) * val + self.gamma * self.l0s.get(last - 1).unwrap());
+            self.l1s.push_back(
+                -self.gamma * self.l0s.get(last).unwrap()
+                    + self.l0s.get(last - 1).unwrap()
+                    + self.gamma * self.l1s.get(last - 1).unwrap(),
+            );
+            self.l2s.push_back(
+                -self.gamma * self.l1s.get(last).unwrap()
+                    + self.l1s.get(last - 1).unwrap()
+                    + self.gamma * self.l2s.get(last - 1).unwrap(),
+            );
+            self.l3s.push_back(
+                -self.gamma * self.l2s.get(last).unwrap()
+                    + self.l2s.get(last - 1).unwrap()
+                    + self.gamma * self.l3s.get(last - 1).unwrap(),
+            );
         }
         let last = self.l0s.len() - 1;
 
@@ -80,9 +93,9 @@ impl View for LaguerreRSI {
 #[cfg(test)]
 mod tests {
     extern crate rust_timeseries_generator;
+    use self::rust_timeseries_generator::gaussian_process::gen;
     use self::rust_timeseries_generator::plt;
     use super::*;
-    use self::rust_timeseries_generator::gaussian_process::gen;
 
     #[test]
     fn test_range() {

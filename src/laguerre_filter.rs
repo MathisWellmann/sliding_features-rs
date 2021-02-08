@@ -21,11 +21,11 @@ impl LaguerreFilter {
             l3s: Vec::new(),
             filts: Vec::new(),
             init: true,
-        }
+        };
     }
 
     pub fn default() -> LaguerreFilter {
-        return LaguerreFilter::new(0.8)
+        return LaguerreFilter::new(0.8);
     }
 }
 
@@ -37,18 +37,38 @@ impl View for LaguerreFilter {
             self.l1s.push(val);
             self.l2s.push(val);
             self.l3s.push(val);
-            self.filts.push((self.l0s[0] + 2.0*self.l1s[0] + 2.0*self.l2s[0] + self.l3s[0]) / 6.0);
-            return
+            self.filts
+                .push((self.l0s[0] + 2.0 * self.l1s[0] + 2.0 * self.l2s[0] + self.l3s[0]) / 6.0);
+            return;
         }
-        self.l0s.push((1.0 - self.gamma) * val + self.gamma * self.l0s[self.l0s.len() - 1]);
-        self.l1s.push(-self.gamma * self.l0s[self.l0s.len() - 1] + self.l0s[self.l0s.len() - 2] + self.gamma * self.l1s[self.l1s.len() - 1]);
-        self.l2s.push(-self.gamma * self.l1s[self.l1s.len() - 1] + self.l1s[self.l1s.len() - 2] + self.gamma * self.l2s[self.l2s.len() - 1]);
-        self.l3s.push(-self.gamma * self.l2s[self.l2s.len() - 1] + self.l2s[self.l2s.len() - 2] + self.gamma * self.l3s[self.l3s.len() - 1]);
-        self.filts.push((self.l0s[self.l0s.len() - 1] + 2.0*self.l1s[self.l1s.len() - 1] + 2.0*self.l2s[self.l2s.len() - 1] + self.l3s[self.l3s.len() - 1]) / 6.0);
+        self.l0s
+            .push((1.0 - self.gamma) * val + self.gamma * self.l0s[self.l0s.len() - 1]);
+        self.l1s.push(
+            -self.gamma * self.l0s[self.l0s.len() - 1]
+                + self.l0s[self.l0s.len() - 2]
+                + self.gamma * self.l1s[self.l1s.len() - 1],
+        );
+        self.l2s.push(
+            -self.gamma * self.l1s[self.l1s.len() - 1]
+                + self.l1s[self.l1s.len() - 2]
+                + self.gamma * self.l2s[self.l2s.len() - 1],
+        );
+        self.l3s.push(
+            -self.gamma * self.l2s[self.l2s.len() - 1]
+                + self.l2s[self.l2s.len() - 2]
+                + self.gamma * self.l3s[self.l3s.len() - 1],
+        );
+        self.filts.push(
+            (self.l0s[self.l0s.len() - 1]
+                + 2.0 * self.l1s[self.l1s.len() - 1]
+                + 2.0 * self.l2s[self.l2s.len() - 1]
+                + self.l3s[self.l3s.len() - 1])
+                / 6.0,
+        );
     }
 
     fn last(&self) -> f64 {
-        return self.filts[self.filts.len() - 1]
+        return self.filts[self.filts.len() - 1];
     }
 }
 
@@ -57,9 +77,9 @@ mod tests {
     use super::*;
     extern crate rand;
     extern crate rust_timeseries_generator;
+    use rand::{thread_rng, Rng};
     use rust_timeseries_generator::gaussian_process;
     use rust_timeseries_generator::plt;
-    use rand::{Rng, thread_rng};
 
     #[test]
     fn test_laguerre_filter() {

@@ -7,9 +7,7 @@ pub struct Echo {
 
 impl Echo {
     pub fn new() -> Echo {
-        return Echo{
-            out: 0.0,
-        }
+        return Echo { out: 0.0 };
     }
 }
 
@@ -24,12 +22,12 @@ impl View for Echo {
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
     extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{plt, gaussian_process};
+    use rust_timeseries_generator::{gaussian_process, plt};
 
-    # [test]
+    #[test]
     fn test_echo_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
         let mut echo = Echo::new();

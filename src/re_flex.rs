@@ -19,7 +19,7 @@ impl ReFlex {
             last_m: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        };
     }
 }
 
@@ -46,7 +46,7 @@ impl View for ReFlex {
         } else if l > 1 {
             let filt2 = self.q_vals.get(l - 2).unwrap();
             let filt1 = self.q_vals.get(l - 1).unwrap();
-            filt = c1 * (val + self.last_val) / 2.0 + b1 *filt1 + c3 * filt2;
+            filt = c1 * (val + self.last_val) / 2.0 + b1 * filt1 + c3 * filt2;
         }
         self.last_val = val;
         self.q_vals.push_back(filt);

@@ -42,12 +42,14 @@ impl View for CorrelationTrendIndicator {
             count += 1;
         }
         if self.window_len as f64 * sxx - sx.powi(2) > 0.0
-            && self.window_len as f64 * syy - sy.powi(2) > 0.0 {
+            && self.window_len as f64 * syy - sy.powi(2) > 0.0
+        {
             return (self.window_len as f64 * sxy - sx * sy)
                 / ((self.window_len as f64 * sxx - sx.powi(2))
-                * (self.window_len as f64 * syy - sy.powi(2))).sqrt()
+                    * (self.window_len as f64 * syy - sy.powi(2)))
+                .sqrt();
         }
-        return 0.0
+        return 0.0;
     }
 }
 

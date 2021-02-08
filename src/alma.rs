@@ -3,8 +3,9 @@ use std::collections::VecDeque;
 use crate::sliding_window::View;
 
 // ALMA - Arnaud Legoux Moving Average
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ALMA {
+    view: Box<dyn View>,
     window_len: usize,
     wtd_sum: f64,
     cum_wt: f64,
@@ -16,10 +17,11 @@ pub struct ALMA {
 }
 
 impl ALMA {
-    pub fn new(window_len: usize, sigma: f64, offset: f64) -> ALMA {
-        let m = offset * (window_len as f64  + 1.0);
+    pub fn new(view: Box<dyn View>, window_len: usize, sigma: f64, offset: f64) -> ALMA {
+        let m = offset * (window_len as f64 + 1.0);
         let s = window_len as f64 / sigma;
         return ALMA {
+            view,
             window_len,
             wtd_sum: 0.0,
             cum_wt: 0.0,
@@ -28,16 +30,20 @@ impl ALMA {
             q_vals: VecDeque::new(),
             q_wtd: VecDeque::new(),
             q_out: VecDeque::new(),
-        }
+        };
     }
 
-    pub fn default(window_len: usize) -> ALMA {
-        return ALMA::new(window_len, 6.0, 0.85)
+    pub fn default(view: Box<dyn View>, window_len: usize) -> ALMA {
+        return ALMA::new(view, window_len, 6.0, 0.85);
     }
 }
 
 impl View for ALMA {
     fn update(&mut self, val: f64) {
+        // first, apply the internal view update
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.front().unwrap();
             let old_wtd = self.q_wtd.front().unwrap();
@@ -49,7 +55,7 @@ impl View for ALMA {
             self.q_out.pop_front();
         }
         let count = self.q_vals.len() as f64;
-        let wtd = (-(count - self.m).powi(2) / (2.0 * self.s * self.s) ).exp();
+        let wtd = (-(count - self.m).powi(2) / (2.0 * self.s * self.s)).exp();
         self.wtd_sum += wtd * val;
         self.cum_wt += wtd;
 
@@ -65,7 +71,7 @@ impl View for ALMA {
     }
 
     fn last(&self) -> f64 {
-        return *self.q_out.back().unwrap()
+        return *self.q_out.back().unwrap();
     }
 }
 
@@ -73,14 +79,15 @@ impl View for ALMA {
 mod tests {
     use super::*;
     extern crate rand;
-    use rand::{Rng, thread_rng};
+    use rand::{thread_rng, Rng};
     extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{plt, gaussian_process};
+    use crate::Echo;
+    use rust_timeseries_generator::{gaussian_process, plt};
 
     #[test]
     fn test_alma() {
         let mut rng = thread_rng();
-        let mut alma = ALMA::default(16);
+        let mut alma = ALMA::default(Box::new(Echo::new()), 16);
         for _i in 0..1_000_000 {
             let r = rng.gen::<f64>();
             alma.update(r);
@@ -94,7 +101,7 @@ mod tests {
     #[test]
     fn test_alma_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut alma = ALMA::default(16);
+        let mut alma = ALMA::default(Box::new(Echo::new()), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             alma.update(*v);

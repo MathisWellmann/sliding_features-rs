@@ -31,7 +31,7 @@ impl View for VSCT {
     fn last(&self) -> f64 {
         let std_dev = self.welford_online.last();
         if std_dev == 0.0 {
-            return 0.0
+            return 0.0;
         }
         let mean = self.welford_online.mean;
         (self.last - mean) / std_dev
@@ -46,7 +46,9 @@ mod tests {
 
     #[test]
     fn vsct() {
-        let rands: Vec<f64> = (0..100).map(|v| rand::random::<f64>() * 20.0 + 100.0).collect();
+        let rands: Vec<f64> = (0..100)
+            .map(|v| rand::random::<f64>() * 20.0 + 100.0)
+            .collect();
         println!("rands: {:?}", rands);
 
         let mut vsct = VSCT::new(Box::new(Echo::new()), 20);

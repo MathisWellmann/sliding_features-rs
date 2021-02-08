@@ -27,11 +27,13 @@ impl Entropy {
         // count of all values
         let c: f64 = self.q_vals.len() as f64;
         // probability of true value
-        let s: f64 = self.q_vals.iter()
-            .map(|v| if *v { 1.0 } else { 0.0 } )
+        let s: f64 = self
+            .q_vals
+            .iter()
+            .map(|v| if *v { 1.0 } else { 0.0 })
             .sum::<f64>();
-        let pt: f64 = s / c;  // probability of true value
-        let pn: f64 = 1.0 - pt;  // probability of negative value
+        let pt: f64 = s / c; // probability of true value
+        let pn: f64 = 1.0 - pt; // probability of negative value
 
         let mut value = pt * pt.log2() + pn * pn.log2();
         if value.is_nan() {

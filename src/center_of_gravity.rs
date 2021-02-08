@@ -11,11 +11,11 @@ pub struct CenterOfGravity {
 
 impl CenterOfGravity {
     pub fn new(window_len: usize) -> CenterOfGravity {
-        return CenterOfGravity{
+        return CenterOfGravity {
             window_len,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        };
     }
 }
 

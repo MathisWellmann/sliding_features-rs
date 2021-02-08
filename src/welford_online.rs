@@ -21,7 +21,7 @@ impl WelfordOnline {
             self.s / (self.n as f64 - 1.0)
         } else {
             0.0
-        }
+        };
     }
 }
 
@@ -42,8 +42,9 @@ impl View for WelfordOnline {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_timeseries_generator::{gaussian_process};
-    
+    use rust_timeseries_generator::gaussian_process;
+    use round::round;
+
     #[test]
     fn correct_std_dev() {
         let vals = gaussian_process::gen(10_000, 100.0);
@@ -54,8 +55,10 @@ mod tests {
         }
         let w_std_dev = wo.last();
         let avg: f64 = vals.iter().sum::<f64>() / vals.len() as f64;
-        let std_dev: f64 = ((1.0 / (vals.len() as f64 - 1.0)) * vals.iter().map(|v| (v - avg).powi(2)).sum::<f64>()).sqrt();
+        let std_dev: f64 = ((1.0 / (vals.len() as f64 - 1.0))
+            * vals.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
+        .sqrt();
 
-        assert_eq!(w_std_dev, std_dev);
+        assert_eq!(round(w_std_dev, 4), round(std_dev, 4));
     }
 }

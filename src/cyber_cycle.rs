@@ -13,12 +13,12 @@ pub struct CyberCycle {
 
 impl CyberCycle {
     pub fn new(window_len: usize) -> CyberCycle {
-        return CyberCycle{
+        return CyberCycle {
             window_len,
             alpha: 2.0 / (window_len as f64 + 1.0),
             vals: VecDeque::new(),
             out: VecDeque::new(),
-        }
+        };
     }
 }
 
@@ -32,12 +32,16 @@ impl View for CyberCycle {
 
         if self.vals.len() < self.window_len {
             self.out.push_back(0.0);
-            return
+            return;
         }
         let mut smooth: Vec<f64> = vec![0.0; self.vals.len()];
         let last = self.vals.len() - 1;
         for i in 3..self.vals.len() {
-            smooth[i] = (val + 2.0*self.vals.get(i - 1).unwrap() + 2.0*self.vals.get(i - 2).unwrap() + *self.vals.get(i - 3).unwrap()) / 6.0
+            smooth[i] = (val
+                + 2.0 * self.vals.get(i - 1).unwrap()
+                + 2.0 * self.vals.get(i - 2).unwrap()
+                + *self.vals.get(i - 3).unwrap())
+                / 6.0
         }
         let cc = (1.0 - 0.5 * self.alpha).powi(2)
             * (smooth[last] - 2.0 * smooth[last - 1] + smooth[last - 2])

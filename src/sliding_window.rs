@@ -14,9 +14,7 @@ pub struct SlidingWindow {
 
 impl SlidingWindow {
     pub fn new() -> SlidingWindow {
-        return SlidingWindow{
-            views: Vec::new(),
-        }
+        return SlidingWindow { views: Vec::new() };
     }
 
     // update propagates the newly observed candle through all views
@@ -31,7 +29,7 @@ impl SlidingWindow {
             let last = self.views[i].last();
             out.push(last)
         }
-        return out
+        return out;
     }
 
     // register_view adds the given view to SlidingFeatures
