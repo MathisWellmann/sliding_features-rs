@@ -7,7 +7,7 @@ license-file = "LICENSE"
 description = "Modular sliding window with various signal processing functions and technical indicators"
 repository = "https://www.github.com/MathisWellmann/sliding_features-rs"
 readme = "README.md"
-keywords = ["sliding-window", "signal-processing", "modular", "ta", "technical-analysis", "trading", "ta-lib", "indicators"]
+keywords = ["sliding-window", "signal-processing", "modular", "technical-analysis", "indicators"]
 categories = ["algorithms", "mathematics"]
 exclude = [
     "img/"
