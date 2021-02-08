@@ -1,9 +1,13 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// John Ehlers TrendFlex Indicators
+/// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+#[derive(Clone)]
 pub struct TrendFlex {
+    view: Box<dyn View>,
     window_len: usize,
     last_val: f64,
     last_m: f64,
@@ -12,19 +16,30 @@ pub struct TrendFlex {
 }
 
 impl TrendFlex {
-    pub fn new(window_len: usize) -> TrendFlex {
-        return TrendFlex {
+    /// Create a new TrendFlex Indicator with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        TrendFlex {
+            view,
             window_len,
             last_val: 0.0,
             last_m: 0.0,
             q_filts: VecDeque::new(),
             out: 0.0,
-        };
+        }
+    }
+
+    /// Create a new TrendFlex Indicator with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for TrendFlex {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_filts.len() == 0 {
             self.last_val = val;
         }
@@ -87,7 +102,7 @@ mod tests {
     #[test]
     fn graph_trend_flex() {
         let vals = gen(1024, 100.0);
-        let mut tf = TrendFlex::new(16);
+        let mut tf = TrendFlex::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             tf.update(vals[i]);

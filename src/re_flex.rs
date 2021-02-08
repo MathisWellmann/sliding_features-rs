@@ -1,9 +1,13 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// John Ehlers ReFlex Indicator
+/// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+#[derive(Clone)]
 pub struct ReFlex {
+    view: Box<dyn View>,
     window_len: usize,
     last_val: f64,
     last_m: f64,
@@ -12,19 +16,30 @@ pub struct ReFlex {
 }
 
 impl ReFlex {
-    pub fn new(window_len: usize) -> ReFlex {
-        return ReFlex {
+    /// Create a new ReFlex indicator with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        ReFlex {
+            view,
             window_len,
             last_val: 0.0,
             last_m: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        };
+        }
+    }
+
+    /// Create a new ReFlex indicator with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for ReFlex {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() == 0 {
             self.last_val = val;
         }
@@ -88,7 +103,7 @@ mod tests {
     #[test]
     fn graph_re_flex() {
         let vals = gen(1024, 100.0);
-        let mut rf = ReFlex::new(16);
+        let mut rf = ReFlex::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rf.update(vals[i]);

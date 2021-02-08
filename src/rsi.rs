@@ -1,9 +1,12 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// Relative Strength Index Indicator
+#[derive(Clone)]
 pub struct RSI {
+    view: Box<dyn View>,
     window_len: usize,
     avg_gain: f64,
     avg_loss: f64,
@@ -14,8 +17,11 @@ pub struct RSI {
 }
 
 impl RSI {
-    pub fn new(window_len: usize) -> RSI {
-        return RSI {
+    /// Create a Relative Strength Index Indicator with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        RSI {
+            view,
             window_len,
             avg_gain: 0.0,
             avg_loss: 0.0,
@@ -23,12 +29,20 @@ impl RSI {
             last_val: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        };
+        }
+    }
+
+    /// Create a new Relative Strength Index Indicator with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for RSI {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() == 0 {
             self.old_ref = val;
             self.last_val = val;
@@ -82,7 +96,7 @@ mod tests {
     #[test]
     fn graph_rsi() {
         let vals = gen(1024, 100.0);
-        let mut rsi = RSI::new(16);
+        let mut rsi = RSI::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rsi.update(vals[i]);
@@ -95,7 +109,7 @@ mod tests {
     #[test]
     fn test_range() {
         let vals = gen(1024, 100.0);
-        let mut rsi = RSI::new(16);
+        let mut rsi = RSI::new_final(16);
         for i in 0..vals.len() {
             rsi.update(vals[i]);
             let last = rsi.last();

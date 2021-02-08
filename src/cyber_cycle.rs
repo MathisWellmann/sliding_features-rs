@@ -1,10 +1,13 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-// CyberCycle with alpha set to default value of 2.0 / (windowLen + 1)
-#[derive(Debug, Clone)]
+/// John Ehlers Cyber Cycle Indicator
+/// from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
+#[derive(Clone)]
 pub struct CyberCycle {
+    view: Box<dyn View>,
     window_len: usize,
     alpha: f64,
     vals: VecDeque<f64>,
@@ -12,18 +15,29 @@ pub struct CyberCycle {
 }
 
 impl CyberCycle {
-    pub fn new(window_len: usize) -> CyberCycle {
+    /// Create a new Cyber Cycle Indicator with a chained View
+    /// and a given window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
         return CyberCycle {
+            view,
             window_len,
             alpha: 2.0 / (window_len as f64 + 1.0),
             vals: VecDeque::new(),
             out: VecDeque::new(),
         };
     }
+
+    /// Create a new Cyber Cycle Indicator with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
+    }
 }
 
 impl View for CyberCycle {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.vals.len() >= self.window_len {
             self.vals.pop_front();
             self.out.pop_front();
@@ -62,9 +76,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn graph_cyber_cycle() {
+    fn cyber_cycle_graph() {
         let vals = gen(1024, 100.0);
-        let mut cc = CyberCycle::new(16);
+        let mut cc = CyberCycle::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             cc.update(vals[i]);

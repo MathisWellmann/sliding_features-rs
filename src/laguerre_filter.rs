@@ -1,7 +1,11 @@
 use crate::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// John Ehlers Laguerre Filter
+/// from: http://mesasoftware.com/papers/TimeWarp.pdf
+#[derive(Clone)]
 pub struct LaguerreFilter {
+    view: Box<dyn View>,
     gamma: f64,
     l0s: Vec<f64>,
     l1s: Vec<f64>,
@@ -12,25 +16,37 @@ pub struct LaguerreFilter {
 }
 
 impl LaguerreFilter {
-    pub fn new(gamma: f64) -> LaguerreFilter {
-        return LaguerreFilter {
+    /// Create a new LaguerreFilter with a chained View
+    /// and a gamma parameter
+    pub fn new(view: Box<dyn View>, gamma: f64) -> Self {
+        LaguerreFilter {
+            view,
             gamma,
-            l0s: Vec::new(),
-            l1s: Vec::new(),
-            l2s: Vec::new(),
-            l3s: Vec::new(),
-            filts: Vec::new(),
+            l0s: vec![],
+            l1s: vec![],
+            l2s: vec![],
+            l3s: vec![],
+            filts: vec![],
             init: true,
-        };
+        }
     }
 
+    /// Create a new LaguerreFilter with a gamma parameter
+    pub fn new_final(gamma: f64) -> Self {
+        Self::new(Box::new(Echo::new()), gamma)
+    }
+
+    /// Create a new LaguerreFilter with the default gamma of 0.8
     pub fn default() -> LaguerreFilter {
-        return LaguerreFilter::new(0.8);
+        return LaguerreFilter::new_final(0.8);
     }
 }
 
 impl View for LaguerreFilter {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.init {
             self.init = false;
             self.l0s.push(val);
@@ -82,7 +98,7 @@ mod tests {
     use rust_timeseries_generator::plt;
 
     #[test]
-    fn test_laguerre_filter() {
+    fn laguerre_filter() {
         let mut rng = thread_rng();
         let mut laguerre = LaguerreFilter::default();
         for _i in 0..1_000 {
@@ -96,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn test_laguerre_filter_graph() {
+    fn laguerre_filter_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
         let mut laguerre = LaguerreFilter::default();
         let mut out: Vec<f64> = Vec::new();

@@ -1,11 +1,13 @@
 use super::sliding_window::View;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+/// Echo always return the last value just like an echo
 pub struct Echo {
     out: f64,
 }
 
 impl Echo {
+    /// Create a new Echo View
     pub fn new() -> Echo {
         return Echo { out: 0.0 };
     }
@@ -28,7 +30,7 @@ mod tests {
     use rust_timeseries_generator::{gaussian_process, plt};
 
     #[test]
-    fn test_echo_graph() {
+    fn echo_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
         let mut echo = Echo::new();
         let mut out: Vec<f64> = Vec::new();

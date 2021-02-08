@@ -1,8 +1,11 @@
 use crate::sliding_window::View;
+use crate::Echo;
 use std::collections::VecDeque;
 
-#[derive(Debug, Clone)]
+/// Standard Deviation Sliding Window
+#[derive(Clone)]
 pub struct StdDev {
+    view: Box<dyn View>,
     window_len: usize,
     mean: f64,
     s: f64,
@@ -10,18 +13,29 @@ pub struct StdDev {
 }
 
 impl StdDev {
-    pub fn new(window_len: usize) -> StdDev {
-        return StdDev {
+    /// Create a new StandardDeviation Sliding Window with a chained View
+    /// and a given window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        StdDev {
+            view,
             window_len,
             mean: 0.0,
             s: 0.0,
             q_vals: VecDeque::new(),
-        };
+        }
+    }
+
+    /// Create a new Standard Deviation sliding window with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for StdDev {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() >= self.window_len {
             // remove old value from std_dev estimation
             let old_val = self.q_vals.front().unwrap();
@@ -63,7 +77,7 @@ mod tests {
     #[test]
     fn test_std_dev_graph() {
         let vals = gaussian_process::gen(10_000, 100.0);
-        let mut std_dev = StdDev::new(64);
+        let mut std_dev = StdDev::new_final(64);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             std_dev.update(*v);

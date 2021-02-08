@@ -1,24 +1,37 @@
-use crate::View;
+use crate::{Echo, View};
 use std::collections::VecDeque;
 
-// from https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
-#[derive(Debug, Clone)]
+/// John Ehlers Correlation Trend Indicator
+/// from: https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
+#[derive(Clone)]
 pub struct CorrelationTrendIndicator {
+    view: Box<dyn View>,
     window_len: usize,
     q_vals: VecDeque<f64>,
 }
 
 impl CorrelationTrendIndicator {
-    pub fn new(window_len: usize) -> Self {
+    /// Create a new Correlation Trend Indicator with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
         Self {
+            view,
             window_len,
             q_vals: VecDeque::new(),
         }
+    }
+
+    /// Create a new Correlation Trend Indicator with the given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for CorrelationTrendIndicator {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() >= self.window_len {
             let _ = self.q_vals.pop_front().unwrap();
         }
@@ -64,7 +77,7 @@ mod tests {
         // Test if indicator is bounded in range [-1, 1.0]
         let vals: Vec<f64> = gen(1000, 100.0);
 
-        let mut cti = CorrelationTrendIndicator::new(10);
+        let mut cti = CorrelationTrendIndicator::new_final(10);
         for v in &vals {
             cti.update(*v);
             let last = cti.last();
@@ -74,11 +87,11 @@ mod tests {
     }
 
     #[test]
-    fn plot_correlation_trend_indicator() {
+    fn correlation_trend_indicator_plot() {
         // Test if indicator is bounded in range [-1.0, 1.0]
         let vals: Vec<f64> = gen(1000, 100.0);
 
-        let mut cti = CorrelationTrendIndicator::new(100);
+        let mut cti = CorrelationTrendIndicator::new_final(100);
         let mut outs: Vec<f64> = vec![];
         for v in &vals {
             cti.update(*v);

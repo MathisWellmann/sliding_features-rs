@@ -1,9 +1,11 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
+/// A sliding High - Low Normalizer
 #[derive(Clone)]
-pub struct Normalizer {
+pub struct HLNormalizer {
     view: Box<dyn View>,
     window_len: usize,
     q_vals: VecDeque<f64>,
@@ -13,9 +15,11 @@ pub struct Normalizer {
     init: bool,
 }
 
-impl Normalizer {
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Normalizer {
-        return Normalizer {
+impl HLNormalizer {
+    /// Create a new HLNormalizer with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        HLNormalizer {
             view,
             window_len,
             q_vals: VecDeque::new(),
@@ -23,7 +27,12 @@ impl Normalizer {
             max: 0.0,
             last: 0.0,
             init: true,
-        };
+        }
+    }
+
+    /// Create a new HLNormalizer with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
@@ -43,7 +52,7 @@ pub fn extent_queue(q: &VecDeque<f64>) -> (f64, f64) {
     return (*min, *max);
 }
 
-impl View for Normalizer {
+impl View for HLNormalizer {
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let view_last = self.view.last();
@@ -99,7 +108,7 @@ mod tests {
     #[test]
     fn normalizer() {
         let vals = gen(1024, 100.0);
-        let mut n = Normalizer::new(Box::new(Echo::new()), 16);
+        let mut n = HLNormalizer::new(Box::new(Echo::new()), 16);
         for i in 0..vals.len() {
             n.update(vals[i]);
             let last = n.last();
@@ -112,8 +121,8 @@ mod tests {
     fn normalizer_center_of_gravity() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let cgo = CenterOfGravity::new(window_len);
-        let mut n = Normalizer::new(Box::new(cgo), vals.len());
+        let cgo = CenterOfGravity::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(cgo), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -129,8 +138,8 @@ mod tests {
     fn normalizer_cyber_cycle() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let cc = CyberCycle::new(window_len);
-        let mut n = Normalizer::new(Box::new(cc), vals.len());
+        let cc = CyberCycle::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(cc), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -146,8 +155,8 @@ mod tests {
     fn normalizer_re_flex() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let rf = ReFlex::new(window_len);
-        let mut n = Normalizer::new(Box::new(rf), vals.len());
+        let rf = ReFlex::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(rf), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -163,8 +172,8 @@ mod tests {
     fn normalizer_roc() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let r = ROC::new(window_len);
-        let mut n = Normalizer::new(Box::new(r), vals.len());
+        let r = ROC::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(r), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -180,8 +189,8 @@ mod tests {
     fn normalizer_rsi() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let r = RSI::new(window_len);
-        let mut n = Normalizer::new(Box::new(r), vals.len());
+        let r = RSI::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(r), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {
@@ -197,8 +206,8 @@ mod tests {
     fn normalizer_trend_flex() {
         let vals = gen(1024, 100.0);
         let window_len = 16;
-        let tf = TrendFlex::new(window_len);
-        let mut n = Normalizer::new(Box::new(tf), vals.len());
+        let tf = TrendFlex::new_final(window_len);
+        let mut n = HLNormalizer::new(Box::new(tf), vals.len());
         let mut out: Vec<f64> = Vec::new();
 
         for i in 0..vals.len() {

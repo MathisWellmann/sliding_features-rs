@@ -1,27 +1,42 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// John Ehlers Center of Gravity Indicator
+/// from: https://mesasoftware.com/papers/TheCGOscillator.pdf
+#[derive(Clone)]
 pub struct CenterOfGravity {
+    view: Box<dyn View>,
     window_len: usize,
     q_vals: VecDeque<f64>,
     out: f64,
 }
 
 impl CenterOfGravity {
-    pub fn new(window_len: usize) -> CenterOfGravity {
-        return CenterOfGravity {
+    /// Create a Center of Gravity Indicator with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        CenterOfGravity {
+            view,
             window_len,
             q_vals: VecDeque::new(),
             out: 0.0,
-        };
+        }
+    }
+
+    /// Create a Center of Gravity Indicator with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for CenterOfGravity {
-    // upate receives an observation in form of a trade and updates the view
+    // update receives a new value and updates its internal state
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
         }
@@ -59,9 +74,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn graph_center_of_gravity() {
+    fn center_of_gravity_graph() {
         let vals = gen(1024, 100.0);
-        let mut cgo = CenterOfGravity::new(16);
+        let mut cgo = CenterOfGravity::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             cgo.update(vals[i]);

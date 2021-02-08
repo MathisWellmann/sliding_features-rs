@@ -1,8 +1,7 @@
 use crate::sliding_window::View;
-use crate::WelfordOnline;
+use crate::{Echo, WelfordOnline};
 
-// Variance Stabilizing Transform uses the standard deviation to normalize values and applies an
-// area hyperbolic sine with the natural logarithm
+/// Variance Stabilizing Transform uses the standard deviation to normalize values
 #[derive(Clone)]
 pub struct VST {
     view: Box<dyn View>,
@@ -11,12 +10,18 @@ pub struct VST {
 }
 
 impl VST {
+    /// Create a new Variance Stabilizing Transform with a chained View
     pub fn new(view: Box<dyn View>) -> Self {
         Self {
             view,
             last: 0.0,
-            welford_online: WelfordOnline::new(),
+            welford_online: WelfordOnline::new_final(),
         }
+    }
+
+    /// Create a new Variance Stabilizing Transform with the default Echo View
+    pub fn new_final() -> Self {
+        Self::new(Box::new(Echo::new()))
     }
 }
 
@@ -34,6 +39,6 @@ impl View for VST {
         if std_dev == 0.0 {
             return 0.0;
         }
-        (self.last / std_dev).asinh()
+        self.last / std_dev
     }
 }

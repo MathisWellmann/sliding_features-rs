@@ -1,14 +1,15 @@
 use std::collections::VecDeque;
 
-/// Compute the shannon entropy of a bit stream over a window
 #[derive(Debug, Clone)]
+/// Shannon Entropy over bool values over a sliding window
 pub struct Entropy {
-    pub value: f64,
+    value: f64,
     window_len: usize,
     q_vals: VecDeque<bool>,
 }
 
 impl Entropy {
+    /// Create a new Entropy Sliding Window
     pub fn new(window_len: usize) -> Self {
         Self {
             value: 0.0,
@@ -16,14 +17,17 @@ impl Entropy {
             q_vals: VecDeque::new(),
         }
     }
-    fn update(&mut self, val: bool) {
+
+    /// Update the Entropy calculation with a new boolean value
+    pub fn update(&mut self, val: bool) {
         if self.q_vals.len() >= self.window_len {
             let _ = self.q_vals.pop_back().unwrap();
         }
         self.q_vals.push_front(val);
     }
 
-    fn last(&self) -> f64 {
+    /// Get the latest Entropy
+    pub fn last(&self) -> f64 {
         // count of all values
         let c: f64 = self.q_vals.len() as f64;
         // probability of true value

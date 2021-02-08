@@ -1,8 +1,10 @@
 use std::collections::VecDeque;
 
 use crate::sliding_window::View;
+use crate::Echo;
 
-// ALMA - Arnaud Legoux Moving Average
+/// ALMA - Arnaud Legoux Moving Average
+/// reference: https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce
 #[derive(Clone)]
 pub struct ALMA {
     view: Box<dyn View>,
@@ -17,24 +19,32 @@ pub struct ALMA {
 }
 
 impl ALMA {
-    pub fn new(view: Box<dyn View>, window_len: usize, sigma: f64, offset: f64) -> ALMA {
+    /// Create a new Arnaud Legoux Moving Average with a chained View
+    /// and a given window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> ALMA {
+        ALMA::new_custom(view, window_len, 6.0, 0.85)
+    }
+
+    /// Create a new Arnaud Legoux Moving Average with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        ALMA::new(Box::new(Echo::new()), window_len)
+    }
+
+    /// Create a Arnaud Legoux Moving Average with custom parameters
+    pub fn new_custom(view: Box<dyn View>, window_len: usize, sigma: f64, offset: f64) -> ALMA {
         let m = offset * (window_len as f64 + 1.0);
         let s = window_len as f64 / sigma;
-        return ALMA {
+        ALMA {
             view,
             window_len,
-            wtd_sum: 0.0,
-            cum_wt: 0.0,
             m,
             s,
+            wtd_sum: 0.0,
+            cum_wt: 0.0,
             q_vals: VecDeque::new(),
             q_wtd: VecDeque::new(),
             q_out: VecDeque::new(),
-        };
-    }
-
-    pub fn default(view: Box<dyn View>, window_len: usize) -> ALMA {
-        return ALMA::new(view, window_len, 6.0, 0.85);
+        }
     }
 }
 
@@ -81,13 +91,12 @@ mod tests {
     extern crate rand;
     use rand::{thread_rng, Rng};
     extern crate rust_timeseries_generator;
-    use crate::Echo;
     use rust_timeseries_generator::{gaussian_process, plt};
 
     #[test]
-    fn test_alma() {
+    fn alma() {
         let mut rng = thread_rng();
-        let mut alma = ALMA::default(Box::new(Echo::new()), 16);
+        let mut alma = ALMA::new_final(16);
         for _i in 0..1_000_000 {
             let r = rng.gen::<f64>();
             alma.update(r);
@@ -99,9 +108,9 @@ mod tests {
     }
 
     #[test]
-    fn test_alma_graph() {
+    fn alma_graph() {
         let vals = gaussian_process::gen(1024, 100.0);
-        let mut alma = ALMA::default(Box::new(Echo::new()), 16);
+        let mut alma = ALMA::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &vals {
             alma.update(*v);

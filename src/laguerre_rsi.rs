@@ -1,10 +1,14 @@
 use std::collections::VecDeque;
 
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// John Ehlers LaguerreRSI
+/// from: http://mesasoftware.com/papers/TimeWarp.pdf
+#[derive(Clone)]
 pub struct LaguerreRSI {
-    pub value: f64,
+    view: Box<dyn View>,
+    value: f64,
     gamma: f64,
     l0s: VecDeque<f64>,
     l1s: VecDeque<f64>,
@@ -13,21 +17,31 @@ pub struct LaguerreRSI {
 }
 
 impl LaguerreRSI {
-    // laguerre_rsi with default gamma value of 0.5
-    pub fn new(window_len: usize) -> LaguerreRSI {
-        return LaguerreRSI {
+    /// Create a new LaguerreRSI with a chained View
+    /// and a given sliding window length
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+        LaguerreRSI {
+            view,
             value: 0.0,
             gamma: 2.0 / (window_len as f64 + 1.0),
             l0s: VecDeque::new(),
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
             l3s: VecDeque::new(),
-        };
+        }
+    }
+
+    /// Create a new LaguerreRSI with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
 impl View for LaguerreRSI {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         if self.l0s.len() >= 3 {
             self.l0s.pop_front();
             self.l1s.pop_front();
@@ -98,9 +112,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_range() {
+    fn laguerre_rsi() {
         let vals = gen(1024, 100.0);
-        let mut lrsi = LaguerreRSI::new(16);
+        let mut lrsi = LaguerreRSI::new_final(16);
         for i in 0..vals.len() {
             lrsi.update(vals[i]);
             let last = lrsi.last();
@@ -110,9 +124,9 @@ mod tests {
     }
 
     #[test]
-    fn graph_laguerre_rsi() {
+    fn laguerre_rsi_graph_() {
         let vals = gen(1024, 100.0);
-        let mut lrsi = LaguerreRSI::new(16);
+        let mut lrsi = LaguerreRSI::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             lrsi.update(vals[i]);

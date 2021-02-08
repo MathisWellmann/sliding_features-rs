@@ -1,7 +1,10 @@
 use super::sliding_window::View;
+use crate::Echo;
 
-#[derive(Debug, Clone)]
+/// Roofing Filter
+#[derive(Clone)]
 pub struct RoofingFilter {
+    view: Box<dyn View>,
     val1: f64,
     val2: f64,
     hps0: f64,
@@ -13,8 +16,10 @@ pub struct RoofingFilter {
 }
 
 impl RoofingFilter {
-    pub fn new() -> RoofingFilter {
-        return RoofingFilter {
+    /// Create a Roofing Filter with a chained view
+    pub fn new(view: Box<dyn View>) -> Self {
+        RoofingFilter {
+            view,
             val1: 0.0,
             val2: 0.0,
             hps0: 0.0,
@@ -23,12 +28,20 @@ impl RoofingFilter {
             filt0: 0.0,
             filt1: 0.0,
             filt2: 0.0,
-        };
+        }
+    }
+
+    /// Create a new Roofing Filter with the default Echo View
+    pub fn new_final() -> Self {
+        Self::new(Box::new(Echo::new()))
     }
 }
 
 impl View for RoofingFilter {
     fn update(&mut self, val: f64) {
+        self.view.update(val);
+        let val = self.view.last();
+
         self.hps2 = self.hps1;
         self.hps1 = self.hps0;
         self.hps0 = 0.36134756541 * (val - 2.0 * self.val1 + self.val2) + 0.40448768902 * self.hps1
@@ -60,10 +73,10 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]  // TODO: this gave an overflow error
+    #[ignore] // TODO: this gave an overflow error
     fn graph_roofing_filter() {
         let vals = gen(1024, 100.0);
-        let mut rf = RoofingFilter::new();
+        let mut rf = RoofingFilter::new_final();
         let mut out: Vec<f64> = Vec::new();
         for i in 0..vals.len() {
             rf.update(vals[i]);

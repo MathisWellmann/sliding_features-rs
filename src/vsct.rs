@@ -1,4 +1,4 @@
-use crate::{View, WelfordOnline};
+use crate::{Echo, View, WelfordOnline};
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Clone)]
@@ -10,13 +10,20 @@ pub struct VSCT {
 }
 
 impl VSCT {
+    /// Create a new Variance Stabilizing Centering Transform with a chained View
+    /// and a given sliding window length
     pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
         VSCT {
             view,
             window_len,
-            welford_online: WelfordOnline::new(),
+            welford_online: WelfordOnline::new_final(),
             last: 0.0,
         }
+    }
+
+    /// Create a new Variance Stabilizing Centering Transform with a given window length
+    pub fn new_final(window_len: usize) -> Self {
+        Self::new(Box::new(Echo::new()), window_len)
     }
 }
 
@@ -33,7 +40,7 @@ impl View for VSCT {
         if std_dev == 0.0 {
             return 0.0;
         }
-        let mean = self.welford_online.mean;
+        let mean = self.welford_online.mean();
         (self.last - mean) / std_dev
     }
 }
@@ -41,23 +48,22 @@ impl View for VSCT {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Echo;
     use rust_timeseries_generator::plt;
 
     #[test]
     fn vsct() {
         let rands: Vec<f64> = (0..100)
-            .map(|v| rand::random::<f64>() * 20.0 + 100.0)
+            .map(|_| rand::random::<f64>() * 20.0 + 100.0)
             .collect();
         println!("rands: {:?}", rands);
 
-        let mut vsct = VSCT::new(Box::new(Echo::new()), 20);
+        let mut vsct = VSCT::new_final(20);
         let mut out: Vec<f64> = Vec::with_capacity(rands.len());
         for v in &rands {
             vsct.update(*v);
             out.push(vsct.last());
         }
         let filename = "img/vsct.png";
-        plt::plt(out, filename);
+        plt::plt(out, filename).unwrap();
     }
 }
