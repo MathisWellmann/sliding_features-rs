@@ -9,6 +9,9 @@ repository = "https://www.github.com/MathisWellmann/sliding_features-rs"
 readme = "README.md"
 keywords = ["sliding-window", "signal-processing", "modular", "ta", "technical-analysis", "trading", "ta-lib", "indicators"]
 categories = ["algorithms", "mathematics"]
+exclude = [
+    "img/"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
