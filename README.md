@@ -171,37 +171,97 @@ Note that each run uses common test data from test_data.rs for consistency.
 
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/echo.rs"> 
     <img style="display: inline!important"
-     src="https://github.com/MathisWellmann/sliding_features-rs/img/echo.png"
-     width="200px"></img>
+     src="img/echo.png"
+     width=300px></img>
 </a>
 
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/sma.rs"> 
     <img style="display: inline!important" 
-    src="https://github.com/MathisWellmann/sliding_features-rs/img/sma.png" 
-    width=200px></img>
+    src="img/sma.png" 
+    width=300px></img>
 </a>
 
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/alma.rs"> 
     <img style="display: inline!important" 
     src="img/alma.png" 
-    width=200px></img>
+    width=300px></img>
 </a>
 
-![laguerre_filter](img/laguerre_filter.png)
-![rsi](img/rsi.png)
-![laguerre_rsi](img/laguerre_rsi.png)
-![roc](img/roc.png)
-![center_of_gravity](img/center_of_gravity.png)
-![center_of_gravity_normalized](img/center_of_gravity_normalized.png)
-![cyber_cycle](img/cyber_cycle.png)
-![re_flex](img/re_flex.png)
-![trend_flex](img/trend_flex.png)
-![cti](img/correlation_trend_indicator.png)
-![vsct](img/vsct.png)
-![std_dev](img/std_dev.png)
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/laguerre_filter.rs"> 
+    <img style="display: inline!important" 
+    src="img/laguerre_filter.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/rsi.rs"> 
+    <img style="display: inline!important" 
+    src="img/rsi.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/laguerre_rsi.rs"> 
+    <img style="display: inline!important" 
+    src="img/laguerre_rsi.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/roc.rs"> 
+    <img style="display: inline!important" 
+    src="img/roc.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/center_of_gravity.rs"> 
+    <img style="display: inline!important" 
+    src="img/center_of_gravity.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/normalizer.rs"> 
+    <img style="display: inline!important" 
+    src="img/center_of_gravity_normalized.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/cyber_cycle.rs"> 
+    <img style="display: inline!important" 
+    src="img/cyber_cycle.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/re_flex.rs"> 
+    <img style="display: inline!important" 
+    src="img/re_flex.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/trend_flex.rs"> 
+    <img style="display: inline!important" 
+    src="img/trend_flex.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/correlation_trend_indicator.rs"> 
+    <img style="display: inline!important" 
+    src="img/correlation_trend_indicator.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/vsct.rs"> 
+    <img style="display: inline!important" 
+    src="img/vsct.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/std_dev.rs"> 
+    <img style="display: inline!important" 
+    src="img/std_dev.png" 
+    width=300px></img>
+</a>
 
 ### TODOs:
 Feel free to implement the following and create a PR for some easy open-source contributions:
+- Roofing Filter
 - EMA
 - FRAMA
 - MAMA
