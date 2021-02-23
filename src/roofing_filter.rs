@@ -2,11 +2,13 @@ use super::sliding_window::View;
 use crate::Echo;
 
 /// Roofing Filter
+/// From paper: http://www.stockspotter.com/files/PredictiveIndicators.pdf
+/// TODO: There is still an implementation error in the roofing filter
 #[derive(Clone)]
 pub struct RoofingFilter {
     view: Box<dyn View>,
-    val1: f64,
-    val2: f64,
+    val1: f64,  // previous value
+    val2: f64,  // value from 2 steps ago
     hps0: f64,
     hps1: f64,
     hps2: f64,
@@ -67,22 +69,19 @@ impl View for RoofingFilter {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    #[ignore] // TODO: this gave an overflow error
-    fn graph_roofing_filter() {
-        let vals = gen(1024, 100.0);
+    fn roofing_filter_plot() {
         let mut rf = RoofingFilter::new_final();
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            rf.update(vals[i]);
+        for v in &TEST_DATA {
+            rf.update(*v);
             out.push(rf.last());
         }
         let filename = "img/roofing_filter.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

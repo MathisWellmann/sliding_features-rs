@@ -88,18 +88,17 @@ impl View for ALMA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate rand;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
     use rand::{thread_rng, Rng};
-    extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{gaussian_process, plt};
 
     #[test]
     fn alma() {
         let mut rng = thread_rng();
         let mut alma = ALMA::new_final(16);
-        for _i in 0..1_000_000 {
-            let r = rng.gen::<f64>();
-            alma.update(r);
+        for _ in 0..1_000_000 {
+            let v = rng.gen::<f64>();
+            alma.update(v);
             let last = alma.last();
 
             assert!(last >= 0.0);
@@ -108,15 +107,14 @@ mod tests {
     }
 
     #[test]
-    fn alma_graph() {
-        let vals = gaussian_process::gen(1024, 100.0);
+    fn alma_plot() {
         let mut alma = ALMA::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for v in &vals {
+        for v in &TEST_DATA {
             alma.update(*v);
             out.push(alma.last())
         }
         let filename = "img/alma.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

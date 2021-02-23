@@ -26,19 +26,18 @@ impl View for Echo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{gaussian_process, plt};
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn echo_graph() {
-        let vals = gaussian_process::gen(1024, 100.0);
+    fn echo_plot() {
         let mut echo = Echo::new();
         let mut out: Vec<f64> = Vec::new();
-        for v in &vals {
+        for v in &TEST_DATA {
             echo.update(*v);
             out.push(echo.last());
         }
         let filename = "img/echo.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

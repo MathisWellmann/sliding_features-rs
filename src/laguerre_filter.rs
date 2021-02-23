@@ -91,19 +91,18 @@ impl View for LaguerreFilter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate rand;
-    extern crate rust_timeseries_generator;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
     use rand::{thread_rng, Rng};
-    use rust_timeseries_generator::gaussian_process;
-    use rust_timeseries_generator::plt;
 
     #[test]
     fn laguerre_filter() {
-        let mut rng = thread_rng();
         let mut laguerre = LaguerreFilter::default();
-        for _i in 0..1_000 {
-            let r = rng.gen::<f64>();
-            laguerre.update(r);
+        let mut rng = thread_rng();
+        for _ in 0..10_000 {
+            let v = rng.gen::<f64>();
+
+            laguerre.update(v);
             let last = laguerre.last();
 
             assert!(last <= 1.0);
@@ -112,15 +111,14 @@ mod tests {
     }
 
     #[test]
-    fn laguerre_filter_graph() {
-        let vals = gaussian_process::gen(1024, 100.0);
+    fn laguerre_filter_plot() {
         let mut laguerre = LaguerreFilter::default();
         let mut out: Vec<f64> = Vec::new();
-        for v in &vals {
+        for v in &TEST_DATA {
             laguerre.update(*v);
             out.push(laguerre.last());
         }
         let filename = "img/laguerre_filter.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

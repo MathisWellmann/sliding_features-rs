@@ -106,17 +106,15 @@ impl View for LaguerreRSI {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
     fn laguerre_rsi() {
-        let vals = gen(1024, 100.0);
         let mut lrsi = LaguerreRSI::new_final(16);
-        for i in 0..vals.len() {
-            lrsi.update(vals[i]);
+        for v in &TEST_DATA {
+            lrsi.update(*v);
             let last = lrsi.last();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
@@ -124,16 +122,15 @@ mod tests {
     }
 
     #[test]
-    fn laguerre_rsi_graph_() {
-        let vals = gen(1024, 100.0);
+    fn laguerre_rsi_plot() {
         let mut lrsi = LaguerreRSI::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            lrsi.update(vals[i]);
+        for v in &TEST_DATA {
+            lrsi.update(*v);
             out.push(lrsi.last());
         }
-        // graph the resutls
+        // graph the results
         let filename = "img/laguerre_rsi.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

@@ -61,21 +61,22 @@ impl View for WelfordOnline {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_data::TEST_DATA;
     use round::round;
-    use rust_timeseries_generator::gaussian_process;
 
     #[test]
     fn correct_std_dev() {
-        let vals = gaussian_process::gen(10_000, 100.0);
         let mut wo = WelfordOnline::new_final();
-        for v in &vals {
+        for v in &TEST_DATA {
             wo.update(*v);
             assert!(!wo.last().is_nan());
         }
         let w_std_dev = wo.last();
-        let avg: f64 = vals.iter().sum::<f64>() / vals.len() as f64;
-        let std_dev: f64 = ((1.0 / (vals.len() as f64 - 1.0))
-            * vals.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
+
+        // compute the standard deviation with the regular formula
+        let avg: f64 = TEST_DATA.iter().sum::<f64>() / TEST_DATA.len() as f64;
+        let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64 - 1.0))
+            * TEST_DATA.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
         .sqrt();
 
         assert_eq!(round(w_std_dev, 4), round(std_dev, 4));

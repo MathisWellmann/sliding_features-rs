@@ -58,21 +58,19 @@ impl View for ROC {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn graph_roc() {
-        let vals = gen(1024, 100.0);
+    fn roc_plot() {
         let mut r = ROC::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            r.update(vals[i]);
+        for v in &TEST_DATA {
+            r.update(*v);
             out.push(r.last());
         }
         let filename = "img/roc.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

@@ -42,3 +42,22 @@ impl View for VST {
         self.last / std_dev
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
+
+    #[test]
+    fn variance_stabilizing_transform_plot() {
+        let mut tf = VST::new_final();
+        let mut out: Vec<f64> = Vec::new();
+        for v in &TEST_DATA {
+            tf.update(*v);
+            out.push(tf.last());
+        }
+        let filename = "img/trend_flex.png";
+        plot_values(out, filename).unwrap();
+    }
+}

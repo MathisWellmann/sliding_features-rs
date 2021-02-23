@@ -95,21 +95,19 @@ impl View for ReFlex {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn graph_re_flex() {
-        let vals = gen(1024, 100.0);
+    fn re_flex_plot() {
         let mut rf = ReFlex::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            rf.update(vals[i]);
+        for v in &TEST_DATA {
+            rf.update(*v);
             out.push(rf.last());
         }
         let filename = "img/re_flex.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

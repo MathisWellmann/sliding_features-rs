@@ -52,13 +52,14 @@ impl View for SMA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate rand;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
     use rand::{thread_rng, Rng};
-    use rust_timeseries_generator::plt;
 
     #[test]
     fn sma() {
         let mut rng = thread_rng();
+
         let mut sma = SMA::new_final(16);
         for _ in 0..1024 {
             let r = rng.gen::<f64>();
@@ -70,16 +71,14 @@ mod tests {
     }
 
     #[test]
-    fn sma_graph() {
-        let rands: Vec<f64> = (0..100).map(|_| rand::random::<f64>()).collect();
-
-        let mut sma = SMA::new_final(128);
+    fn sma_plot() {
+        let mut sma = SMA::new_final(32);
         let mut out: Vec<f64> = Vec::new();
-        for v in &rands {
+        for v in &TEST_DATA {
             sma.update(*v);
             out.push(sma.last());
         }
         let filename = "img/sma.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

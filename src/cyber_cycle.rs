@@ -70,21 +70,19 @@ impl View for CyberCycle {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn cyber_cycle_graph() {
-        let vals = gen(1024, 100.0);
+    fn cyber_cycle_plot() {
         let mut cc = CyberCycle::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            cc.update(vals[i]);
+        for v in &TEST_DATA {
+            cc.update(*v);
             out.push(cc.last());
         }
         let filename = "img/cyber_cycle.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

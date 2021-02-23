@@ -69,16 +69,14 @@ impl View for CorrelationTrendIndicator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_timeseries_generator::gaussian_process::gen;
-    use rust_timeseries_generator::plt::plt;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
     fn correlation_trend_indicator() {
         // Test if indicator is bounded in range [-1, 1.0]
-        let vals: Vec<f64> = gen(1000, 100.0);
-
         let mut cti = CorrelationTrendIndicator::new_final(10);
-        for v in &vals {
+        for v in &TEST_DATA {
             cti.update(*v);
             let last = cti.last();
             assert!(last <= 1.0);
@@ -88,22 +86,17 @@ mod tests {
 
     #[test]
     fn correlation_trend_indicator_plot() {
-        // Test if indicator is bounded in range [-1.0, 1.0]
-        let vals: Vec<f64> = gen(1000, 100.0);
-
         let mut cti = CorrelationTrendIndicator::new_final(100);
         let mut outs: Vec<f64> = vec![];
-        for v in &vals {
+        for v in &TEST_DATA {
             cti.update(*v);
             let last = cti.last();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
             outs.push(last);
         }
-        let filename = "./img/plot_correlation_trend_indicator_vals.png";
-        plt(vals, filename).unwrap();
 
-        let filename = "./img/plot_correlation_trend_indicator_cti.png";
-        plt(outs, filename).unwrap();
+        let filename = "./img/correlation_trend_indicator.png";
+        plot_values(outs, filename).unwrap();
     }
 }

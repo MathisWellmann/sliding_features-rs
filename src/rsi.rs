@@ -88,30 +88,27 @@ impl View for RSI {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn graph_rsi() {
-        let vals = gen(1024, 100.0);
+    fn rsi_plot() {
         let mut rsi = RSI::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            rsi.update(vals[i]);
+        for v in &TEST_DATA {
+            rsi.update(*v);
             out.push(rsi.last());
         }
         let filename = "img/rsi.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 
     #[test]
-    fn test_range() {
-        let vals = gen(1024, 100.0);
+    fn rsi_range() {
         let mut rsi = RSI::new_final(16);
-        for i in 0..vals.len() {
-            rsi.update(vals[i]);
+        for v in &TEST_DATA {
+            rsi.update(*v);
             let last = rsi.last();
             assert!(last >= 0.0);
             assert!(last <= 100.0);

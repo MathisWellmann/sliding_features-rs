@@ -68,21 +68,19 @@ impl View for CenterOfGravity {
 
 #[cfg(test)]
 mod tests {
-    extern crate rust_timeseries_generator;
-    use self::rust_timeseries_generator::gaussian_process::gen;
-    use self::rust_timeseries_generator::plt;
     use super::*;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn center_of_gravity_graph() {
-        let vals = gen(1024, 100.0);
+    fn center_of_gravity_plot() {
         let mut cgo = CenterOfGravity::new_final(16);
         let mut out: Vec<f64> = Vec::new();
-        for i in 0..vals.len() {
-            cgo.update(vals[i]);
+        for v in &TEST_DATA {
+            cgo.update(*v);
             out.push(cgo.last());
         }
         let filename = "img/center_of_gravity.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

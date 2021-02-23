@@ -48,22 +48,18 @@ impl View for VSCT {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_timeseries_generator::plt;
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn vsct() {
-        let rands: Vec<f64> = (0..100)
-            .map(|_| rand::random::<f64>() * 20.0 + 100.0)
-            .collect();
-        println!("rands: {:?}", rands);
-
+    fn vsct_plot() {
         let mut vsct = VSCT::new_final(20);
-        let mut out: Vec<f64> = Vec::with_capacity(rands.len());
-        for v in &rands {
+        let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
+        for v in &TEST_DATA {
             vsct.update(*v);
             out.push(vsct.last());
         }
         let filename = "img/vsct.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

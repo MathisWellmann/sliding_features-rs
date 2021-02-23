@@ -71,19 +71,18 @@ impl StdDev {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate rust_timeseries_generator;
-    use rust_timeseries_generator::{gaussian_process, plt};
+    use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
-    fn test_std_dev_graph() {
-        let vals = gaussian_process::gen(10_000, 100.0);
+    fn test_std_dev_plot() {
         let mut std_dev = StdDev::new_final(64);
         let mut out: Vec<f64> = Vec::new();
-        for v in &vals {
+        for v in &TEST_DATA {
             std_dev.update(*v);
             out.push(std_dev.last());
         }
         let filename = "img/std_dev.png";
-        plt::plt(out, filename).unwrap();
+        plot_values(out, filename).unwrap();
     }
 }

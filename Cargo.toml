@@ -1,14 +1,23 @@
 [package]
 name = "sliding_features"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2018"
 license-file = "LICENSE"
 description = "Modular sliding window with various signal processing functions and technical indicators"
 repository = "https://www.github.com/MathisWellmann/sliding_features-rs"
 readme = "README.md"
-keywords = ["sliding-window", "signal-processing", "modular", "technical-analysis", "indicators"]
-categories = ["algorithms", "mathematics"]
+keywords = [
+    "sliding-window",
+    "signal-processing",
+    "modular",
+    "technical-analysis",
+    "indicators"
+]
+categories = [
+    "algorithms",
+    "mathematics"
+]
 exclude = [
     "img/"
 ]
@@ -20,6 +29,7 @@ rulinalg = "0.4.2"
 dyn-clone = "^1.0.3"
 
 [dev-dependencies]
-rust_timeseries_generator = { git = "https://github.com/MathisWellmann/rust_timeseries_generator"}
+time_series_generator = "0.2.0"
 rand = "0.7.3"
 round = "0.1"
+plotters = "^0.3.0"
