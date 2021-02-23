@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_std_dev_plot() {
-        let mut std_dev = StdDev::new_final(64);
+        let mut std_dev = StdDev::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             std_dev.update(*v);

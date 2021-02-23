@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = VSCT::new_final(20);
+        let mut vsct = VSCT::new_final(16);
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

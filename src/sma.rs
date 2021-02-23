@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn sma_plot() {
-        let mut sma = SMA::new_final(32);
+        let mut sma = SMA::new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);

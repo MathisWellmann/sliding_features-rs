@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn correlation_trend_indicator_plot() {
-        let mut cti = CorrelationTrendIndicator::new_final(100);
+        let mut cti = CorrelationTrendIndicator::new_final(16);
         let mut outs: Vec<f64> = vec![];
         for v in &TEST_DATA {
             cti.update(*v);
