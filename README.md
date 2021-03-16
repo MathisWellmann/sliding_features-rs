@@ -151,6 +151,8 @@ A View defines the function which processes value updates. They currently includ
     * TrendFlex
     * ROC
     * RSI
+    * MyRSI (RSI in range [-1.0, 1.0])
+    * NET (John Ehlers noise elimination technology using kendall correlation)
     * Correlation Trend Indicator (CTI)
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
@@ -202,6 +204,18 @@ Note that each run uses common test data from test_data.rs for consistency.
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/laguerre_rsi.rs"> 
     <img style="display: inline!important" 
     src="img/laguerre_rsi.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/my_rsi.rs"> 
+    <img style="display: inline!important" 
+    src="img/my_rsi.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/net_my_rsi.rs"> 
+    <img style="display: inline!important" 
+    src="img/net_my_rsi.png" 
     width=300px></img>
 </a>
 

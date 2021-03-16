@@ -23,6 +23,8 @@ mod trend_flex;
 mod variance_stabilizing_transformation;
 mod vsct;
 mod welford_online;
+mod my_rsi;
+mod net;
 
 #[cfg(test)]
 mod plot;
@@ -48,6 +50,8 @@ pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
 pub use vsct::VSCT;
 pub use welford_online::WelfordOnline;
+pub use my_rsi::MyRSI;
+pub use net::NET;
 // pub use roofing_filter::RoofingFilter
 
 // Does not impl View
