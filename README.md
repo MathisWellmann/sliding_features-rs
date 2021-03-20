@@ -23,7 +23,7 @@ This struct allows you to manage a bunch of Views at once and conveniently updat
 ### Usage
 In your Cargo.toml add the crate:
 ```toml
-sliding_features = "0.5.1"
+sliding_features = "0.5.3"
 ```
 
 ### Basic single View example
@@ -154,6 +154,7 @@ A View defines the function which processes value updates. They currently includ
     * MyRSI (RSI in range [-1.0, 1.0])
     * NET (John Ehlers noise elimination technology using kendall correlation)
     * Correlation Trend Indicator (CTI)
+    - Polarized Fractal Efficiency
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
     * Variance Stabilizing Transform (VST)
@@ -161,6 +162,7 @@ A View defines the function which processes value updates. They currently includ
 * Moving Averages
     * ALMA (Arnaux Legoux Moving Average)
     * SMA (Simple Moving Average)
+    * EMA (Exponential Moving Average)
     
 * Entropy (acts on a bit stream, thus does not impl View trait)
 
@@ -180,6 +182,12 @@ Note that each run uses common test data from test_data.rs for consistency.
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/sma.rs"> 
     <img style="display: inline!important" 
     src="img/sma.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/ema.rs"> 
+    <img style="display: inline!important" 
+    src="img/ema.png" 
     width=300px></img>
 </a>
 
@@ -273,10 +281,16 @@ Note that each run uses common test data from test_data.rs for consistency.
     width=300px></img>
 </a>
 
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/polarized_fractal_efficiency.rs"> 
+    <img style="display: inline!important" 
+    src="img/polarized_fractal_efficiency.png" 
+    width=300px></img>
+</a>
+
+
 ### TODOs:
 Feel free to implement the following and create a PR for some easy open-source contributions:
 - Roofing Filter
-- EMA
 - FRAMA
 - MAMA
 - FAMA

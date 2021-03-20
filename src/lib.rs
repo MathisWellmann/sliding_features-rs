@@ -18,6 +18,7 @@ mod roc;
 mod rsi;
 mod sliding_window;
 mod sma;
+mod ema;
 mod std_dev;
 mod trend_flex;
 mod variance_stabilizing_transformation;
@@ -25,6 +26,7 @@ mod vsct;
 mod welford_online;
 mod my_rsi;
 mod net;
+mod polarized_fractal_efficiency;
 
 #[cfg(test)]
 mod plot;
@@ -45,6 +47,7 @@ pub use rsi::RSI;
 pub use sliding_window::SlidingWindow;
 pub use sliding_window::View;
 pub use sma::SMA;
+pub use ema::EMA;
 pub use std_dev::StdDev;
 pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
@@ -52,6 +55,7 @@ pub use vsct::VSCT;
 pub use welford_online::WelfordOnline;
 pub use my_rsi::MyRSI;
 pub use net::NET;
+pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
 // pub use roofing_filter::RoofingFilter
 
 // Does not impl View
