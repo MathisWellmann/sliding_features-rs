@@ -2,7 +2,7 @@ use crate::sliding_window::View;
 use crate::Echo;
 
 #[derive(Clone)]
-// EMA - Exponential Moving Average
+/// EMA - Exponential Moving Average
 pub struct EMA {
     view: Box<dyn View>,
     window_len: usize,
@@ -23,6 +23,7 @@ impl EMA {
         Self::new(Box::new(Echo::new()), window_len)
     }
 
+    /// Create a new EMA with a custom alpha as well
     pub fn with_alpha(view: Box<dyn View>, window_len: usize, alpha: f64) -> Self {
         Self {
             view,
