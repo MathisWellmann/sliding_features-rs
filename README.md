@@ -154,7 +154,8 @@ A View defines the function which processes value updates. They currently includ
     * MyRSI (RSI in range [-1.0, 1.0])
     * NET (John Ehlers noise elimination technology using kendall correlation)
     * Correlation Trend Indicator (CTI)
-    - Polarized Fractal Efficiency
+    * Polarized Fractal Efficiency
+    * Ehlers Fisher Transform
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
     * Variance Stabilizing Transform (VST)
@@ -286,6 +287,13 @@ Note that each run uses common test data from test_data.rs for consistency.
     src="img/polarized_fractal_efficiency.png" 
     width=300px></img>
 </a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/ehlers_fisher_transform.rs"> 
+    <img style="display: inline!important" 
+    src="img/ehlers_fisher_transform.png" 
+    width=300px></img>
+</a>
+
 
 
 ### TODOs:
