@@ -86,7 +86,7 @@ impl View for EhlersFisherTransform {
         } else if smoothed < -0.99 {
             smoothed = -0.99;
         }
-        if self.q_out.len() < self.window_len {
+        if self.q_out.len() == 0 {
             // do not insert values when there are not enough values yet
             self.q_out.push_back(0.0);
             return

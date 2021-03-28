@@ -38,26 +38,30 @@ impl View for NET {
         }
         self.q_vals.push_back(val);
 
-        if self.q_vals.len() == self.window_len {
-            let mut x: Vec<f64> = vec![0.0; self.window_len];
-            let mut y: Vec<f64> = vec![0.0; self.window_len];
-            for count in 1..self.window_len {
-                x[count] = *self.q_vals.get(self.window_len - count).unwrap();
-                y[count] = - (count as f64);
-            }
-
-            let mut num: f64 = 0.0;
-            for count in 2..self.window_len {
-                for k in 1..count - 1 {
-                    num -= (x[count] - x[k]).signum();
-                }
-            }
-
-            let denom: f64 = 0.5 * self.window_len as f64 * (self.window_len as f64 - 1.0);
-            self.out = num / denom;
-        } else {
-            self.out = val;
+        // if self.q_vals.len() == self.window_len {
+        //
+        // } else {
+        //     self.out = val;
+        // }
+        if self.q_vals.len() < 2 {
+            return
         }
+        let mut x: Vec<f64> = vec![0.0; self.q_vals.len()];
+        let mut y: Vec<f64> = vec![0.0; self.q_vals.len()];
+        for count in 1..self.q_vals.len() {
+            x[count] = *self.q_vals.get(self.q_vals.len() - count).unwrap();
+            y[count] = - (count as f64);
+        }
+
+        let mut num: f64 = 0.0;
+        for count in 2..self.q_vals.len() {
+            for k in 1..count - 1 {
+                num -= (x[count] - x[k]).signum();
+            }
+        }
+
+        let denom: f64 = 0.5 * self.q_vals.len() as f64 * (self.q_vals.len() as f64 - 1.0);
+        self.out = num / denom;
     }
 
     fn last(&self) -> f64 {

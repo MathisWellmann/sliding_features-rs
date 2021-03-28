@@ -64,13 +64,9 @@ impl View for MyRSI {
         }
         self.last_val = val;
 
-        if self.q_vals.len() == self.window_len {
-            // only output value if window length is satisfied with enough values
-            if self.cu + self.cd != 0.0 {
-                self.out = (self.cu - self.cd) / (self.cu + self.cd);
-            }
-        } else {
-            self.out = 0.0;
+        // only output value if window length is satisfied with enough values
+        if self.cu + self.cd != 0.0 {
+            self.out = (self.cu - self.cd) / (self.cu + self.cd);
         }
 
     }

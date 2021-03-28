@@ -37,7 +37,7 @@ impl View for VST {
     fn last(&self) -> f64 {
         let std_dev = self.welford_online.last();
         if std_dev == 0.0 {
-            return 0.0;
+            return self.last;
         }
         self.last / std_dev
     }

@@ -1,11 +1,10 @@
-use crate::{Echo, View, WelfordOnline};
+use crate::{Echo, View, WelfordOnlineSliding};
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Clone)]
 pub struct VSCT {
     view: Box<dyn View>,
-    window_len: usize,
-    welford_online: WelfordOnline,
+    welford_online: WelfordOnlineSliding,
     last: f64,
 }
 
@@ -15,8 +14,7 @@ impl VSCT {
     pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
         VSCT {
             view,
-            window_len,
-            welford_online: WelfordOnline::new_final(),
+            welford_online: WelfordOnlineSliding::new_final(window_len),
             last: 0.0,
         }
     }
@@ -30,9 +28,10 @@ impl VSCT {
 impl View for VSCT {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let view_last = self.view.last();
-        self.welford_online.update(view_last);
-        self.last = view_last;
+        let val = self.view.last();
+
+        self.welford_online.update(val);
+        self.last = val;
     }
 
     fn last(&self) -> f64 {

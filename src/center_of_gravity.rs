@@ -42,23 +42,19 @@ impl View for CenterOfGravity {
         }
         self.q_vals.push_back(val);
 
-        if self.q_vals.len() < self.window_len {
-            self.out = 0.0;
+        let mut denom: f64 = 0.0;
+        let mut num: f64 = 0.0;
+        let q_len = self.q_vals.len();
+        for i in 0..q_len {
+            let weight = q_len - i;
+            let val_i = self.q_vals.get(i).unwrap();
+            num += weight as f64 * val_i;
+            denom += *val_i;
+        }
+        if denom != 0.0 {
+            self.out = -num / denom + (self.q_vals.len() as f64 + 1.0) / 2.0
         } else {
-            let mut denom: f64 = 0.0;
-            let mut num: f64 = 0.0;
-            let q_len = self.q_vals.len();
-            for i in 0..q_len {
-                let weight = q_len - i;
-                let val_i = self.q_vals.get(i).unwrap();
-                num += weight as f64 * val_i;
-                denom += *val_i;
-            }
-            if denom != 0.0 {
-                self.out = -num / denom + (self.window_len as f64 + 1.0) / 2.0
-            } else {
-                self.out = 0.0;
-            }
+            self.out = 0.0;
         }
     }
     fn last(&self) -> f64 {

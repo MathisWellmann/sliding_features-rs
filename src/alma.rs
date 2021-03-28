@@ -72,12 +72,8 @@ impl View for ALMA {
         self.q_vals.push_back(val);
         self.q_wtd.push_back(wtd);
 
-        if self.q_vals.len() < self.window_len {
-            self.q_out.push_back(val);
-        } else {
-            let ala = self.wtd_sum / self.cum_wt;
-            self.q_out.push_back(ala);
-        }
+        let ala = self.wtd_sum / self.cum_wt;
+        self.q_out.push_back(ala);
     }
 
     fn last(&self) -> f64 {

@@ -77,14 +77,10 @@ impl View for TrendFlex {
         // normalize in terms of standard deviation;
         let ms0 = 0.04 * d_sum.powi(2) + 0.96 * self.last_m;
         self.last_m = ms0;
-        if self.q_filts.len() < self.window_len {
-            self.out = 0.0;
+        if ms0 > 0.0 {
+            self.out = d_sum / ms0.sqrt();
         } else {
-            if ms0 > 0.0 {
-                self.out = d_sum / ms0.sqrt();
-            } else {
-                self.out = 0.0;
-            }
+            self.out = 0.0;
         }
     }
     fn last(&self) -> f64 {

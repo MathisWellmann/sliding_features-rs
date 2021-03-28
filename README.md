@@ -164,7 +164,8 @@ A View defines the function which processes value updates. They currently includ
     * ALMA (Arnaux Legoux Moving Average)
     * SMA (Simple Moving Average)
     * EMA (Exponential Moving Average)
-    
+* Standard deviation sliding window estimation using WelfordOnlineSliding
+
 * Entropy (acts on a bit stream, thus does not impl View trait)
 
 
@@ -276,9 +277,9 @@ Note that each run uses common test data from test_data.rs for consistency.
     width=300px></img>
 </a>
 
-<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/std_dev.rs"> 
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/welford_online_sliding.rs"> 
     <img style="display: inline!important" 
-    src="img/std_dev.png" 
+    src="img/welford_online_sliding.png" 
     width=300px></img>
 </a>
 

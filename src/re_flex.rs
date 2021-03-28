@@ -43,7 +43,7 @@ impl View for ReFlex {
         if self.q_vals.len() == 0 {
             self.last_val = val;
         }
-        if self.q_vals.len() > self.window_len {
+        if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
         }
         let a1 = 8.88442402435 / self.window_len as f64;
@@ -79,12 +79,8 @@ impl View for ReFlex {
         // normalize in termsn of standard deviation
         let ms0 = 0.04 * d_sum.powi(2) + 0.96 * self.last_m;
         self.last_m = ms0;
-        if self.q_vals.len() < self.window_len {
-            self.out = 0.0;
-        } else {
-            if ms0 > 0.0 {
-                self.out = d_sum / ms0.sqrt();
-            }
+        if ms0 > 0.0 {
+            self.out = d_sum / ms0.sqrt();
         }
     }
 
