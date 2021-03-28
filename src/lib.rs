@@ -28,6 +28,7 @@ mod my_rsi;
 mod net;
 mod polarized_fractal_efficiency;
 mod ehlers_fisher_transform;
+mod multiplier;
 
 #[cfg(test)]
 mod plot;
@@ -58,6 +59,7 @@ pub use my_rsi::MyRSI;
 pub use net::NET;
 pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
+pub use multiplier::Multiplier;
 // pub use roofing_filter::RoofingFilter
 
 // Does not impl View

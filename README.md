@@ -165,7 +165,7 @@ A View defines the function which processes value updates. They currently includ
     * SMA (Simple Moving Average)
     * EMA (Exponential Moving Average)
 * Standard deviation sliding window estimation using WelfordOnlineSliding
-
+* Multiplier
 * Entropy (acts on a bit stream, thus does not impl View trait)
 
 
