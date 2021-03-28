@@ -1,4 +1,4 @@
-use crate::{View, EMA, Echo};
+use crate::{Echo, View, EMA};
 use std::collections::VecDeque;
 
 #[derive(Clone)]
@@ -17,18 +17,18 @@ pub struct EhlersFisherTransform {
 impl EhlersFisherTransform {
     /// Create a new indicator with a given chained view and a window length
     /// The default EMA is used as in the paper
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        Self::with_ma(view, Box::new(EMA::new_final(5)), window_len)
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Self::with_ma(view, EMA::new_final(5), window_len)
     }
 
     /// Create a new indicator with a window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 
     /// Create a new indicator with a view, moving average and window length
-    pub fn with_ma(view: Box<dyn View>, ma: Box<dyn View>, window_len: usize) -> Self {
-        Self {
+    pub fn with_ma(view: Box<dyn View>, ma: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(Self {
             view,
             moving_average: ma,
             window_len,
@@ -36,7 +36,7 @@ impl EhlersFisherTransform {
             high: 0.0,
             low: 0.0,
             q_out: VecDeque::new(),
-        }
+        })
     }
 }
 
@@ -54,13 +54,17 @@ impl View for EhlersFisherTransform {
             // update high and low values if needed
             if old_val >= self.high {
                 // re-compute high
-                self.high = *self.q_vals.iter()
+                self.high = *self
+                    .q_vals
+                    .iter()
                     .max_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
             }
             if old_val <= self.low {
                 // re-compute low
-                self.low = *self.q_vals.iter()
+                self.low = *self
+                    .q_vals
+                    .iter()
                     .min_by(|x, y| x.partial_cmp(y).unwrap())
                     .unwrap();
             }
@@ -74,7 +78,7 @@ impl View for EhlersFisherTransform {
 
         if self.high == self.low {
             self.q_out.push_back(0.0);
-            return
+            return;
         }
         let val: f64 = 2.0 * ((val - self.low) / (self.high - self.low) - 0.5);
         // smooth with moving average
@@ -89,10 +93,10 @@ impl View for EhlersFisherTransform {
         if self.q_out.len() == 0 {
             // do not insert values when there are not enough values yet
             self.q_out.push_back(0.0);
-            return
+            return;
         }
-        let fish: f64 = 0.5 * ((1.0 + smoothed) / (1.0 - smoothed)).ln()
-            + 0.5 * self.q_out.back().unwrap();
+        let fish: f64 =
+            0.5 * ((1.0 + smoothed) / (1.0 - smoothed)).ln() + 0.5 * self.q_out.back().unwrap();
         self.q_out.push_back(fish);
     }
 
@@ -104,8 +108,8 @@ impl View for EhlersFisherTransform {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_data::TEST_DATA;
     use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
     fn ehlers_fisher_transform_plot() {

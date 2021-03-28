@@ -4,24 +4,24 @@ use crate::{Echo, View, WelfordOnlineSliding};
 #[derive(Clone)]
 pub struct VSCT {
     view: Box<dyn View>,
-    welford_online: WelfordOnlineSliding,
+    welford_online: Box<WelfordOnlineSliding>,
     last: f64,
 }
 
 impl VSCT {
     /// Create a new Variance Stabilizing Centering Transform with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        VSCT {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(VSCT {
             view,
             welford_online: WelfordOnlineSliding::new_final(window_len),
             last: 0.0,
-        }
+        })
     }
 
     /// Create a new Variance Stabilizing Centering Transform with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

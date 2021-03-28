@@ -6,22 +6,22 @@ use crate::{Echo, WelfordOnline};
 pub struct VST {
     view: Box<dyn View>,
     last: f64,
-    welford_online: WelfordOnline,
+    welford_online: Box<WelfordOnline>,
 }
 
 impl VST {
     /// Create a new Variance Stabilizing Transform with a chained View
-    pub fn new(view: Box<dyn View>) -> Self {
-        Self {
+    pub fn new(view: Box<dyn View>) -> Box<Self> {
+        Box::new(Self {
             view,
             last: 0.0,
             welford_online: WelfordOnline::new_final(),
-        }
+        })
     }
 
     /// Create a new Variance Stabilizing Transform with the default Echo View
-    pub fn new_final() -> Self {
-        Self::new(Box::new(Echo::new()))
+    pub fn new_final() -> Box<Self> {
+        Self::new(Echo::new())
     }
 }
 

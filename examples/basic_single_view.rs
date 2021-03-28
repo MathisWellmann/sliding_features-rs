@@ -5,7 +5,7 @@ use sliding_features::*;
 use time_series_generator::generate_standard_normal;
 
 fn main() {
-    let mut rsi = Box::new(RSI::new_final(14));
+    let mut rsi = RSI::new_final(14);
 
     // generate dummy values
     let vals = generate_standard_normal(1024, 100.0);

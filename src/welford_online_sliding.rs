@@ -16,20 +16,20 @@ pub struct WelfordOnlineSliding {
 
 impl WelfordOnlineSliding {
     /// Create a WelfordOnline struct with a chained View
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        Self {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(Self {
             view,
             window_len,
             q_vals: VecDeque::new(),
             mean: 0.0,
             s: 0.0,
             n: 0,
-        }
+        })
     }
 
     /// Create a new WelfordOnline Sliding Window without a chained View
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 
     /// Return the variance of the sliding window
@@ -77,9 +77,9 @@ impl View for WelfordOnlineSliding {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
     use round::round;
-    use crate::plot::plot_values;
 
     #[test]
     fn welford_online_sliding() {
@@ -94,7 +94,7 @@ mod tests {
         let avg: f64 = TEST_DATA.iter().sum::<f64>() / TEST_DATA.len() as f64;
         let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64 - 1.0))
             * TEST_DATA.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
-            .sqrt();
+        .sqrt();
 
         assert_eq!(round(w_std_dev, 4), round(std_dev, 4));
     }

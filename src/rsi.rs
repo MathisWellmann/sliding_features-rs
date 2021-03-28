@@ -19,8 +19,8 @@ pub struct RSI {
 impl RSI {
     /// Create a Relative Strength Index Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        RSI {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(RSI {
             view,
             window_len,
             avg_gain: 0.0,
@@ -29,12 +29,12 @@ impl RSI {
             last_val: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        })
     }
 
     /// Create a new Relative Strength Index Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

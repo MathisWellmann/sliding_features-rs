@@ -12,18 +12,18 @@ pub struct WelfordOnline {
 
 impl WelfordOnline {
     /// Create a WelfordOnline struct with a chained View
-    pub fn new(view: Box<dyn View>) -> Self {
-        Self {
+    pub fn new(view: Box<dyn View>) -> Box<Self> {
+        Box::new(Self {
             view,
             mean: 0.0,
             s: 0.0,
             n: 0,
-        }
+        })
     }
 
     /// Create a new WelfordOnline Sliding Window without a chained View
-    pub fn new_final() -> Self {
-        Self::new(Box::new(Echo::new()))
+    pub fn new_final() -> Box<Self> {
+        Self::new(Echo::new())
     }
 
     /// Return the variance of the sliding window

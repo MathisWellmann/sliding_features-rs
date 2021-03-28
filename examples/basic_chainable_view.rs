@@ -16,7 +16,7 @@ fn main() {
     let window_len: usize = 20;
     let mut chain = ALMA::new(
         // first, define the last function which gets applied in the chain
-        Box::new(VSCT::new_final(window_len)), // Make the first transformation in the chain a VSCT
+        VSCT::new_final(window_len), // Make the first transformation in the chain a VSCT
         window_len,
     );
     for v in &rands {

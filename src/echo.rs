@@ -8,8 +8,8 @@ pub struct Echo {
 
 impl Echo {
     /// Create a new Echo View
-    pub fn new() -> Echo {
-        return Echo { out: 0.0 };
+    pub fn new() -> Box<Echo> {
+        Box::new(Echo { out: 0.0 })
     }
 }
 

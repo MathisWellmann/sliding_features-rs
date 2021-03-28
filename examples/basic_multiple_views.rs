@@ -6,13 +6,13 @@ fn main() {
 
     // lets register some of views, which will later be updated in a single step
     let window_len: usize = 16;
-    sf.register_view(Box::new(RSI::new_final(window_len)));
-    sf.register_view(Box::new(ROC::new_final(window_len)));
+    sf.register_view(RSI::new_final(window_len));
+    sf.register_view(ROC::new_final(window_len));
     // now a more complex view chain
-    sf.register_view(Box::new(ALMA::new(
-        Box::new(VSCT::new(Box::new(SMA::new_final(window_len)), window_len)),
+    sf.register_view(ALMA::new(
+        VSCT::new(SMA::new_final(window_len), window_len),
         window_len,
-    )));
+    ));
 
     // generate random dummy values
     let rands: Vec<f64> = (0..100)

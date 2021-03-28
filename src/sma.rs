@@ -15,18 +15,18 @@ pub struct SMA {
 impl SMA {
     /// Create a new simple moving average with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        SMA {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(SMA {
             view,
             window_len,
             q_vals: VecDeque::new(),
             sum: 0.0,
-        }
+        })
     }
 
     /// Create a new simple moving average with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

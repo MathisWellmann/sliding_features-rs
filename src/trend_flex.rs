@@ -18,20 +18,20 @@ pub struct TrendFlex {
 impl TrendFlex {
     /// Create a new TrendFlex Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        TrendFlex {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(TrendFlex {
             view,
             window_len,
             last_val: 0.0,
             last_m: 0.0,
             q_filts: VecDeque::new(),
             out: 0.0,
-        }
+        })
     }
 
     /// Create a new TrendFlex Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

@@ -19,8 +19,8 @@ pub struct LaguerreRSI {
 impl LaguerreRSI {
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        LaguerreRSI {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(LaguerreRSI {
             view,
             value: 0.0,
             gamma: 2.0 / (window_len as f64 + 1.0),
@@ -28,12 +28,12 @@ impl LaguerreRSI {
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
             l3s: VecDeque::new(),
-        }
+        })
     }
 
     /// Create a new LaguerreRSI with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

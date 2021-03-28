@@ -14,24 +14,24 @@ pub struct EMA {
 impl EMA {
     /// Create a new EMA with a chained view and a given window length
     /// and a default alpha value of 2.0
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
         Self::with_alpha(view, window_len, 2.0)
     }
 
     /// Create a new EMA with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 
     /// Create a new EMA with a custom alpha as well
-    pub fn with_alpha(view: Box<dyn View>, window_len: usize, alpha: f64) -> Self {
-        Self {
+    pub fn with_alpha(view: Box<dyn View>, window_len: usize, alpha: f64) -> Box<Self> {
+        Box::new(Self {
             view,
             window_len,
             alpha,
             last_ema: 0.0,
             out: 0.0,
-        }
+        })
     }
 }
 
@@ -40,14 +40,13 @@ impl View for EMA {
         self.view.update(val);
         let val: f64 = self.view.last();
 
-        let weight: f64 = self.alpha / ( 1.0 + self.window_len as f64);
+        let weight: f64 = self.alpha / (1.0 + self.window_len as f64);
         if self.last_ema == 0.0 {
             self.out = val;
             self.last_ema = val;
-            return
+            return;
         }
-        self.out = val * weight 
-            + self.last_ema * (1.0 - weight); 
+        self.out = val * weight + self.last_ema * (1.0 - weight);
         self.last_ema = self.out;
     }
 

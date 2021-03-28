@@ -19,8 +19,8 @@ pub struct RoofingFilter {
 
 impl RoofingFilter {
     /// Create a Roofing Filter with a chained view
-    pub fn new(view: Box<dyn View>) -> Self {
-        RoofingFilter {
+    pub fn new(view: Box<dyn View>) -> Box<Self> {
+        Box::new(RoofingFilter {
             view,
             val1: 0.0,
             val2: 0.0,
@@ -30,12 +30,12 @@ impl RoofingFilter {
             filt0: 0.0,
             filt1: 0.0,
             filt2: 0.0,
-        }
+        })
     }
 
     /// Create a new Roofing Filter with the default Echo View
-    pub fn new_final() -> Self {
-        Self::new(Box::new(Echo::new()))
+    pub fn new_final() -> Box<Self> {
+        Self::new(Echo::new())
     }
 }
 

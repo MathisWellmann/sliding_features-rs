@@ -1,4 +1,4 @@
-use crate::{View, Echo};
+use crate::{Echo, View};
 
 #[derive(Clone)]
 /// Simply multiply the output of View by a certain number
@@ -10,20 +10,17 @@ pub struct Multiplier {
 
 impl Multiplier {
     /// Create a new multiplier with a chanied view and a given value
-    pub fn new(view: Box<dyn View>, multiplier: f64) -> Self {
-        Self {
+    pub fn new(view: Box<dyn View>, multiplier: f64) -> Box<Self> {
+        Box::new(Self {
             view,
             multiplier,
             out: 0.0,
-        }
+        })
     }
 
     /// Create a new multiplier with a given multiplier value
-    pub fn new_final(multiplier: f64) -> Self {
-        Self::new(
-            Box::new(Echo::new()),
-            multiplier,
-        )
+    pub fn new_final(multiplier: f64) -> Box<Self> {
+        Self::new(Echo::new(), multiplier)
     }
 }
 

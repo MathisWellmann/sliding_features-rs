@@ -1,4 +1,4 @@
-use crate::{View, Echo};
+use crate::{Echo, View};
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
@@ -17,8 +17,8 @@ pub struct MyRSI {
 
 impl MyRSI {
     /// Create a new MyRSI indicator with a chained View and a given window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        MyRSI {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(MyRSI {
             view,
             window_len,
             cu: 0.0,
@@ -27,12 +27,12 @@ impl MyRSI {
             q_vals: VecDeque::new(),
             last_val: 0.0,
             oldest_val: 0.0,
-        }
+        })
     }
 
     /// Create a MyRSI indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 
@@ -68,7 +68,6 @@ impl View for MyRSI {
         if self.cu + self.cd != 0.0 {
             self.out = (self.cu - self.cd) / (self.cu + self.cd);
         }
-
     }
 
     fn last(&self) -> f64 {
@@ -79,8 +78,8 @@ impl View for MyRSI {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_data::TEST_DATA;
     use crate::plot::plot_values;
+    use crate::test_data::TEST_DATA;
 
     #[test]
     fn my_rsi() {

@@ -18,8 +18,8 @@ pub struct HLNormalizer {
 impl HLNormalizer {
     /// Create a new HLNormalizer with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        HLNormalizer {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(HLNormalizer {
             view,
             window_len,
             q_vals: VecDeque::new(),
@@ -27,12 +27,12 @@ impl HLNormalizer {
             max: 0.0,
             last: 0.0,
             init: true,
-        }
+        })
     }
 
     /// Create a new HLNormalizer with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 
@@ -95,7 +95,6 @@ mod tests {
     use super::*;
     use crate::center_of_gravity::CenterOfGravity;
     use crate::cyber_cycle::CyberCycle;
-    use crate::echo::Echo;
     use crate::plot::plot_values;
     use crate::re_flex::ReFlex;
     use crate::roc::ROC;
@@ -105,7 +104,7 @@ mod tests {
 
     #[test]
     fn normalizer() {
-        let mut n = HLNormalizer::new(Box::new(Echo::new()), 16);
+        let mut n = HLNormalizer::new_final(16);
         for v in &TEST_DATA {
             n.update(*v);
             let last = n.last();
@@ -118,7 +117,7 @@ mod tests {
     fn normalizer_center_of_gravity_plot() {
         let window_len = 16;
         let cgo = CenterOfGravity::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(cgo), window_len);
+        let mut n = HLNormalizer::new(cgo, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {
@@ -134,7 +133,7 @@ mod tests {
     fn normalizer_cyber_cycle_plot() {
         let window_len = 16;
         let cc = CyberCycle::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(cc), window_len);
+        let mut n = HLNormalizer::new(cc, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {
@@ -150,7 +149,7 @@ mod tests {
     fn normalizer_re_flex_plot() {
         let window_len = 16;
         let rf = ReFlex::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(rf), window_len);
+        let mut n = HLNormalizer::new(rf, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {
@@ -166,7 +165,7 @@ mod tests {
     fn normalizer_roc_plot() {
         let window_len = 16;
         let r = ROC::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(r), window_len);
+        let mut n = HLNormalizer::new(r, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {
@@ -182,7 +181,7 @@ mod tests {
     fn normalizer_rsi_plot() {
         let window_len = 16;
         let r = RSI::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(r), window_len);
+        let mut n = HLNormalizer::new(r, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {
@@ -198,7 +197,7 @@ mod tests {
     fn normalizer_trend_flex_plot() {
         let window_len = 16;
         let tf = TrendFlex::new_final(window_len);
-        let mut n = HLNormalizer::new(Box::new(tf), window_len);
+        let mut n = HLNormalizer::new(tf, window_len);
         let mut out: Vec<f64> = Vec::new();
 
         for v in &TEST_DATA {

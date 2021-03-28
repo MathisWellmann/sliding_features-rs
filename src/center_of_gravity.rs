@@ -16,18 +16,18 @@ pub struct CenterOfGravity {
 impl CenterOfGravity {
     /// Create a Center of Gravity Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        CenterOfGravity {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(CenterOfGravity {
             view,
             window_len,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        })
     }
 
     /// Create a Center of Gravity Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

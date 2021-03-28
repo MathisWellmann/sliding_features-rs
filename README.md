@@ -35,7 +35,7 @@ use sliding_features::*;
 use time_series_generator::generate_standard_normal;
 
 fn main() {
-    let mut rsi = Box::new(RSI::new_final(14));
+    let mut rsi = RSI::new_final(14);
 
     // generate dummy values
     let vals = generate_standard_normal(1024, 100.0);
@@ -45,7 +45,6 @@ fn main() {
         println!("last rsi value: {:?}", last);
     }
 }
-
 ```
 See [examples/basic_single_view.rs](examples/basic_single_view.rs) for the code
 Run the code using
@@ -61,7 +60,7 @@ cargo run --release --example basic_single_view
 //  and after that, smooth the values with an ALMA
 
 // import the needed structs, and the View trait
-use sliding_features::{ALMA, VSCT, View};
+use sliding_features::{View, ALMA, VSCT};
 
 fn main() {
     // generate random value shifted up by 100.0 and scaled by 20.0,
@@ -72,9 +71,10 @@ fn main() {
     println!("rands: {:?}", rands);
 
     let window_len: usize = 20;
-    let mut chain = ALMA::new(  // first, define the last function which gets applied in the chain
-        Box::new(VSCT::new_final(window_len)), // Make the first transformation in the chain a VSCT
-        window_len
+    let mut chain = ALMA::new(
+        // first, define the last function which gets applied in the chain
+        VSCT::new_final(window_len), // Make the first transformation in the chain a VSCT
+        window_len,
     );
     for v in &rands {
         // the chain will first call the inner most view, which is Echo.
@@ -85,6 +85,7 @@ fn main() {
         println!("transformed value: {}", last_value);
     }
 }
+
 ```
 See [examples/basic_chainable_view.rs](examples/basic_chainable_view.rs) for the code
 Run the code using
@@ -106,31 +107,25 @@ fn main() {
 
     // lets register some of views, which will later be updated in a single step
     let window_len: usize = 16;
-    sf.register_view(Box::new(RSI::new_final(window_len)));
-    sf.register_view(Box::new(ROC::new_final(window_len)));
+    sf.register_view(RSI::new_final(window_len));
+    sf.register_view(ROC::new_final(window_len));
     // now a more complex view chain
-    sf.register_view(
-        Box::new(ALMA::new(
-            Box::new(VSCT::new(
-                Box::new(SMA::new_final(window_len)),
-                window_len
-            )),
-            window_len
-        ))
-    );
+    sf.register_view(ALMA::new(
+        VSCT::new(SMA::new_final(window_len), window_len),
+        window_len,
+    ));
 
     // generate random dummy values
     let rands: Vec<f64> = (0..100)
         .map(|_| rand::random::<f64>() * 20.0 + 100.0)
         .collect();
     for r in &rands {
-        sf.update(*r);  // update all registered views with the newest value
+        sf.update(*r); // update all registered views with the newest value
         let last: Vec<f64> = sf.last(); // get the latest values from all views
-        assert_eq!(last.len(), 3);  // because there are 3 registered views we get three ordered values
+        assert_eq!(last.len(), 3); // because there are 3 registered views we get three ordered values
         println!("last values: {:?}", last);
     }
 }
-
 ```
 See [examples/basic_multiple_views.rs](examples/basic_multiple_views.rs) for the code
 Run the code using

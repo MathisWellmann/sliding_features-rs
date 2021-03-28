@@ -16,19 +16,19 @@ pub struct ROC {
 impl ROC {
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        ROC {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(ROC {
             view,
             window_len,
             oldest: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        }
+        })
     }
 
     /// Create a new Rate of Change Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

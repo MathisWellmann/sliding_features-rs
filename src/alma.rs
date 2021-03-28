@@ -21,20 +21,25 @@ pub struct ALMA {
 impl ALMA {
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> ALMA {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
         ALMA::new_custom(view, window_len, 6.0, 0.85)
     }
 
     /// Create a new Arnaud Legoux Moving Average with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        ALMA::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        ALMA::new(Echo::new(), window_len)
     }
 
     /// Create a Arnaud Legoux Moving Average with custom parameters
-    pub fn new_custom(view: Box<dyn View>, window_len: usize, sigma: f64, offset: f64) -> ALMA {
+    pub fn new_custom(
+        view: Box<dyn View>,
+        window_len: usize,
+        sigma: f64,
+        offset: f64,
+    ) -> Box<Self> {
         let m = offset * (window_len as f64 + 1.0);
         let s = window_len as f64 / sigma;
-        ALMA {
+        Box::new(ALMA {
             view,
             window_len,
             m,
@@ -44,7 +49,7 @@ impl ALMA {
             q_vals: VecDeque::new(),
             q_wtd: VecDeque::new(),
             q_out: VecDeque::new(),
-        }
+        })
     }
 }
 

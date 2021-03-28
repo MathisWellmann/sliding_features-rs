@@ -17,19 +17,19 @@ pub struct CyberCycle {
 impl CyberCycle {
     /// Create a new Cyber Cycle Indicator with a chained View
     /// and a given window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        return CyberCycle {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(CyberCycle {
             view,
             window_len,
             alpha: 2.0 / (window_len as f64 + 1.0),
             vals: VecDeque::new(),
             out: VecDeque::new(),
-        };
+        })
     }
 
     /// Create a new Cyber Cycle Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

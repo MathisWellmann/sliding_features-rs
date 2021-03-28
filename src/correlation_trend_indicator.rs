@@ -13,17 +13,17 @@ pub struct CorrelationTrendIndicator {
 impl CorrelationTrendIndicator {
     /// Create a new Correlation Trend Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Self {
-        Self {
+    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+        Box::new(Self {
             view,
             window_len,
             q_vals: VecDeque::new(),
-        }
+        })
     }
 
     /// Create a new Correlation Trend Indicator with the given window length
-    pub fn new_final(window_len: usize) -> Self {
-        Self::new(Box::new(Echo::new()), window_len)
+    pub fn new_final(window_len: usize) -> Box<Self> {
+        Self::new(Echo::new(), window_len)
     }
 }
 

@@ -18,8 +18,8 @@ pub struct LaguerreFilter {
 impl LaguerreFilter {
     /// Create a new LaguerreFilter with a chained View
     /// and a gamma parameter
-    pub fn new(view: Box<dyn View>, gamma: f64) -> Self {
-        LaguerreFilter {
+    pub fn new(view: Box<dyn View>, gamma: f64) -> Box<Self> {
+        Box::new(LaguerreFilter {
             view,
             gamma,
             l0s: vec![],
@@ -28,16 +28,16 @@ impl LaguerreFilter {
             l3s: vec![],
             filts: vec![],
             init: true,
-        }
+        })
     }
 
     /// Create a new LaguerreFilter with a gamma parameter
-    pub fn new_final(gamma: f64) -> Self {
-        Self::new(Box::new(Echo::new()), gamma)
+    pub fn new_final(gamma: f64) -> Box<Self> {
+        Self::new(Echo::new(), gamma)
     }
 
     /// Create a new LaguerreFilter with the default gamma of 0.8
-    pub fn default() -> LaguerreFilter {
+    pub fn default() -> Box<Self> {
         return LaguerreFilter::new_final(0.8);
     }
 }
