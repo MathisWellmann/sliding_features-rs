@@ -23,7 +23,7 @@ This struct allows you to manage a bunch of Views at once and conveniently updat
 ### Usage
 In your Cargo.toml add the crate:
 ```toml
-sliding_features = "0.5.3"
+sliding_features = "0.6.0"
 ```
 
 ### Basic single View example
@@ -93,10 +93,6 @@ Run the code using
 cargo run --release --example basic_chainable_view
 ```
 
-NOTE: I am aware that the boxed View code looks ugly can get quite large for longer view chains.
-if you happen to know a clean solution, please let me know or write a PR
-
-
 ### Multiple Sliding Features Example
 ```rust
 /// Basic Example showing how to utilize a SlidingWindow to combine multiple chained views
@@ -132,7 +128,6 @@ Run the code using
 ```shell script
 cargo run --release --example basic_multiple_views
 ```
-
 
 ### Views
 A View defines the function which processes value updates. They currently include:
