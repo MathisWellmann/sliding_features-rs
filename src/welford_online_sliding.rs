@@ -14,6 +14,13 @@ pub struct WelfordOnlineSliding {
     n: usize,
 }
 
+impl std::fmt::Debug for WelfordOnlineSliding {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "WelfordOnlineSliding(window_len: {}, q_vals: {:?}, mean: {}, s: {}, n: {})",
+               self.window_len, self.q_vals, self.mean, self.s, self.n)
+    }
+}
+
 impl WelfordOnlineSliding {
     /// Create a WelfordOnline struct with a chained View
     pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {

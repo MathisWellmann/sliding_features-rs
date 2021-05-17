@@ -12,6 +12,13 @@ pub struct SMA {
     sum: f64,
 }
 
+impl std::fmt::Debug for SMA {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "SMA(window_len: {}, q_vals: {:?}, sum: {})",
+               self.window_len, self.q_vals, self.sum)
+    }
+}
+
 impl SMA {
     /// Create a new simple moving average with a chained View
     /// and a given sliding window length

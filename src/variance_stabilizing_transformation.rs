@@ -9,6 +9,12 @@ pub struct VST {
     welford_online: Box<WelfordOnline>,
 }
 
+impl std::fmt::Debug for VST {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "VST.last: {}", self.last)
+    }
+}
+
 impl VST {
     /// Create a new Variance Stabilizing Transform with a chained View
     pub fn new(view: Box<dyn View>) -> Box<Self> {

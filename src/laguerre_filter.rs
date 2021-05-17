@@ -15,6 +15,13 @@ pub struct LaguerreFilter {
     init: bool,
 }
 
+impl std::fmt::Debug for LaguerreFilter {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "LaguerreFilter(gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?}, filts: {:?}, init: {})",
+               self.gamma, self.l0s, self.l1s, self.l2s, self.l3s, self.filts, self.init)
+    }
+}
+
 impl LaguerreFilter {
     /// Create a new LaguerreFilter with a chained View
     /// and a gamma parameter

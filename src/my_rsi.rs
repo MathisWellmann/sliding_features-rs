@@ -15,6 +15,13 @@ pub struct MyRSI {
     oldest_val: f64,
 }
 
+impl std::fmt::Debug for MyRSI {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "MyRSI(window_len: {}, cu: {}, cd: {}, out: {}, q_vals: {:?}, last_val: {}, oldest_val: {})",
+               self.window_len, self.cu, self.cd, self.out, self.q_vals, self.last_val, self.oldest_val)
+    }
+}
+
 impl MyRSI {
     /// Create a new MyRSI indicator with a chained View and a given window length
     pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {

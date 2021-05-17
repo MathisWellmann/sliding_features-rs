@@ -15,6 +15,13 @@ pub struct TrendFlex {
     out: f64,
 }
 
+impl std::fmt::Debug for TrendFlex {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "TrendFlex(window_len: {}, last_val: {}, last_m: {}, q_filts: {:?}, out: {})",
+               self.window_len, self.last_val, self.last_m, self.q_filts, self.out)
+    }
+}
+
 impl TrendFlex {
     /// Create a new TrendFlex Indicator with a chained View
     /// and a given sliding window length

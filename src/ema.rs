@@ -11,6 +11,13 @@ pub struct EMA {
     out: f64,
 }
 
+impl std::fmt::Debug for EMA {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "EMA(window_len: {}, alpha: {}, last_ema: {}, out: {})",
+               self.window_len, self.alpha, self.last_ema, self.out)
+    }
+}
+
 impl EMA {
     /// Create a new EMA with a chained view and a given window length
     /// and a default alpha value of 2.0

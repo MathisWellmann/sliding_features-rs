@@ -10,6 +10,13 @@ pub struct CorrelationTrendIndicator {
     q_vals: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for CorrelationTrendIndicator {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "CorrelationTrendIndicator(window_len: {}, q_vals: {:?})",
+               self.window_len, self.q_vals)
+    }
+}
+
 impl CorrelationTrendIndicator {
     /// Create a new Correlation Trend Indicator with a chained View
     /// and a given sliding window length

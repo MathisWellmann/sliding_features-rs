@@ -15,6 +15,13 @@ pub struct ReFlex {
     out: f64,
 }
 
+impl std::fmt::Debug for ReFlex {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "ReFlex(window_len: {}, last_val: {}, last_m: {}, q_vals: {:?}, out: {})",
+               self.window_len, self.last_val, self.last_m, self.q_vals, self.out)
+    }
+}
+
 impl ReFlex {
     /// Create a new ReFlex indicator with a chained View
     /// and a given sliding window length

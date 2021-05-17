@@ -16,6 +16,13 @@ pub struct LaguerreRSI {
     l3s: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for LaguerreRSI {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "LaguerreRSI(value: {}, gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?})",
+               self.value, self.gamma, self.l0s, self.l1s, self.l2s, self.l3s)
+    }
+}
+
 impl LaguerreRSI {
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length

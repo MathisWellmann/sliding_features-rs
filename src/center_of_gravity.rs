@@ -13,6 +13,13 @@ pub struct CenterOfGravity {
     out: f64,
 }
 
+impl std::fmt::Debug for CenterOfGravity {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "CenterOfGravity(window_len: {}, q_vals: {:?}, out: {})",
+               self.window_len, self.q_vals, self.out)
+    }
+}
+
 impl CenterOfGravity {
     /// Create a Center of Gravity Indicator with a chained View
     /// and a given sliding window length

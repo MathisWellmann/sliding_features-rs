@@ -16,6 +16,13 @@ pub struct RSI {
     out: f64,
 }
 
+impl std::fmt::Debug for RSI {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "RSI(window_len: {}, avg_gain: {}, avg_loss: {}, old_ref: {}, last_val: {}, q_vals: {:?}, out: {})",
+               self.window_len, self.avg_gain, self.avg_loss, self.old_ref, self.last_val, self.q_vals, self.out)
+    }
+}
+
 impl RSI {
     /// Create a Relative Strength Index Indicator with a chained View
     /// and a given sliding window length

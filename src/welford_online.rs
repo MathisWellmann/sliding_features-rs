@@ -10,6 +10,12 @@ pub struct WelfordOnline {
     n: usize,
 }
 
+impl std::fmt::Debug for WelfordOnline {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "WelfordOnline(mean: {}, s: {}, n: {})", self.mean, self.s, self.n)
+    }
+}
+
 impl WelfordOnline {
     /// Create a WelfordOnline struct with a chained View
     pub fn new(view: Box<dyn View>) -> Box<Self> {

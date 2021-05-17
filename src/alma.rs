@@ -18,6 +18,13 @@ pub struct ALMA {
     q_out: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for ALMA {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "ALMA(window_len: {}, wtd_sum: {}, cum_wt: {}, m: {}, s: {}, q_vals: {:?}, q_wtd: {:?}, q_out: {:?})",
+               self.window_len, self.wtd_sum, self.cum_wt, self.m, self.s, self.q_vals, self.q_wtd, self.q_out)
+    }
+}
+
 impl ALMA {
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length

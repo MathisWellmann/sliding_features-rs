@@ -13,6 +13,13 @@ pub struct PolarizedFractalEfficiency {
     out: f64,
 }
 
+impl std::fmt::Debug for PolarizedFractalEfficiency {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "PolarizedFractalEfficiency(window_len: {}, q_vals: {:?}, out: {})",
+               self.window_len, self.q_vals, self.out)
+    }
+}
+
 impl PolarizedFractalEfficiency {
     /// Create a new PolarizedFractalEfficiency indicator with a chained view and a given window
     /// length. The window length will also be used for the EMA

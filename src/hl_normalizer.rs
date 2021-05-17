@@ -15,6 +15,13 @@ pub struct HLNormalizer {
     init: bool,
 }
 
+impl std::fmt::Debug for HLNormalizer {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "HLNormalizer(window_len: {}, q_vals: {:?}, min: {}, max: {}, last: {}, init: {})",
+               self.window_len, self.q_vals, self.min, self.max, self.last, self.init)
+    }
+}
+
 impl HLNormalizer {
     /// Create a new HLNormalizer with a chained View
     /// and a given sliding window length

@@ -13,6 +13,13 @@ pub struct ROC {
     out: f64,
 }
 
+impl std::fmt::Debug for ROC {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "ROC(window_len: {}, oldest: {}, q_vals: {:?}, out: {})",
+               self.window_len, self.oldest, self.q_vals, self.out)
+    }
+}
+
 impl ROC {
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length

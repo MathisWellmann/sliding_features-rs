@@ -11,6 +11,13 @@ pub struct NET {
     q_vals: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for NET {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "NET(window_len: {}, out: {}, q_vals: {:?})",
+               self.window_len, self.out, self.q_vals)
+    }
+}
+
 impl NET {
     /// Create a new NET with a chained View and window length
     pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {

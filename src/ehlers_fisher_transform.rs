@@ -14,6 +14,14 @@ pub struct EhlersFisherTransform {
     q_out: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for EhlersFisherTransform {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "EhlersFisherTransform(window_len: {}, q_vals: {:?}, high: {}, low: {}, q_out: {:?})",
+               self.window_len, self.q_vals, self.high, self.low, self.q_out)
+    }
+}
+
+
 impl EhlersFisherTransform {
     /// Create a new indicator with a given chained view and a window length
     /// The default EMA is used as in the paper

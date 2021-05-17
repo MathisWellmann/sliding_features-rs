@@ -8,8 +8,14 @@ pub struct Multiplier {
     out: f64,
 }
 
+impl std::fmt::Debug for Multiplier {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "Multiplier(multiplier: {}, out: {})", self.multiplier, self.out)
+    }
+}
+
 impl Multiplier {
-    /// Create a new multiplier with a chanied view and a given value
+    /// Create a new multiplier with a chained view and a given value
     pub fn new(view: Box<dyn View>, multiplier: f64) -> Box<Self> {
         Box::new(Self {
             view,

@@ -14,6 +14,13 @@ pub struct CyberCycle {
     out: VecDeque<f64>,
 }
 
+impl std::fmt::Debug for CyberCycle {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "CyberCycle(window_len: {}, alpha: {}, vals: {:?}, out: {:?})",
+               self.window_len, self.alpha, self.vals, self.out)
+    }
+}
+
 impl CyberCycle {
     /// Create a new Cyber Cycle Indicator with a chained View
     /// and a given window length
