@@ -1,13 +1,16 @@
+//! John Ehlers TrendFlex Indicators
+//! from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// John Ehlers TrendFlex Indicators
 /// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
 #[derive(Clone)]
-pub struct TrendFlex {
-    view: Box<dyn View>,
+pub struct TrendFlex<V> {
+    view: V,
     window_len: usize,
     last_val: f64,
     last_m: f64,
@@ -15,34 +18,48 @@ pub struct TrendFlex {
     out: f64,
 }
 
-impl std::fmt::Debug for TrendFlex {
+impl<V> std::fmt::Debug for TrendFlex<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "TrendFlex(window_len: {}, last_val: {}, last_m: {}, q_filts: {:?}, out: {})",
-               self.window_len, self.last_val, self.last_m, self.q_filts, self.out)
+        write!(
+            fmt,
+            "TrendFlex(window_len: {}, last_val: {}, last_m: {}, q_filts: {:?}, out: {})",
+            self.window_len, self.last_val, self.last_m, self.q_filts, self.out
+        )
     }
 }
 
-impl TrendFlex {
+/// Create a new TrendFlex Indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> TrendFlex<Echo> {
+    TrendFlex::new(Echo::new(), window_len)
+}
+
+impl<V> TrendFlex<V>
+where
+    V: View,
+{
     /// Create a new TrendFlex Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(TrendFlex {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        TrendFlex {
             view,
             window_len,
             last_val: 0.0,
             last_m: 0.0,
             q_filts: VecDeque::new(),
             out: 0.0,
-        })
-    }
-
-    /// Create a new TrendFlex Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for TrendFlex {
+impl<V> View for TrendFlex<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -90,8 +107,10 @@ impl View for TrendFlex {
             self.out = 0.0;
         }
     }
+
+    #[inline(always)]
     fn last(&self) -> f64 {
-        return self.out;
+        self.out
     }
 }
 
@@ -103,7 +122,7 @@ mod tests {
 
     #[test]
     fn trend_flex_plot() {
-        let mut tf = TrendFlex::new_final(16);
+        let mut tf = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             tf.update(*v);

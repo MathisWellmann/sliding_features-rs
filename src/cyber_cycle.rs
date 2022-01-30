@@ -1,46 +1,63 @@
+//! John Ehlers Cyber Cycle Indicator
+//! from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// John Ehlers Cyber Cycle Indicator
 /// from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
 #[derive(Clone)]
-pub struct CyberCycle {
-    view: Box<dyn View>,
+pub struct CyberCycle<V> {
+    view: V,
     window_len: usize,
     alpha: f64,
     vals: VecDeque<f64>,
     out: VecDeque<f64>,
 }
 
-impl std::fmt::Debug for CyberCycle {
+impl<V> std::fmt::Debug for CyberCycle<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "CyberCycle(window_len: {}, alpha: {}, vals: {:?}, out: {:?})",
-               self.window_len, self.alpha, self.vals, self.out)
+        write!(
+            fmt,
+            "CyberCycle(window_len: {}, alpha: {}, vals: {:?}, out: {:?})",
+            self.window_len, self.alpha, self.vals, self.out
+        )
     }
 }
 
-impl CyberCycle {
+/// Create a new Cyber Cycle Indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> CyberCycle<Echo> {
+    CyberCycle::new(Echo::new(), window_len)
+}
+
+impl<V> CyberCycle<V>
+where
+    V: View,
+{
     /// Create a new Cyber Cycle Indicator with a chained View
     /// and a given window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(CyberCycle {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        CyberCycle {
             view,
             window_len,
             alpha: 2.0 / (window_len as f64 + 1.0),
             vals: VecDeque::new(),
             out: VecDeque::new(),
-        })
-    }
-
-    /// Create a new Cyber Cycle Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for CyberCycle {
+impl<V> View for CyberCycle<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -70,8 +87,10 @@ impl View for CyberCycle {
             - (1.0 - self.alpha).powi(2) * self.out.get(last - 2).unwrap();
         self.out.push_back(cc);
     }
+
+    #[inline(always)]
     fn last(&self) -> f64 {
-        return *self.out.get(self.out.len() - 1).unwrap();
+        *self.out.get(self.out.len() - 1).unwrap()
     }
 }
 
@@ -83,7 +102,7 @@ mod tests {
 
     #[test]
     fn cyber_cycle_plot() {
-        let mut cc = CyberCycle::new_final(16);
+        let mut cc = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cc.update(*v);

@@ -1,53 +1,72 @@
-use crate::sliding_window::View;
+//! Welford online algorithm for computing mean and variance on-the-fly
+
 use crate::Echo;
+use crate::View;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 #[derive(Clone)]
-pub struct WelfordOnline {
-    view: Box<dyn View>,
+pub struct WelfordOnline<V> {
+    view: V,
     mean: f64,
     s: f64,
     n: usize,
 }
 
-impl std::fmt::Debug for WelfordOnline {
+impl<V> std::fmt::Debug for WelfordOnline<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "WelfordOnline(mean: {}, s: {}, n: {})", self.mean, self.s, self.n)
+        write!(
+            fmt,
+            "WelfordOnline(mean: {}, s: {}, n: {})",
+            self.mean, self.s, self.n
+        )
     }
 }
 
-impl WelfordOnline {
+/// Create a new WelfordOnline Sliding Window without a chained View
+#[inline(always)]
+pub fn new_final() -> WelfordOnline<Echo> {
+    WelfordOnline::new(Echo::new())
+}
+
+impl<V> WelfordOnline<V>
+where
+    V: View,
+{
     /// Create a WelfordOnline struct with a chained View
-    pub fn new(view: Box<dyn View>) -> Box<Self> {
-        Box::new(Self {
+    #[inline]
+    pub fn new(view: V) -> Self {
+        Self {
             view,
             mean: 0.0,
             s: 0.0,
             n: 0,
-        })
-    }
-
-    /// Create a new WelfordOnline Sliding Window without a chained View
-    pub fn new_final() -> Box<Self> {
-        Self::new(Echo::new())
+        }
     }
 
     /// Return the variance of the sliding window
+    #[inline(always)]
     pub fn variance(&self) -> f64 {
-        return if self.n > 1 {
+        if self.n > 1 {
             self.s / (self.n as f64 - 1.0)
         } else {
             0.0
-        };
+        }
     }
 
     /// Return the mean of the sliding window
+    #[inline(always)]
     pub fn mean(&self) -> f64 {
         self.mean
     }
 }
 
-impl View for WelfordOnline {
+impl<V> View for WelfordOnline<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -58,9 +77,9 @@ impl View for WelfordOnline {
         self.s += (val - old_mean) * (val - self.mean);
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
-        let std_dev = self.variance().sqrt();
-        std_dev
+        self.variance().sqrt()
     }
 }
 
@@ -72,7 +91,7 @@ mod tests {
 
     #[test]
     fn correct_std_dev() {
-        let mut wo = WelfordOnline::new_final();
+        let mut wo = new_final();
         for v in &TEST_DATA {
             wo.update(*v);
             assert!(!wo.last().is_nan());

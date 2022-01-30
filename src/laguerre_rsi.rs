@@ -1,13 +1,16 @@
+//! John Ehlers LaguerreRSI
+//! from: http://mesasoftware.com/papers/TimeWarp.pdf
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// John Ehlers LaguerreRSI
 /// from: http://mesasoftware.com/papers/TimeWarp.pdf
 #[derive(Clone)]
-pub struct LaguerreRSI {
-    view: Box<dyn View>,
+pub struct LaguerreRSI<V> {
+    view: V,
     value: f64,
     gamma: f64,
     l0s: VecDeque<f64>,
@@ -16,18 +19,34 @@ pub struct LaguerreRSI {
     l3s: VecDeque<f64>,
 }
 
-impl std::fmt::Debug for LaguerreRSI {
+impl<V> std::fmt::Debug for LaguerreRSI<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "LaguerreRSI(value: {}, gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?})",
-               self.value, self.gamma, self.l0s, self.l1s, self.l2s, self.l3s)
+        write!(
+            fmt,
+            "LaguerreRSI(value: {}, gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?})",
+            self.value, self.gamma, self.l0s, self.l1s, self.l2s, self.l3s
+        )
     }
 }
 
-impl LaguerreRSI {
+/// Create a new LaguerreRSI with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> LaguerreRSI<Echo> {
+    LaguerreRSI::new(Echo::new(), window_len)
+}
+
+impl<V> LaguerreRSI<V>
+where
+    V: View,
+{
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(LaguerreRSI {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        LaguerreRSI {
             view,
             value: 0.0,
             gamma: 2.0 / (window_len as f64 + 1.0),
@@ -35,16 +54,14 @@ impl LaguerreRSI {
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
             l3s: VecDeque::new(),
-        })
-    }
-
-    /// Create a new LaguerreRSI with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for LaguerreRSI {
+impl<V> View for LaguerreRSI<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -106,6 +123,8 @@ impl View for LaguerreRSI {
             self.value = cu / (cu + cd);
         }
     }
+
+    #[inline(always)]
     fn last(&self) -> f64 {
         return self.value;
     }
@@ -119,7 +138,7 @@ mod tests {
 
     #[test]
     fn laguerre_rsi() {
-        let mut lrsi = LaguerreRSI::new_final(16);
+        let mut lrsi = new_final(16);
         for v in &TEST_DATA {
             lrsi.update(*v);
             let last = lrsi.last();
@@ -130,7 +149,7 @@ mod tests {
 
     #[test]
     fn laguerre_rsi_plot() {
-        let mut lrsi = LaguerreRSI::new_final(16);
+        let mut lrsi = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             lrsi.update(*v);

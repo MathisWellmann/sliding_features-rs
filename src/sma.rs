@@ -1,43 +1,59 @@
+//! SMA - Simple Moving Average
+
 use std::collections::VecDeque;
 
-use crate::sliding_window::View;
 use crate::Echo;
+use crate::View;
 
 #[derive(Clone)]
 /// SMA - Simple Moving Average
-pub struct SMA {
-    view: Box<dyn View>,
+pub struct SMA<V> {
+    view: V,
     window_len: usize,
     q_vals: VecDeque<f64>,
     sum: f64,
 }
 
-impl std::fmt::Debug for SMA {
+impl<V> std::fmt::Debug for SMA<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "SMA(window_len: {}, q_vals: {:?}, sum: {})",
-               self.window_len, self.q_vals, self.sum)
+        write!(
+            fmt,
+            "SMA(window_len: {}, q_vals: {:?}, sum: {})",
+            self.window_len, self.q_vals, self.sum
+        )
     }
 }
 
-impl SMA {
+/// Create a new simple moving average with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> SMA<Echo> {
+    SMA::new(Echo::new(), window_len)
+}
+
+impl<V> SMA<V>
+where
+    V: View,
+{
     /// Create a new simple moving average with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(SMA {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        SMA {
             view,
             window_len,
             q_vals: VecDeque::new(),
             sum: 0.0,
-        })
-    }
-
-    /// Create a new simple moving average with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for SMA {
+impl<V> View for SMA<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -51,6 +67,7 @@ impl View for SMA {
         self.sum += val;
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         self.sum / self.q_vals.len() as f64
     }
@@ -67,7 +84,7 @@ mod tests {
     fn sma() {
         let mut rng = thread_rng();
 
-        let mut sma = SMA::new_final(16);
+        let mut sma = new_final(16);
         for _ in 0..1024 {
             let r = rng.gen::<f64>();
             sma.update(r);
@@ -79,7 +96,7 @@ mod tests {
 
     #[test]
     fn sma_plot() {
-        let mut sma = SMA::new_final(16);
+        let mut sma = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);

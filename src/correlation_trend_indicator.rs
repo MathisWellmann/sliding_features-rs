@@ -1,40 +1,57 @@
+//! John Ehlers Correlation Trend Indicator
+//! from: https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
+
 use crate::{Echo, View};
 use std::collections::VecDeque;
 
 /// John Ehlers Correlation Trend Indicator
 /// from: https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
 #[derive(Clone)]
-pub struct CorrelationTrendIndicator {
-    view: Box<dyn View>,
+pub struct CorrelationTrendIndicator<V> {
+    view: V,
     window_len: usize,
     q_vals: VecDeque<f64>,
 }
 
-impl std::fmt::Debug for CorrelationTrendIndicator {
+impl<V> std::fmt::Debug for CorrelationTrendIndicator<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "CorrelationTrendIndicator(window_len: {}, q_vals: {:?})",
-               self.window_len, self.q_vals)
+        write!(
+            fmt,
+            "CorrelationTrendIndicator(window_len: {}, q_vals: {:?})",
+            self.window_len, self.q_vals
+        )
     }
 }
 
-impl CorrelationTrendIndicator {
+/// Create a new Correlation Trend Indicator with the given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> CorrelationTrendIndicator<Echo> {
+    CorrelationTrendIndicator::new(Echo::new(), window_len)
+}
+
+impl<V> CorrelationTrendIndicator<V>
+where
+    V: View,
+{
     /// Create a new Correlation Trend Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(Self {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        Self {
             view,
             window_len,
             q_vals: VecDeque::new(),
-        })
-    }
-
-    /// Create a new Correlation Trend Indicator with the given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for CorrelationTrendIndicator {
+impl<V> View for CorrelationTrendIndicator<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -82,7 +99,7 @@ mod tests {
     #[test]
     fn correlation_trend_indicator() {
         // Test if indicator is bounded in range [-1, 1.0]
-        let mut cti = CorrelationTrendIndicator::new_final(10);
+        let mut cti = new_final(10);
         for v in &TEST_DATA {
             cti.update(*v);
             let last = cti.last();
@@ -93,7 +110,7 @@ mod tests {
 
     #[test]
     fn correlation_trend_indicator_plot() {
-        let mut cti = CorrelationTrendIndicator::new_final(16);
+        let mut cti = new_final(16);
         let mut outs: Vec<f64> = vec![];
         for v in &TEST_DATA {
             cti.update(*v);

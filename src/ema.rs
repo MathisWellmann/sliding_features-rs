@@ -1,48 +1,65 @@
-use crate::sliding_window::View;
+//! EMA - Exponential Moving Average
+
 use crate::Echo;
+use crate::View;
 
 #[derive(Clone)]
 /// EMA - Exponential Moving Average
-pub struct EMA {
-    view: Box<dyn View>,
+pub struct EMA<V> {
+    view: V,
     window_len: usize,
     alpha: f64,
     last_ema: f64,
     out: f64,
 }
 
-impl std::fmt::Debug for EMA {
+impl<V> std::fmt::Debug for EMA<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "EMA(window_len: {}, alpha: {}, last_ema: {}, out: {})",
-               self.window_len, self.alpha, self.last_ema, self.out)
+        write!(
+            fmt,
+            "EMA(window_len: {}, alpha: {}, last_ema: {}, out: {})",
+            self.window_len, self.alpha, self.last_ema, self.out
+        )
     }
 }
 
-impl EMA {
+/// Create a new EMA with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> EMA<Echo> {
+    EMA::new(Echo::new(), window_len)
+}
+
+impl<V> EMA<V>
+where
+    V: View,
+{
     /// Create a new EMA with a chained view and a given window length
     /// and a default alpha value of 2.0
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
+    #[inline(always)]
+    pub fn new(view: V, window_len: usize) -> Self {
         Self::with_alpha(view, window_len, 2.0)
     }
 
-    /// Create a new EMA with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
-    }
-
     /// Create a new EMA with a custom alpha as well
-    pub fn with_alpha(view: Box<dyn View>, window_len: usize, alpha: f64) -> Box<Self> {
-        Box::new(Self {
+    #[inline]
+    pub fn with_alpha(view: V, window_len: usize, alpha: f64) -> Self {
+        Self {
             view,
             window_len,
             alpha,
             last_ema: 0.0,
             out: 0.0,
-        })
+        }
     }
 }
 
-impl View for EMA {
+impl<V> View for EMA<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val: f64 = self.view.last();
@@ -57,6 +74,7 @@ impl View for EMA {
         self.last_ema = self.out;
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         self.out
     }
@@ -70,7 +88,7 @@ mod tests {
 
     #[test]
     fn ema_plot() {
-        let mut ema = EMA::new_final(16);
+        let mut ema = new_final(16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             ema.update(*v);

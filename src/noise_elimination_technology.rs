@@ -1,41 +1,58 @@
+//! John Ehlers Noise elimination technology using kendall correlation
+//! from http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
+
 use crate::{Echo, View};
 use std::collections::VecDeque;
 
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
 #[derive(Clone)]
-pub struct NET {
-    view: Box<dyn View>,
+pub struct NET<V> {
+    view: V,
     window_len: usize,
     out: f64,
     q_vals: VecDeque<f64>,
 }
 
-impl std::fmt::Debug for NET {
+impl<V> std::fmt::Debug for NET<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "NET(window_len: {}, out: {}, q_vals: {:?})",
-               self.window_len, self.out, self.q_vals)
+        write!(
+            fmt,
+            "NET(window_len: {}, out: {}, q_vals: {:?})",
+            self.window_len, self.out, self.q_vals
+        )
     }
 }
 
-impl NET {
+/// Create a new NET with a window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> NET<Echo> {
+    NET::new(Echo::new(), window_len)
+}
+
+impl<V> NET<V>
+where
+    V: View,
+{
     /// Create a new NET with a chained View and window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(NET {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        NET {
             view,
             window_len,
             out: 0.0,
             q_vals: VecDeque::new(),
-        })
-    }
-
-    /// Create a new NET with a window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for NET {
+impl<V> View for NET<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val: f64 = self.view.last();
@@ -71,6 +88,7 @@ impl View for NET {
         self.out = num / denom;
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         self.out
     }
@@ -81,11 +99,10 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
-    use crate::MyRSI;
 
     #[test]
     fn net_my_rsi_plot() {
-        let mut net = NET::new(MyRSI::new_final(16), 16);
+        let mut net = NET::new(crate::my_rsi::new_final(16), 16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             net.update(*v);

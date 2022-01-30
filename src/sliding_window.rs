@@ -1,17 +1,5 @@
-use dyn_clone::DynClone;
+use crate::View;
 
-/// The most important Trait, defining methods which each sliding feature needs to implement
-pub trait View: Send + DynClone {
-    /// Update the state with a new value
-    fn update(&mut self, val: f64);
-
-    /// Return the last value
-    fn last(&self) -> f64;
-}
-
-dyn_clone::clone_trait_object!(View);
-
-#[derive(Clone)]
 /// A Sliding Window holding any number of Sliding Features (Views)
 pub struct SlidingWindow {
     /// A Vector of individual, chainable sliding windows (View)

@@ -1,12 +1,15 @@
+//! John Ehlers Fisher Transform Indicator
+//! from: http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+
 use crate::{Echo, View, EMA};
 use std::collections::VecDeque;
 
 #[derive(Clone)]
 /// John Ehlers Fisher Transform Indicator
 /// from: http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
-pub struct EhlersFisherTransform {
-    view: Box<dyn View>,
-    moving_average: Box<dyn View>,
+pub struct EhlersFisherTransform<V, M> {
+    view: V,
+    moving_average: M,
     window_len: usize,
     q_vals: VecDeque<f64>,
     high: f64,
@@ -14,29 +17,45 @@ pub struct EhlersFisherTransform {
     q_out: VecDeque<f64>,
 }
 
-impl std::fmt::Debug for EhlersFisherTransform {
+impl<V, M> std::fmt::Debug for EhlersFisherTransform<V, M>
+where
+    V: View,
+    M: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "EhlersFisherTransform(window_len: {}, q_vals: {:?}, high: {}, low: {}, q_out: {:?})",
-               self.window_len, self.q_vals, self.high, self.low, self.q_out)
+        write!(
+            fmt,
+            "EhlersFisherTransform(window_len: {}, q_vals: {:?}, high: {}, low: {}, q_out: {:?})",
+            self.window_len, self.q_vals, self.high, self.low, self.q_out
+        )
     }
 }
 
+/// Create a new indicator with a window length and the default moving average
+#[inline(always)]
+pub fn new_final(window_len: usize) -> EhlersFisherTransform<Echo, EMA<Echo>> {
+    new_with_default_ma(Echo::new(), window_len)
+}
 
-impl EhlersFisherTransform {
-    /// Create a new indicator with a given chained view and a window length
-    /// The default EMA is used as in the paper
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Self::with_ma(view, EMA::new_final(5), window_len)
-    }
+/// Create a new indicator with a given chained view and a window length
+/// The default EMA is used as in the paper
+#[inline(always)]
+pub fn new_with_default_ma<V: View>(
+    view: V,
+    window_len: usize,
+) -> EhlersFisherTransform<V, EMA<Echo>> {
+    EhlersFisherTransform::new(view, crate::ema::new_final(5), window_len)
+}
 
-    /// Create a new indicator with a window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
-    }
-
+impl<V, M> EhlersFisherTransform<V, M>
+where
+    V: View,
+    M: View,
+{
     /// Create a new indicator with a view, moving average and window length
-    pub fn with_ma(view: Box<dyn View>, ma: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(Self {
+    #[inline]
+    pub fn new(view: V, ma: M, window_len: usize) -> Self {
+        Self {
             view,
             moving_average: ma,
             window_len,
@@ -44,11 +63,15 @@ impl EhlersFisherTransform {
             high: 0.0,
             low: 0.0,
             q_out: VecDeque::new(),
-        })
+        }
     }
 }
 
-impl View for EhlersFisherTransform {
+impl<V, M> View for EhlersFisherTransform<V, M>
+where
+    V: View,
+    M: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val: f64 = self.view.last();
@@ -108,6 +131,7 @@ impl View for EhlersFisherTransform {
         self.q_out.push_back(fish);
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         *self.q_out.back().unwrap()
     }
@@ -121,7 +145,7 @@ mod tests {
 
     #[test]
     fn ehlers_fisher_transform_plot() {
-        let mut eft = EhlersFisherTransform::new_final(16);
+        let mut eft = new_final(16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             eft.update(*v);

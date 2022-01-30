@@ -1,3 +1,5 @@
+//! Shannon Entropy over bool values over a sliding window
+
 use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
@@ -10,6 +12,7 @@ pub struct Entropy {
 
 impl Entropy {
     /// Create a new Entropy Sliding Window
+    #[inline(always)]
     pub fn new(window_len: usize) -> Self {
         Self {
             value: 0.0,
@@ -19,6 +22,7 @@ impl Entropy {
     }
 
     /// Update the Entropy calculation with a new boolean value
+    #[inline]
     pub fn update(&mut self, val: bool) {
         if self.q_vals.len() >= self.window_len {
             let _ = self.q_vals.pop_back().unwrap();

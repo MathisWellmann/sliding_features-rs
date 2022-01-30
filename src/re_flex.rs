@@ -1,13 +1,16 @@
+//! John Ehlers ReFlex Indicator
+//! from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// John Ehlers ReFlex Indicator
 /// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
 #[derive(Clone)]
-pub struct ReFlex {
-    view: Box<dyn View>,
+pub struct ReFlex<V> {
+    view: V,
     window_len: usize,
     last_val: f64,
     last_m: f64,
@@ -15,34 +18,48 @@ pub struct ReFlex {
     out: f64,
 }
 
-impl std::fmt::Debug for ReFlex {
+impl<V> std::fmt::Debug for ReFlex<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "ReFlex(window_len: {}, last_val: {}, last_m: {}, q_vals: {:?}, out: {})",
-               self.window_len, self.last_val, self.last_m, self.q_vals, self.out)
+        write!(
+            fmt,
+            "ReFlex(window_len: {}, last_val: {}, last_m: {}, q_vals: {:?}, out: {})",
+            self.window_len, self.last_val, self.last_m, self.q_vals, self.out
+        )
     }
 }
 
-impl ReFlex {
+/// Create a new ReFlex indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> ReFlex<Echo> {
+    ReFlex::new(Echo::new(), window_len)
+}
+
+impl<V> ReFlex<V>
+where
+    V: View,
+{
     /// Create a new ReFlex indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(ReFlex {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        ReFlex {
             view,
             window_len,
             last_val: 0.0,
             last_m: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        })
-    }
-
-    /// Create a new ReFlex indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for ReFlex {
+impl<V> View for ReFlex<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -91,8 +108,9 @@ impl View for ReFlex {
         }
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
-        return self.out;
+        self.out
     }
 }
 
@@ -104,7 +122,7 @@ mod tests {
 
     #[test]
     fn re_flex_plot() {
-        let mut rf = ReFlex::new_final(16);
+        let mut rf = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);

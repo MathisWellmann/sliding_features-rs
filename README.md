@@ -23,110 +23,14 @@ This struct allows you to manage a bunch of Views at once and conveniently updat
 ### Usage
 In your Cargo.toml add the crate:
 ```toml
-sliding_features = "0.6.0"
+sliding_features = "0.7.0"
 ```
 
-### Basic single View example
-```rust
-/// Example showing how to use a single View
-extern crate time_series_generator;
-
-use sliding_features::*;
-use time_series_generator::generate_standard_normal;
-
-fn main() {
-    let mut rsi = RSI::new_final(14);
-
-    // generate dummy values
-    let vals = generate_standard_normal(1024, 100.0);
-    for r in &vals {
-        rsi.update(*r); // update the rsi computation with the newest value
-        let last = rsi.last(); // get the latest rsi value
-        println!("last rsi value: {:?}", last);
-    }
-}
-```
-See [examples/basic_single_view.rs](examples/basic_single_view.rs) for the code
-Run the code using
-```shell script
-cargo run --release --example basic_single_view
-```
-
-
-### Basic Chainable Example
-```rust
-/// This Example provides a basic overview of chainable View definitions.
-/// Assume you want to first transform your values with a Variance Stabilizing Centering Transform
-//  and after that, smooth the values with an ALMA
-
-// import the needed structs, and the View trait
-use sliding_features::{View, ALMA, VSCT};
-
-fn main() {
-    // generate random value shifted up by 100.0 and scaled by 20.0,
-    // a series which is neither centered around 0 nor variance stabilized
-    let rands: Vec<f64> = (0..100)
-        .map(|_| rand::random::<f64>() * 20.0 + 100.0)
-        .collect();
-    println!("rands: {:?}", rands);
-
-    let window_len: usize = 20;
-    let mut chain = ALMA::new(
-        // first, define the last function which gets applied in the chain
-        VSCT::new_final(window_len), // Make the first transformation in the chain a VSCT
-        window_len,
-    );
-    for v in &rands {
-        // the chain will first call the inner most view, which is Echo.
-        // after that it will apply the VSCT transform
-        // and finally apply an Arnaux Legoux moving average
-        chain.update(*v);
-        let last_value = chain.last();
-        println!("transformed value: {}", last_value);
-    }
-}
-
-```
-See [examples/basic_chainable_view.rs](examples/basic_chainable_view.rs) for the code
-Run the code using
-```shell script
-cargo run --release --example basic_chainable_view
-```
-
-### Multiple Sliding Features Example
-```rust
-/// Basic Example showing how to utilize a SlidingWindow to combine multiple chained views
-use sliding_features::*;
-
-fn main() {
-    let mut sf = SlidingWindow::new();
-
-    // lets register some of views, which will later be updated in a single step
-    let window_len: usize = 16;
-    sf.register_view(RSI::new_final(window_len));
-    sf.register_view(ROC::new_final(window_len));
-    // now a more complex view chain
-    sf.register_view(ALMA::new(
-        VSCT::new(SMA::new_final(window_len), window_len),
-        window_len,
-    ));
-
-    // generate random dummy values
-    let rands: Vec<f64> = (0..100)
-        .map(|_| rand::random::<f64>() * 20.0 + 100.0)
-        .collect();
-    for r in &rands {
-        sf.update(*r); // update all registered views with the newest value
-        let last: Vec<f64> = sf.last(); // get the latest values from all views
-        assert_eq!(last.len(), 3); // because there are 3 registered views we get three ordered values
-        println!("last values: {:?}", last);
-    }
-}
-```
-See [examples/basic_multiple_views.rs](examples/basic_multiple_views.rs) for the code
-Run the code using
-```shell script
+See examples folder for some code ideas
+```shell 
 cargo run --release --example basic_multiple_views
+cargo run --release --example basic_single_view
+cargo run --release --example basic_chainable_view
 ```
 
 ### Views
@@ -298,6 +202,8 @@ Feel free to implement the following and create a PR for some easy open-source c
 - Zero Lag
 - gaussian filter
 - correlation cycle indicator
+- some indicators can be built with const sized arrays, for better performance
+- add Default impl for all
 - and so much more...
 
 

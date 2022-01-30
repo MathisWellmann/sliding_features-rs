@@ -1,37 +1,47 @@
+//! Variance Stabilizing Centering Transform Sliding Window
+
 use crate::{Echo, View, WelfordOnlineSliding};
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Clone)]
-pub struct VSCT {
-    view: Box<dyn View>,
-    welford_online: Box<WelfordOnlineSliding>,
+pub struct VSCT<V> {
+    view: V,
+    welford_online: WelfordOnlineSliding<Echo>,
     last: f64,
 }
 
-impl std::fmt::Debug for VSCT {
+impl<V> std::fmt::Debug for VSCT<V> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "VSCT.last: {}", self.last)
     }
 }
 
-impl VSCT {
+/// Create a new Variance Stabilizing Centering Transform with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> VSCT<Echo> {
+    VSCT::new(Echo::new(), window_len)
+}
+
+impl<V> VSCT<V>
+where
+    V: View,
+{
     /// Create a new Variance Stabilizing Centering Transform with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(VSCT {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        VSCT {
             view,
-            welford_online: WelfordOnlineSliding::new_final(window_len),
+            welford_online: crate::welford_online_sliding::new_final(window_len),
             last: 0.0,
-        })
-    }
-
-    /// Create a new Variance Stabilizing Centering Transform with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for VSCT {
+impl<V> View for VSCT<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -58,7 +68,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = VSCT::new_final(16);
+        let mut vsct = new_final(16);
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

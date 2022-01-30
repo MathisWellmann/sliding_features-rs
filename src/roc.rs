@@ -1,45 +1,61 @@
+//! Rate of Change Indicator
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// Rate of Change Indicator
 #[derive(Clone)]
-pub struct ROC {
-    view: Box<dyn View>,
+pub struct ROC<V> {
+    view: V,
     window_len: usize,
     oldest: f64,
     q_vals: VecDeque<f64>,
     out: f64,
 }
 
-impl std::fmt::Debug for ROC {
+impl<V> std::fmt::Debug for ROC<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "ROC(window_len: {}, oldest: {}, q_vals: {:?}, out: {})",
-               self.window_len, self.oldest, self.q_vals, self.out)
+        write!(
+            fmt,
+            "ROC(window_len: {}, oldest: {}, q_vals: {:?}, out: {})",
+            self.window_len, self.oldest, self.q_vals, self.out
+        )
     }
 }
 
-impl ROC {
+/// Create a new Rate of Change Indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> ROC<Echo> {
+    ROC::new(Echo::new(), window_len)
+}
+
+impl<V> ROC<V>
+where
+    V: View,
+{
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(ROC {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        ROC {
             view,
             window_len,
             oldest: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        })
-    }
-
-    /// Create a new Rate of Change Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for ROC {
+impl<V> View for ROC<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -58,6 +74,7 @@ impl View for ROC {
         self.out = roc;
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         return self.out;
     }
@@ -71,7 +88,7 @@ mod tests {
 
     #[test]
     fn roc_plot() {
-        let mut r = ROC::new_final(16);
+        let mut r = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             r.update(*v);

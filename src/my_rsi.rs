@@ -1,11 +1,14 @@
+//! John Ehlers MyRSI
+//! from: http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
+
 use crate::{Echo, View};
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
 /// from: http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
 #[derive(Clone)]
-pub struct MyRSI {
-    view: Box<dyn View>,
+pub struct MyRSI<V> {
+    view: V,
     window_len: usize,
     cu: f64,
     cd: f64,
@@ -15,17 +18,30 @@ pub struct MyRSI {
     oldest_val: f64,
 }
 
-impl std::fmt::Debug for MyRSI {
+impl<V> std::fmt::Debug for MyRSI<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "MyRSI(window_len: {}, cu: {}, cd: {}, out: {}, q_vals: {:?}, last_val: {}, oldest_val: {})",
                self.window_len, self.cu, self.cd, self.out, self.q_vals, self.last_val, self.oldest_val)
     }
 }
 
-impl MyRSI {
+/// Create a MyRSI indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> MyRSI<Echo> {
+    MyRSI::new(Echo::new(), window_len)
+}
+
+impl<V> MyRSI<V>
+where
+    V: View,
+{
     /// Create a new MyRSI indicator with a chained View and a given window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(MyRSI {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        MyRSI {
             view,
             window_len,
             cu: 0.0,
@@ -34,16 +50,14 @@ impl MyRSI {
             q_vals: VecDeque::new(),
             last_val: 0.0,
             oldest_val: 0.0,
-        })
-    }
-
-    /// Create a MyRSI indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for MyRSI {
+impl<V> View for MyRSI<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val: f64 = self.view.last();
@@ -77,6 +91,7 @@ impl View for MyRSI {
         }
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         self.out
     }
@@ -90,7 +105,7 @@ mod tests {
 
     #[test]
     fn my_rsi() {
-        let mut my_rsi = MyRSI::new_final(16);
+        let mut my_rsi = new_final(16);
         for v in &TEST_DATA {
             my_rsi.update(*v);
             assert!(my_rsi.last() <= 1.0);
@@ -100,7 +115,7 @@ mod tests {
 
     #[test]
     fn my_rsi_plot() {
-        let mut my_rsi = MyRSI::new_final(16);
+        let mut my_rsi = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             my_rsi.update(*v);

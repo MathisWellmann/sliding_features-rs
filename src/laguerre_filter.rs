@@ -1,11 +1,14 @@
-use crate::sliding_window::View;
+//! John Ehlers Laguerre Filter
+//! from: http://mesasoftware.com/papers/TimeWarp.pdf
+
 use crate::Echo;
+use crate::View;
 
 /// John Ehlers Laguerre Filter
 /// from: http://mesasoftware.com/papers/TimeWarp.pdf
 #[derive(Clone)]
-pub struct LaguerreFilter {
-    view: Box<dyn View>,
+pub struct LaguerreFilter<V> {
+    view: V,
     gamma: f64,
     l0s: Vec<f64>,
     l1s: Vec<f64>,
@@ -15,18 +18,31 @@ pub struct LaguerreFilter {
     init: bool,
 }
 
-impl std::fmt::Debug for LaguerreFilter {
+impl<V> std::fmt::Debug for LaguerreFilter<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "LaguerreFilter(gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?}, filts: {:?}, init: {})",
                self.gamma, self.l0s, self.l1s, self.l2s, self.l3s, self.filts, self.init)
     }
 }
 
-impl LaguerreFilter {
+/// Create a new LaguerreFilter with a gamma parameter
+#[inline(always)]
+pub fn new_final(gamma: f64) -> LaguerreFilter<Echo> {
+    LaguerreFilter::new(Echo::new(), gamma)
+}
+
+impl<V> LaguerreFilter<V>
+where
+    V: View,
+{
     /// Create a new LaguerreFilter with a chained View
     /// and a gamma parameter
-    pub fn new(view: Box<dyn View>, gamma: f64) -> Box<Self> {
-        Box::new(LaguerreFilter {
+    #[inline]
+    pub fn new(view: V, gamma: f64) -> Self {
+        LaguerreFilter {
             view,
             gamma,
             l0s: vec![],
@@ -35,21 +51,14 @@ impl LaguerreFilter {
             l3s: vec![],
             filts: vec![],
             init: true,
-        })
-    }
-
-    /// Create a new LaguerreFilter with a gamma parameter
-    pub fn new_final(gamma: f64) -> Box<Self> {
-        Self::new(Echo::new(), gamma)
-    }
-
-    /// Create a new LaguerreFilter with the default gamma of 0.8
-    pub fn default() -> Box<Self> {
-        return LaguerreFilter::new_final(0.8);
+        }
     }
 }
 
-impl View for LaguerreFilter {
+impl<V> View for LaguerreFilter<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -90,8 +99,9 @@ impl View for LaguerreFilter {
         );
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
-        return self.filts[self.filts.len() - 1];
+        self.filts[self.filts.len() - 1]
     }
 }
 
@@ -104,7 +114,7 @@ mod tests {
 
     #[test]
     fn laguerre_filter() {
-        let mut laguerre = LaguerreFilter::default();
+        let mut laguerre = new_final(0.8);
         let mut rng = thread_rng();
         for _ in 0..10_000 {
             let v = rng.gen::<f64>();
@@ -119,7 +129,7 @@ mod tests {
 
     #[test]
     fn laguerre_filter_plot() {
-        let mut laguerre = LaguerreFilter::default();
+        let mut laguerre = new_final(0.8);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             laguerre.update(*v);

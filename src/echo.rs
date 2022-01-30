@@ -1,4 +1,6 @@
-use super::sliding_window::View;
+//! Echo always return the last value just like an echo
+
+use super::View;
 
 #[derive(Clone, Debug)]
 /// Echo always return the last value just like an echo
@@ -8,18 +10,21 @@ pub struct Echo {
 
 impl Echo {
     /// Create a new Echo View
-    pub fn new() -> Box<Echo> {
-        Box::new(Echo { out: 0.0 })
+    #[inline(always)]
+    pub fn new() -> Echo {
+        Echo { out: 0.0 }
     }
 }
 
 impl View for Echo {
+    #[inline(always)]
     fn update(&mut self, val: f64) {
         self.out = val;
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
-        return self.out;
+        self.out
     }
 }
 

@@ -1,34 +1,35 @@
 #![deny(missing_docs, missing_crate_level_docs)]
+#![warn(clippy::all)]
 
 //! The sliding_features crate provides modular, chainable sliding windows
 //! for various signal processing function and technical indicators
 
-mod alma;
-mod center_of_gravity;
-mod correlation_trend_indicator;
-mod cyber_cycle;
-mod echo;
-mod entropy;
-mod hl_normalizer;
-mod laguerre_filter;
-mod laguerre_rsi;
-mod re_flex;
-mod roc;
-//mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
-mod ehlers_fisher_transform;
-mod ema;
-mod multiplier;
-mod my_rsi;
-mod noise_elimination_technology;
-mod polarized_fractal_efficiency;
-mod rsi;
+pub mod alma;
+pub mod center_of_gravity;
+pub mod correlation_trend_indicator;
+pub mod cyber_cycle;
+pub mod echo;
+pub mod entropy;
+pub mod hl_normalizer;
+pub mod laguerre_filter;
+pub mod laguerre_rsi;
+pub mod re_flex;
+pub mod roc;
+//pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
+pub mod ehlers_fisher_transform;
+pub mod ema;
+pub mod multiplier;
+pub mod my_rsi;
+pub mod noise_elimination_technology;
+pub mod polarized_fractal_efficiency;
+pub mod rsi;
 mod sliding_window;
-mod sma;
-mod trend_flex;
-mod variance_stabilizing_transformation;
-mod vsct;
-mod welford_online;
-mod welford_online_sliding;
+pub mod sma;
+pub mod trend_flex;
+pub mod variance_stabilizing_transformation;
+pub mod vsct;
+pub mod welford_online;
+pub mod welford_online_sliding;
 
 #[cfg(test)]
 mod plot;
@@ -53,7 +54,6 @@ pub use re_flex::ReFlex;
 pub use roc::ROC;
 pub use rsi::RSI;
 pub use sliding_window::SlidingWindow;
-pub use sliding_window::View;
 pub use sma::SMA;
 pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
@@ -64,3 +64,12 @@ pub use welford_online_sliding::WelfordOnlineSliding;
 
 // Does not impl View
 pub use entropy::Entropy;
+
+/// The most important Trait, defining methods which each sliding feature needs to implement
+pub trait View: Send + Sync {
+    /// Update the state with a new value
+    fn update(&mut self, val: f64);
+
+    /// Return the last value
+    fn last(&self) -> f64;
+}

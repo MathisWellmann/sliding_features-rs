@@ -1,12 +1,14 @@
+//! Relative Strength Index Indicator
+
 use std::collections::VecDeque;
 
-use super::sliding_window::View;
+use super::View;
 use crate::Echo;
 
 /// Relative Strength Index Indicator
 #[derive(Clone)]
-pub struct RSI {
-    view: Box<dyn View>,
+pub struct RSI<V> {
+    view: V,
     window_len: usize,
     avg_gain: f64,
     avg_loss: f64,
@@ -16,18 +18,31 @@ pub struct RSI {
     out: f64,
 }
 
-impl std::fmt::Debug for RSI {
+impl<V> std::fmt::Debug for RSI<V>
+where
+    V: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "RSI(window_len: {}, avg_gain: {}, avg_loss: {}, old_ref: {}, last_val: {}, q_vals: {:?}, out: {})",
                self.window_len, self.avg_gain, self.avg_loss, self.old_ref, self.last_val, self.q_vals, self.out)
     }
 }
 
-impl RSI {
+/// Create a new Relative Strength Index Indicator with a given window length
+#[inline(always)]
+pub fn new_final(window_len: usize) -> RSI<Echo> {
+    RSI::new(Echo::new(), window_len)
+}
+
+impl<V> RSI<V>
+where
+    V: View,
+{
     /// Create a Relative Strength Index Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Box::new(RSI {
+    #[inline]
+    pub fn new(view: V, window_len: usize) -> Self {
+        RSI {
             view,
             window_len,
             avg_gain: 0.0,
@@ -36,16 +51,14 @@ impl RSI {
             last_val: 0.0,
             q_vals: VecDeque::new(),
             out: 0.0,
-        })
-    }
-
-    /// Create a new Relative Strength Index Indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
+        }
     }
 }
 
-impl View for RSI {
+impl<V> View for RSI<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -88,6 +101,8 @@ impl View for RSI {
             }
         }
     }
+
+    #[inline(always)]
     fn last(&self) -> f64 {
         return self.out;
     }
@@ -101,7 +116,7 @@ mod tests {
 
     #[test]
     fn rsi_plot() {
-        let mut rsi = RSI::new_final(16);
+        let mut rsi = new_final(16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rsi.update(*v);
@@ -113,7 +128,7 @@ mod tests {
 
     #[test]
     fn rsi_range() {
-        let mut rsi = RSI::new_final(16);
+        let mut rsi = new_final(16);
         for v in &TEST_DATA {
             rsi.update(*v);
             let last = rsi.last();

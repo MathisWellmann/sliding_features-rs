@@ -1,3 +1,6 @@
+//! A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
+//! it is also possible to use a custom moving average instead of the default EMA in the original
+
 use std::collections::VecDeque;
 
 use crate::{Echo, View, EMA};
@@ -5,51 +8,69 @@ use crate::{Echo, View, EMA};
 #[derive(Clone)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 /// it is also possible to use a custom moving average instead of the default EMA in the original
-pub struct PolarizedFractalEfficiency {
-    view: Box<dyn View>,
-    moving_average: Box<dyn View>, // defines which moving average to use, default is EMA
+pub struct PolarizedFractalEfficiency<V, M> {
+    view: V,
+    moving_average: M, // defines which moving average to use, default is EMA
     window_len: usize,
     q_vals: VecDeque<f64>,
     out: f64,
 }
 
-impl std::fmt::Debug for PolarizedFractalEfficiency {
+impl<V, M> std::fmt::Debug for PolarizedFractalEfficiency<V, M>
+where
+    V: View,
+    M: View,
+{
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "PolarizedFractalEfficiency(window_len: {}, q_vals: {:?}, out: {})",
-               self.window_len, self.q_vals, self.out)
+        write!(
+            fmt,
+            "PolarizedFractalEfficiency(window_len: {}, q_vals: {:?}, out: {})",
+            self.window_len, self.q_vals, self.out
+        )
     }
 }
 
-impl PolarizedFractalEfficiency {
-    /// Create a new PolarizedFractalEfficiency indicator with a chained view and a given window
-    /// length. The window length will also be used for the EMA
-    pub fn new(view: Box<dyn View>, window_len: usize) -> Box<Self> {
-        Self::with_ma(view, EMA::new_final(window_len), window_len)
-    }
+/// Create a new PolarizedFractalEfficiency indicator with a given window length
+/// and the default moving average
+#[inline(always)]
+pub fn new_final(window_len: usize) -> PolarizedFractalEfficiency<Echo, EMA<Echo>> {
+    new_with_default_ma(Echo::new(), window_len)
+}
 
-    /// Create a new PolarizedFractalEfficiency indicator with a given window length
-    pub fn new_final(window_len: usize) -> Box<Self> {
-        Self::new(Echo::new(), window_len)
-    }
+/// Create a new PolarizedFractalEfficiency indicator with a chained view and a given window
+/// length. The window length will also be used for the EMA
+#[inline(always)]
+pub fn new_with_default_ma<V: View>(
+    view: V,
+    window_len: usize,
+) -> PolarizedFractalEfficiency<V, EMA<Echo>> {
+    PolarizedFractalEfficiency::new(view, crate::ema::new_final(window_len), window_len)
+}
 
+impl<V, M> PolarizedFractalEfficiency<V, M>
+where
+    V: View,
+    M: View,
+{
     /// Create a new PolarizedFractalEfficiency indicator with a chained view, custom moving
     /// average and a window length
-    pub fn with_ma(
-        view: Box<dyn View>,
-        moving_average: Box<dyn View>,
-        window_len: usize,
-    ) -> Box<Self> {
-        Box::new(Self {
+    #[inline]
+    pub fn new(view: V, moving_average: M, window_len: usize) -> Self {
+        Self {
             view,
             moving_average,
             window_len,
             q_vals: VecDeque::new(),
             out: 0.0,
-        })
+        }
     }
 }
 
-impl View for PolarizedFractalEfficiency {
+impl<V, M> View for PolarizedFractalEfficiency<V, M>
+where
+    V: View,
+    M: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val: f64 = self.view.last();
@@ -82,6 +103,7 @@ impl View for PolarizedFractalEfficiency {
         }
     }
 
+    #[inline(always)]
     fn last(&self) -> f64 {
         self.out
     }
@@ -95,7 +117,7 @@ mod tests {
 
     #[test]
     fn polarized_fractal_efficiency() {
-        let mut pfe = PolarizedFractalEfficiency::new_final(16);
+        let mut pfe = new_final(16);
         for v in &TEST_DATA {
             pfe.update(*v);
             assert!(pfe.last() <= 1.0);
@@ -105,7 +127,7 @@ mod tests {
 
     #[test]
     fn polarized_fractal_efficiency_plot() {
-        let mut pfe = PolarizedFractalEfficiency::new_final(16);
+        let mut pfe = new_final(16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             pfe.update(*v);
