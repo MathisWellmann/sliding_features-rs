@@ -1,7 +1,10 @@
+//! Cumulative sliding window
+
 use std::collections::VecDeque;
 
 use crate::{Echo, View};
 
+/// Cumulative Sliding Window with a chained view
 #[derive(Clone)]
 pub struct Cumulative<V> {
     view: V,

@@ -15,7 +15,6 @@ pub mod laguerre_filter;
 pub mod laguerre_rsi;
 pub mod re_flex;
 pub mod roc;
-//pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
 pub mod cumulative;
 pub mod ehlers_fisher_transform;
 pub mod ema;
@@ -31,6 +30,7 @@ pub mod variance_stabilizing_transformation;
 pub mod vsct;
 pub mod welford_online;
 pub mod welford_online_sliding;
+//pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
 
 #[cfg(test)]
 mod plot;
