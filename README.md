@@ -60,6 +60,7 @@ A View defines the function which processes value updates. They currently includ
     * EMA (Exponential Moving Average)
 * Standard deviation sliding window estimation using WelfordOnlineSliding
 * Multiplier
+* Cumulative
 * Entropy (acts on a bit stream, thus does not impl View trait)
 
 
@@ -186,6 +187,12 @@ Note that each run uses common test data from test_data.rs for consistency.
 <a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/ehlers_fisher_transform.rs"> 
     <img style="display: inline!important" 
     src="img/ehlers_fisher_transform.png" 
+    width=300px></img>
+</a>
+
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/cumulative.rs"> 
+    <img style="display: inline!important" 
+    src="img/cumulative.png" 
     width=300px></img>
 </a>
 

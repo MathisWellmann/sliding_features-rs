@@ -16,6 +16,7 @@ pub mod laguerre_rsi;
 pub mod re_flex;
 pub mod roc;
 //pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
+pub mod cumulative;
 pub mod ehlers_fisher_transform;
 pub mod ema;
 pub mod multiplier;
