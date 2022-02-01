@@ -1,7 +1,7 @@
 //! John Ehlers Fisher Transform Indicator
 //! from: http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
 
-use crate::{Echo, View, EMA};
+use crate::View;
 use std::collections::VecDeque;
 
 #[derive(Clone)]
@@ -29,22 +29,6 @@ where
             self.window_len, self.q_vals, self.high, self.low, self.q_out
         )
     }
-}
-
-/// Create a new indicator with a window length and the default moving average
-#[inline(always)]
-pub fn new_final(window_len: usize) -> EhlersFisherTransform<Echo, EMA<Echo>> {
-    new_with_default_ma(Echo::new(), window_len)
-}
-
-/// Create a new indicator with a given chained view and a window length
-/// The default EMA is used as in the paper
-#[inline(always)]
-pub fn new_with_default_ma<V: View>(
-    view: V,
-    window_len: usize,
-) -> EhlersFisherTransform<V, EMA<Echo>> {
-    EhlersFisherTransform::new(view, crate::ema::new_final(5), window_len)
 }
 
 impl<V, M> EhlersFisherTransform<V, M>
@@ -76,7 +60,7 @@ where
         self.view.update(val);
         let val: f64 = self.view.last();
 
-        if self.q_vals.len() == 0 {
+        if self.q_vals.is_empty() {
             self.high = val;
             self.low = val;
         }
@@ -121,7 +105,7 @@ where
         } else if smoothed < -0.99 {
             smoothed = -0.99;
         }
-        if self.q_out.len() == 0 {
+        if self.q_out.is_empty() {
             // do not insert values when there are not enough values yet
             self.q_out.push_back(0.0);
             return;
@@ -142,10 +126,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::{Echo, EMA};
 
     #[test]
     fn ehlers_fisher_transform_plot() {
-        let mut eft = new_final(16);
+        let mut eft = EhlersFisherTransform::new(Echo::new(), EMA::new(Echo::new(), 16), 16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             eft.update(*v);

@@ -3,7 +3,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// A sliding High - Low Normalizer
 #[derive(Clone)]
@@ -28,12 +27,6 @@ where
             self.window_len, self.q_vals, self.min, self.max, self.last, self.init
         )
     }
-}
-
-/// Create a new HLNormalizer with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> HLNormalizer<Echo> {
-    HLNormalizer::new(Echo::new(), window_len)
 }
 
 impl<V> HLNormalizer<V>
@@ -69,7 +62,8 @@ fn extent_queue(q: &VecDeque<f64>) -> (f64, f64) {
             min = val;
         }
     }
-    return (*min, *max);
+
+    (*min, *max)
 }
 
 impl<V> View for HLNormalizer<V>
@@ -118,113 +112,16 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::test_data::TEST_DATA;
+    use crate::{test_data::TEST_DATA, Echo};
 
     #[test]
     fn normalizer() {
-        let mut n = new_final(16);
+        let mut n = HLNormalizer::new(Echo::new(), 16);
         for v in &TEST_DATA {
             n.update(*v);
             let last = n.last();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
         }
-    }
-
-    #[test]
-    fn normalizer_center_of_gravity_plot() {
-        let window_len = 16;
-        let cgo = crate::center_of_gravity::new_final(window_len);
-        let mut n = HLNormalizer::new(cgo, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/center_of_gravity_normalized.png";
-        plot_values(out, filename).unwrap();
-    }
-
-    #[test]
-    fn normalizer_cyber_cycle_plot() {
-        let window_len = 16;
-        let cc = crate::cyber_cycle::new_final(window_len);
-        let mut n = HLNormalizer::new(cc, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/cyber_cycle_normalized.png";
-        plot_values(out, filename).unwrap();
-    }
-
-    #[test]
-    fn normalizer_re_flex_plot() {
-        let window_len = 16;
-        let rf = crate::re_flex::new_final(window_len);
-        let mut n = HLNormalizer::new(rf, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/re_flex_normalized.png";
-        plot_values(out, filename).unwrap();
-    }
-
-    #[test]
-    fn normalizer_roc_plot() {
-        let window_len = 16;
-        let r = crate::roc::new_final(window_len);
-        let mut n = HLNormalizer::new(r, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/roc_normalized.png";
-        plot_values(out, filename).unwrap();
-    }
-
-    #[test]
-    fn normalizer_rsi_plot() {
-        let window_len = 16;
-        let r = crate::rsi::new_final(window_len);
-        let mut n = HLNormalizer::new(r, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/rsi_normalized.png";
-        plot_values(out, filename).unwrap();
-    }
-
-    #[test]
-    fn normalizer_trend_flex_plot() {
-        let window_len = 16;
-        let tf = crate::trend_flex::new_final(window_len);
-        let mut n = HLNormalizer::new(tf, window_len);
-        let mut out: Vec<f64> = Vec::new();
-
-        for v in &TEST_DATA {
-            n.update(*v);
-            out.push(n.last());
-        }
-
-        let filename = "img/trend_flex_normalized.png";
-        plot_values(out, filename).unwrap();
     }
 }

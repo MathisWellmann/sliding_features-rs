@@ -1,7 +1,6 @@
 //! John Ehlers Laguerre Filter
 //! from: http://mesasoftware.com/papers/TimeWarp.pdf
 
-use crate::Echo;
 use crate::View;
 
 /// John Ehlers Laguerre Filter
@@ -26,12 +25,6 @@ where
         write!(fmt, "LaguerreFilter(gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?}, filts: {:?}, init: {})",
                self.gamma, self.l0s, self.l1s, self.l2s, self.l3s, self.filts, self.init)
     }
-}
-
-/// Create a new LaguerreFilter with a gamma parameter
-#[inline(always)]
-pub fn new_final(gamma: f64) -> LaguerreFilter<Echo> {
-    LaguerreFilter::new(Echo::new(), gamma)
 }
 
 impl<V> LaguerreFilter<V>
@@ -108,13 +101,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::{plot::plot_values, Echo};
     use rand::{thread_rng, Rng};
 
     #[test]
     fn laguerre_filter() {
-        let mut laguerre = new_final(0.8);
+        let mut laguerre = LaguerreFilter::new(Echo::new(), 0.8);
         let mut rng = thread_rng();
         for _ in 0..10_000 {
             let v = rng.gen::<f64>();
@@ -129,7 +122,7 @@ mod tests {
 
     #[test]
     fn laguerre_filter_plot() {
-        let mut laguerre = new_final(0.8);
+        let mut laguerre = LaguerreFilter::new(Echo::new(), 0.8);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             laguerre.update(*v);

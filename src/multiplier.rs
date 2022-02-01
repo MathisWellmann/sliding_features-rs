@@ -1,6 +1,6 @@
 //! Simply multiply the output of View by a certain number
 
-use crate::{Echo, View};
+use crate::View;
 
 #[derive(Clone)]
 /// Simply multiply the output of View by a certain number
@@ -21,12 +21,6 @@ where
             self.multiplier, self.out
         )
     }
-}
-
-/// Create a new multiplier with a given multiplier value
-#[inline(always)]
-pub fn new_final(multiplier: f64) -> Multiplier<Echo> {
-    Multiplier::new(Echo::new(), multiplier)
 }
 
 impl<V> Multiplier<V>

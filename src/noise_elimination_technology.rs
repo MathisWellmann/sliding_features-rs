@@ -1,7 +1,7 @@
 //! John Ehlers Noise elimination technology using kendall correlation
 //! from http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
 
-use crate::{Echo, View};
+use crate::View;
 use std::collections::VecDeque;
 
 /// John Ehlers Noise elimination technology using kendall correlation
@@ -25,12 +25,6 @@ where
             self.window_len, self.out, self.q_vals
         )
     }
-}
-
-/// Create a new NET with a window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> NET<Echo> {
-    NET::new(Echo::new(), window_len)
 }
 
 impl<V> NET<V>
@@ -62,11 +56,6 @@ where
         }
         self.q_vals.push_back(val);
 
-        // if self.q_vals.len() == self.window_len {
-        //
-        // } else {
-        //     self.out = val;
-        // }
         if self.q_vals.len() < 2 {
             return;
         }
@@ -99,10 +88,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::{Echo, MyRSI};
 
     #[test]
     fn net_my_rsi_plot() {
-        let mut net = NET::new(crate::my_rsi::new_final(16), 16);
+        let mut net = NET::new(MyRSI::new(Echo::new(), 16), 16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             net.update(*v);

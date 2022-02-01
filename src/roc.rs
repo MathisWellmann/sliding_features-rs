@@ -3,7 +3,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// Rate of Change Indicator
 #[derive(Clone)]
@@ -26,12 +25,6 @@ where
             self.window_len, self.oldest, self.q_vals, self.out
         )
     }
-}
-
-/// Create a new Rate of Change Indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> ROC<Echo> {
-    ROC::new(Echo::new(), window_len)
 }
 
 impl<V> ROC<V>
@@ -60,7 +53,7 @@ where
         self.view.update(val);
         let val = self.view.last();
 
-        if self.q_vals.len() == 0 {
+        if self.q_vals.is_empty() {
             self.oldest = val;
         }
         if self.q_vals.len() >= self.window_len {
@@ -76,7 +69,7 @@ where
 
     #[inline(always)]
     fn last(&self) -> f64 {
-        return self.out;
+        self.out
     }
 }
 
@@ -85,10 +78,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn roc_plot() {
-        let mut r = new_final(16);
+        let mut r = ROC::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             r.update(*v);

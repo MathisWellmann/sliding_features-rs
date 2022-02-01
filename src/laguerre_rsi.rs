@@ -4,7 +4,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// John Ehlers LaguerreRSI
 /// from: http://mesasoftware.com/papers/TimeWarp.pdf
@@ -30,12 +29,6 @@ where
             self.value, self.gamma, self.l0s, self.l1s, self.l2s, self.l3s
         )
     }
-}
-
-/// Create a new LaguerreRSI with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> LaguerreRSI<Echo> {
-    LaguerreRSI::new(Echo::new(), window_len)
 }
 
 impl<V> LaguerreRSI<V>
@@ -126,7 +119,7 @@ where
 
     #[inline(always)]
     fn last(&self) -> f64 {
-        return self.value;
+        self.value
     }
 }
 
@@ -135,10 +128,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn laguerre_rsi() {
-        let mut lrsi = new_final(16);
+        let mut lrsi = LaguerreRSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             lrsi.update(*v);
             let last = lrsi.last();
@@ -149,7 +143,7 @@ mod tests {
 
     #[test]
     fn laguerre_rsi_plot() {
-        let mut lrsi = new_final(16);
+        let mut lrsi = LaguerreRSI::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             lrsi.update(*v);

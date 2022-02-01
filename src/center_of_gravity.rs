@@ -4,7 +4,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// John Ehlers Center of Gravity Indicator
 /// from: https://mesasoftware.com/papers/TheCGOscillator.pdf
@@ -27,12 +26,6 @@ where
             self.window_len, self.q_vals, self.out
         )
     }
-}
-
-/// Create a Center of Gravity Indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> CenterOfGravity<Echo> {
-    CenterOfGravity::new(Echo::new(), window_len)
 }
 
 impl<V> CenterOfGravity<V>
@@ -93,10 +86,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn center_of_gravity_plot() {
-        let mut cgo = new_final(16);
+        let mut cgo = CenterOfGravity::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cgo.update(*v);

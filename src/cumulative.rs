@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 
-use crate::{Echo, View};
+use crate::View;
 
 /// Cumulative Sliding Window with a chained view
 #[derive(Clone)]
@@ -11,12 +11,6 @@ pub struct Cumulative<V> {
     window_len: usize,
     q_vals: VecDeque<f64>,
     out: f64,
-}
-
-/// Create a new cumulative sliding window with the given window len
-#[inline(always)]
-pub fn new_final(window_len: usize) -> Cumulative<Echo> {
-    Cumulative::new(Echo::new(), window_len)
 }
 
 impl<V> Cumulative<V>
@@ -59,13 +53,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{plot::plot_values, test_data::TEST_DATA};
+    use crate::{plot::plot_values, test_data::TEST_DATA, Echo};
 
     use super::*;
 
     #[test]
     fn cumulative_plot() {
-        let mut cum = new_final(TEST_DATA.len());
+        let mut cum = Cumulative::new(Echo::new(), TEST_DATA.len());
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             cum.update(*v);

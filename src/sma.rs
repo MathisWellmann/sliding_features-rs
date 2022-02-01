@@ -2,7 +2,6 @@
 
 use std::collections::VecDeque;
 
-use crate::Echo;
 use crate::View;
 
 #[derive(Clone)]
@@ -25,12 +24,6 @@ where
             self.window_len, self.q_vals, self.sum
         )
     }
-}
-
-/// Create a new simple moving average with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> SMA<Echo> {
-    SMA::new(Echo::new(), window_len)
 }
 
 impl<V> SMA<V>
@@ -76,15 +69,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::{plot::plot_values, Echo};
     use rand::{thread_rng, Rng};
 
     #[test]
     fn sma() {
         let mut rng = thread_rng();
 
-        let mut sma = new_final(16);
+        let mut sma = SMA::new(Echo::new(), 16);
         for _ in 0..1024 {
             let r = rng.gen::<f64>();
             sma.update(r);
@@ -96,7 +89,7 @@ mod tests {
 
     #[test]
     fn sma_plot() {
-        let mut sma = new_final(16);
+        let mut sma = SMA::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);

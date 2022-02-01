@@ -3,7 +3,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// Relative Strength Index Indicator
 #[derive(Clone)]
@@ -26,12 +25,6 @@ where
         write!(fmt, "RSI(window_len: {}, avg_gain: {}, avg_loss: {}, old_ref: {}, last_val: {}, q_vals: {:?}, out: {})",
                self.window_len, self.avg_gain, self.avg_loss, self.old_ref, self.last_val, self.q_vals, self.out)
     }
-}
-
-/// Create a new Relative Strength Index Indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> RSI<Echo> {
-    RSI::new(Echo::new(), window_len)
 }
 
 impl<V> RSI<V>
@@ -63,7 +56,7 @@ where
         self.view.update(val);
         let val = self.view.last();
 
-        if self.q_vals.len() == 0 {
+        if self.q_vals.is_empty() {
             self.old_ref = val;
             self.last_val = val;
         }
@@ -104,7 +97,7 @@ where
 
     #[inline(always)]
     fn last(&self) -> f64 {
-        return self.out;
+        self.out
     }
 }
 
@@ -113,10 +106,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn rsi_plot() {
-        let mut rsi = new_final(16);
+        let mut rsi = RSI::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rsi.update(*v);
@@ -128,7 +122,7 @@ mod tests {
 
     #[test]
     fn rsi_range() {
-        let mut rsi = new_final(16);
+        let mut rsi = RSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             rsi.update(*v);
             let last = rsi.last();

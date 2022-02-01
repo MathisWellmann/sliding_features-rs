@@ -2,7 +2,7 @@
 
 use super::View;
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 /// Echo always return the last value just like an echo
 pub struct Echo {
     out: f64,

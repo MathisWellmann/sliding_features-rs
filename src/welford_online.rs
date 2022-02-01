@@ -1,12 +1,16 @@
 //! Welford online algorithm for computing mean and variance on-the-fly
+//! over a sliding window
 
-use crate::Echo;
 use crate::View;
+use std::collections::VecDeque;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
+/// over a sliding window
 #[derive(Clone)]
 pub struct WelfordOnline<V> {
     view: V,
+    window_len: usize,
+    q_vals: VecDeque<f64>,
     mean: f64,
     s: f64,
     n: usize,
@@ -19,16 +23,10 @@ where
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(
             fmt,
-            "WelfordOnline(mean: {}, s: {}, n: {})",
-            self.mean, self.s, self.n
+            "WelfordOnlineSliding(window_len: {}, q_vals: {:?}, mean: {}, s: {}, n: {})",
+            self.window_len, self.q_vals, self.mean, self.s, self.n
         )
     }
-}
-
-/// Create a new WelfordOnline Sliding Window without a chained View
-#[inline(always)]
-pub fn new_final() -> WelfordOnline<Echo> {
-    WelfordOnline::new(Echo::new())
 }
 
 impl<V> WelfordOnline<V>
@@ -37,9 +35,11 @@ where
 {
     /// Create a WelfordOnline struct with a chained View
     #[inline]
-    pub fn new(view: V) -> Self {
+    pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
+            window_len,
+            q_vals: VecDeque::new(),
             mean: 0.0,
             s: 0.0,
             n: 0,
@@ -71,6 +71,16 @@ where
         self.view.update(val);
         let val = self.view.last();
 
+        if self.q_vals.len() >= self.window_len {
+            let old_val: f64 = self.q_vals.pop_front().unwrap();
+            // remove old value from estimation
+            let new_mean = (self.n as f64 * self.mean - old_val) / (self.n as f64 - 1.0);
+            self.s -= (old_val - self.mean) * (old_val - new_mean);
+            self.mean = new_mean;
+            self.n -= 1;
+        }
+        self.q_vals.push_back(val);
+
         self.n += 1;
         let old_mean = self.mean;
         self.mean += (val - old_mean) / self.n as f64;
@@ -86,12 +96,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
     use round::round;
 
     #[test]
-    fn correct_std_dev() {
-        let mut wo = new_final();
+    fn welford_online() {
+        let mut wo = WelfordOnline::new(Echo::new(), TEST_DATA.len());
         for v in &TEST_DATA {
             wo.update(*v);
             assert!(!wo.last().is_nan());
@@ -105,5 +117,17 @@ mod tests {
         .sqrt();
 
         assert_eq!(round(w_std_dev, 4), round(std_dev, 4));
+    }
+
+    #[test]
+    fn welford_online_plot() {
+        let mut wo = WelfordOnline::new(Echo::new(), 16);
+        let mut out: Vec<f64> = vec![];
+        for v in &TEST_DATA {
+            wo.update(*v);
+            out.push(wo.last());
+        }
+        let filename = "img/welford_online_sliding.png";
+        plot_values(out, filename).unwrap();
     }
 }

@@ -1,6 +1,5 @@
 //! EMA - Exponential Moving Average
 
-use crate::Echo;
 use crate::View;
 
 #[derive(Clone)]
@@ -24,12 +23,6 @@ where
             self.window_len, self.alpha, self.last_ema, self.out
         )
     }
-}
-
-/// Create a new EMA with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> EMA<Echo> {
-    EMA::new(Echo::new(), window_len)
 }
 
 impl<V> EMA<V>
@@ -85,10 +78,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn ema_plot() {
-        let mut ema = new_final(16);
+        let mut ema = EMA::new(Echo::new(), 16);
         let mut out: Vec<f64> = vec![];
         for v in &TEST_DATA {
             ema.update(*v);

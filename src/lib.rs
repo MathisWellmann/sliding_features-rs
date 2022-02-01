@@ -1,10 +1,11 @@
-#![deny(missing_docs, missing_crate_level_docs)]
+#![deny(missing_docs, rustdoc::missing_crate_level_docs)]
 #![warn(clippy::all)]
 
 //! The sliding_features crate provides modular, chainable sliding windows
 //! for various signal processing function and technical indicators
 
 pub mod alma;
+pub mod binary_entropy;
 pub mod center_of_gravity;
 pub mod correlation_trend_indicator;
 pub mod cumulative;
@@ -12,7 +13,6 @@ pub mod cyber_cycle;
 pub mod echo;
 pub mod ehlers_fisher_transform;
 pub mod ema;
-pub mod entropy;
 pub mod hl_normalizer;
 pub mod laguerre_filter;
 pub mod laguerre_rsi;
@@ -23,13 +23,11 @@ pub mod polarized_fractal_efficiency;
 pub mod re_flex;
 pub mod roc;
 pub mod rsi;
-mod sliding_window;
 pub mod sma;
 pub mod trend_flex;
 pub mod variance_stabilizing_transformation;
 pub mod vsct;
 pub mod welford_online;
-pub mod welford_online_sliding;
 //pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
 
 #[cfg(test)]
@@ -38,6 +36,7 @@ mod plot;
 mod test_data;
 
 pub use alma::ALMA;
+pub use binary_entropy::BinaryEntropy;
 pub use center_of_gravity::CenterOfGravity;
 pub use correlation_trend_indicator::CorrelationTrendIndicator;
 pub use cumulative::Cumulative;
@@ -55,17 +54,12 @@ pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
 pub use re_flex::ReFlex;
 pub use roc::ROC;
 pub use rsi::RSI;
-pub use sliding_window::SlidingWindow;
 pub use sma::SMA;
 pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
 pub use vsct::VSCT;
 pub use welford_online::WelfordOnline;
-pub use welford_online_sliding::WelfordOnlineSliding;
 // pub use roofing_filter::RoofingFilter
-
-// Does not impl View
-pub use entropy::Entropy;
 
 /// The most important Trait, defining methods which each sliding feature needs to implement
 pub trait View: Send + Sync {

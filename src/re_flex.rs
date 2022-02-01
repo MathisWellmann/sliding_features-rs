@@ -4,7 +4,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// John Ehlers ReFlex Indicator
 /// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
@@ -29,12 +28,6 @@ where
             self.window_len, self.last_val, self.last_m, self.q_vals, self.out
         )
     }
-}
-
-/// Create a new ReFlex indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> ReFlex<Echo> {
-    ReFlex::new(Echo::new(), window_len)
 }
 
 impl<V> ReFlex<V>
@@ -64,7 +57,7 @@ where
         self.view.update(val);
         let val = self.view.last();
 
-        if self.q_vals.len() == 0 {
+        if self.q_vals.is_empty() {
             self.last_val = val;
         }
         if self.q_vals.len() >= self.window_len {
@@ -119,10 +112,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn re_flex_plot() {
-        let mut rf = new_final(16);
+        let mut rf = ReFlex::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);

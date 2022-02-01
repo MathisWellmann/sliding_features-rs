@@ -1,12 +1,12 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
-use crate::{Echo, View, WelfordOnlineSliding};
+use crate::{Echo, View, WelfordOnline};
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Clone)]
 pub struct VSCT<V> {
     view: V,
-    welford_online: WelfordOnlineSliding<Echo>,
+    welford_online: WelfordOnline<Echo>,
     last: f64,
 }
 
@@ -14,12 +14,6 @@ impl<V> std::fmt::Debug for VSCT<V> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "VSCT.last: {}", self.last)
     }
-}
-
-/// Create a new Variance Stabilizing Centering Transform with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> VSCT<Echo> {
-    VSCT::new(Echo::new(), window_len)
 }
 
 impl<V> VSCT<V>
@@ -32,7 +26,7 @@ where
     pub fn new(view: V, window_len: usize) -> Self {
         VSCT {
             view,
-            welford_online: crate::welford_online_sliding::new_final(window_len),
+            welford_online: WelfordOnline::new(Echo::new(), window_len),
             last: 0.0,
         }
     }
@@ -68,7 +62,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = new_final(16);
+        let mut vsct = VSCT::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

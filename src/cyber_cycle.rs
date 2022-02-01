@@ -4,7 +4,6 @@
 use std::collections::VecDeque;
 
 use super::View;
-use crate::Echo;
 
 /// John Ehlers Cyber Cycle Indicator
 /// from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
@@ -28,12 +27,6 @@ where
             self.window_len, self.alpha, self.vals, self.out
         )
     }
-}
-
-/// Create a new Cyber Cycle Indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> CyberCycle<Echo> {
-    CyberCycle::new(Echo::new(), window_len)
 }
 
 impl<V> CyberCycle<V>
@@ -99,10 +92,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn cyber_cycle_plot() {
-        let mut cc = new_final(16);
+        let mut cc = CyberCycle::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cc.update(*v);

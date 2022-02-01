@@ -3,7 +3,7 @@
 //  and after that, smooth the values with an ALMA
 
 // import the needed structs, and the View trait
-use sliding_features::{vsct, View, ALMA};
+use sliding_features::{Echo, View, ALMA, VSCT};
 
 fn main() {
     // generate random value shifted up by 100.0 and scaled by 20.0,
@@ -16,7 +16,7 @@ fn main() {
     let window_len: usize = 20;
     let mut chain = ALMA::new(
         // first, define the last function which gets applied in the chain
-        vsct::new_final(window_len), // Make the first transformation in the chain a VSCT
+        VSCT::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT
         window_len,
     );
     for v in &rands {

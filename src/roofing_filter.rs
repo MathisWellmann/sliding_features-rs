@@ -5,8 +5,8 @@ use crate::Echo;
 /// From paper: http://www.stockspotter.com/files/PredictiveIndicators.pdf
 /// TODO: There is still an implementation error in the roofing filter
 #[derive(Clone)]
-pub struct RoofingFilter {
-    view: Box<dyn View>,
+pub struct RoofingFilter<V> {
+    view: V,
     val1: f64,  // previous value
     val2: f64,  // value from 2 steps ago
     hps0: f64,
@@ -17,10 +17,14 @@ pub struct RoofingFilter {
     filt2: f64,
 }
 
-impl RoofingFilter {
+impl<V> RoofingFilter<V>
+where
+    V: View,
+{
     /// Create a Roofing Filter with a chained view
-    pub fn new(view: Box<dyn View>) -> Box<Self> {
-        Box::new(RoofingFilter {
+    #[inline]
+    pub fn new(view: V) -> Self {
+        RoofingFilter {
             view,
             val1: 0.0,
             val2: 0.0,
@@ -30,16 +34,14 @@ impl RoofingFilter {
             filt0: 0.0,
             filt1: 0.0,
             filt2: 0.0,
-        })
-    }
-
-    /// Create a new Roofing Filter with the default Echo View
-    pub fn new_final() -> Box<Self> {
-        Self::new(Echo::new())
+        }
     }
 }
 
-impl View for RoofingFilter {
+impl<V> View for RoofingFilter<V>
+where
+    V: View,
+{
     fn update(&mut self, val: f64) {
         self.view.update(val);
         let val = self.view.last();
@@ -75,7 +77,7 @@ mod tests {
 
     #[test]
     fn roofing_filter_plot() {
-        let mut rf = RoofingFilter::new_final();
+        let mut rf = RoofingFilter::new(Echo::new());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);

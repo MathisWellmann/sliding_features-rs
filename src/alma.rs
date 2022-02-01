@@ -3,7 +3,6 @@
 
 use std::collections::VecDeque;
 
-use crate::Echo;
 use crate::View;
 
 /// ALMA - Arnaud Legoux Moving Average
@@ -29,12 +28,6 @@ where
         write!(fmt, "ALMA(window_len: {}, wtd_sum: {}, cum_wt: {}, m: {}, s: {}, q_vals: {:?}, q_wtd: {:?}, q_out: {:?})",
                self.window_len, self.wtd_sum, self.cum_wt, self.m, self.s, self.q_vals, self.q_wtd, self.q_out)
     }
-}
-
-/// Create a new Arnaud Legoux Moving Average with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> ALMA<Echo> {
-    ALMA::new(Echo::new(), window_len)
 }
 
 impl<V> ALMA<V>
@@ -107,14 +100,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::{plot::plot_values, Echo};
     use rand::{thread_rng, Rng};
 
     #[test]
     fn alma() {
         let mut rng = thread_rng();
-        let mut alma = new_final(16);
+        let mut alma = ALMA::new(Echo::new(), 16);
         for _ in 0..1_000_000 {
             let v = rng.gen::<f64>();
             alma.update(v);
@@ -127,7 +120,7 @@ mod tests {
 
     #[test]
     fn alma_plot() {
-        let mut alma = new_final(16);
+        let mut alma = ALMA::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             alma.update(*v);

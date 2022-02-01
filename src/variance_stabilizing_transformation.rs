@@ -20,23 +20,18 @@ where
     }
 }
 
-/// Create a new Variance Stabilizing Transform with the default Echo View
-#[inline(always)]
-pub fn new_final() -> VST<Echo> {
-    VST::new(Echo::new())
-}
-
 impl<V> VST<V>
 where
     V: View,
 {
     /// Create a new Variance Stabilizing Transform with a chained View
+    /// and a given window length for computing standard deviation
     #[inline]
-    pub fn new(view: V) -> Self {
+    pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
             last: 0.0,
-            welford_online: crate::welford_online::new_final(),
+            welford_online: WelfordOnline::new(Echo::new(), window_len),
         }
     }
 }
@@ -70,7 +65,7 @@ mod tests {
 
     #[test]
     fn variance_stabilizing_transform_plot() {
-        let mut tf = new_final();
+        let mut tf = VST::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             tf.update(*v);

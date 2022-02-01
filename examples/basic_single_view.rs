@@ -1,12 +1,11 @@
 /// Example showing how to use a single View
 extern crate time_series_generator;
 
-use sliding_features::rsi;
-use sliding_features::View;
+use sliding_features::{Echo, View, RSI};
 use time_series_generator::generate_standard_normal;
 
 fn main() {
-    let mut rsi = rsi::new_final(14);
+    let mut rsi = RSI::new(Echo::new(), 14);
 
     // generate dummy values
     let vals = generate_standard_normal(1024, 100.0);

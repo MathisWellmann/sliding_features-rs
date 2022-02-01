@@ -1,7 +1,7 @@
 //! John Ehlers MyRSI
 //! from: http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
 
-use crate::{Echo, View};
+use crate::View;
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
@@ -26,12 +26,6 @@ where
         write!(fmt, "MyRSI(window_len: {}, cu: {}, cd: {}, out: {}, q_vals: {:?}, last_val: {}, oldest_val: {})",
                self.window_len, self.cu, self.cd, self.out, self.q_vals, self.last_val, self.oldest_val)
     }
-}
-
-/// Create a MyRSI indicator with a given window length
-#[inline(always)]
-pub fn new_final(window_len: usize) -> MyRSI<Echo> {
-    MyRSI::new(Echo::new(), window_len)
 }
 
 impl<V> MyRSI<V>
@@ -62,7 +56,7 @@ where
         self.view.update(val);
         let val: f64 = self.view.last();
 
-        if self.q_vals.len() == 0 {
+        if self.q_vals.is_empty() {
             self.oldest_val = val;
             self.last_val = val;
         }
@@ -102,10 +96,11 @@ mod tests {
     use super::*;
     use crate::plot::plot_values;
     use crate::test_data::TEST_DATA;
+    use crate::Echo;
 
     #[test]
     fn my_rsi() {
-        let mut my_rsi = new_final(16);
+        let mut my_rsi = MyRSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             my_rsi.update(*v);
             assert!(my_rsi.last() <= 1.0);
@@ -115,7 +110,7 @@ mod tests {
 
     #[test]
     fn my_rsi_plot() {
-        let mut my_rsi = new_final(16);
+        let mut my_rsi = MyRSI::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             my_rsi.update(*v);
