@@ -4,31 +4,36 @@
 //! The sliding_features crate provides modular, chainable sliding windows
 //! for various signal processing function and technical indicators
 
-pub mod alma;
-pub mod binary_entropy;
-pub mod center_of_gravity;
-pub mod correlation_trend_indicator;
-pub mod cumulative;
-pub mod cyber_cycle;
-pub mod echo;
-pub mod ehlers_fisher_transform;
-pub mod ema;
-pub mod hl_normalizer;
-pub mod laguerre_filter;
-pub mod laguerre_rsi;
-pub mod multiplier;
-pub mod my_rsi;
-pub mod noise_elimination_technology;
-pub mod polarized_fractal_efficiency;
-pub mod re_flex;
-pub mod roc;
-pub mod rsi;
-pub mod sma;
-pub mod trend_flex;
-pub mod variance_stabilizing_transformation;
-pub mod vsct;
-pub mod welford_online;
+mod alma;
+mod binary_entropy;
+mod center_of_gravity;
+mod correlation_trend_indicator;
+mod cumulative;
+mod cyber_cycle;
+mod echo;
+mod ehlers_fisher_transform;
+mod ema;
+mod hl_normalizer;
+mod laguerre_filter;
+mod laguerre_rsi;
+mod my_rsi;
+mod noise_elimination_technology;
+mod polarized_fractal_efficiency;
+mod re_flex;
+mod roc;
+mod rsi;
+mod sma;
+mod trend_flex;
+mod variance_stabilizing_transformation;
+mod vsct;
+mod welford_online;
 //pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
+
+mod add;
+mod constant;
+mod divide;
+mod multiply;
+mod subtract;
 
 #[cfg(test)]
 mod plot;
@@ -47,7 +52,6 @@ pub use ema::EMA;
 pub use hl_normalizer::HLNormalizer;
 pub use laguerre_filter::LaguerreFilter;
 pub use laguerre_rsi::LaguerreRSI;
-pub use multiplier::Multiplier;
 pub use my_rsi::MyRSI;
 pub use noise_elimination_technology::NET;
 pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
@@ -59,7 +63,13 @@ pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
 pub use vsct::VSCT;
 pub use welford_online::WelfordOnline;
-// pub use roofing_filter::RoofingFilter
+// Pub use roofing_filter::RoofingFilter
+
+pub use add::Add;
+pub use constant::Constant;
+pub use divide::Divide;
+pub use multiply::Multiply;
+pub use subtract::Subtract;
 
 /// The most important Trait, defining methods which each sliding feature needs to implement
 pub trait View: Send + Sync {

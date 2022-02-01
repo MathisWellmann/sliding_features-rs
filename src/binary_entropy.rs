@@ -69,7 +69,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{plot::plot_values, test_data::TEST_DATA, Echo};
+    use crate::Echo;
 
     use super::*;
 

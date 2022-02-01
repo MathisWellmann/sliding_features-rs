@@ -5,15 +5,20 @@ Views can easily be added by implementing the View Trait which requires two meth
 - update(&mut self, val: f64): Call whenever you have a new value with which to update the View
 - last(&self) -> f64: Retrieve the last value from the View
 
+To use this crate in your project add this to your Cargo.toml:
+```toml
+sliding_features = "2.0.0"
+```
+
 To create a new View, call the appropriate constructor as such:
 ``` rust
 let mut rsi = RSI::new(Echo::new(), 16);
 ```
 This creates an RSI indicator with window length of 16. Notice that Echo will always be at the end of a View chain, as it just returns the latest observed value.
-Now to update the values of the chain:
+Now to update the values of the chain, assuming test_values contains f64 values:
 
 ``` rust
-for v in [1.5, 1.7, 1.8, 1.9] {
+for v in &test_values {
     rsi.update(v);
     let last = rsi.last();
     println!("latest rsi value: {}", last);
@@ -22,12 +27,7 @@ for v in [1.5, 1.7, 1.8, 1.9] {
 Each View will first call it's chained View to get it's last value, which will then be used to update the state of the View.
 Some Views have additional parameters such as ALMA. 
 
-### Usage
-In your Cargo.toml add the crate:
-```toml
-sliding_features = "^1.0.0"
-```
-
+### Examples
 See examples folder for some code ideas
 ```shell 
 cargo run --release --example basic_single_view
@@ -59,8 +59,12 @@ A View defines the function which processes value updates. They currently includ
     * ALMA (Arnaux Legoux Moving Average)
     * SMA (Simple Moving Average)
     * EMA (Exponential Moving Average)
+* Math combinations of Views
+    * Add
+    * Subtract
+    * Multiply
+    * Divide
 * Standard deviation sliding window estimation using WelfordOnlineSliding
-* Multiplier
 * Cumulative
 * Entropy 
 
