@@ -6,6 +6,18 @@ pub struct Add<A, B> {
     b: B,
 }
 
+impl<A, B> Add<A, B>
+where
+    A: View,
+    B: View,
+{
+    /// Create a new instance with Views a and b
+    #[inline]
+    pub fn new(a: A, b: B) -> Self {
+        Self { a, b }
+    }
+}
+
 impl<A, B> View for Add<A, B>
 where
     A: View,

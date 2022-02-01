@@ -6,6 +6,18 @@ pub struct Multiply<A, B> {
     b: B,
 }
 
+impl<A, B> Multiply<A, B>
+where
+    A: View,
+    B: View,
+{
+    /// Create a new Instance with Views a and b
+    #[inline]
+    pub fn new(a: A, b: B) -> Self {
+        Self { a, b }
+    }
+}
+
 impl<A, B> View for Multiply<A, B>
 where
     A: View,

@@ -6,6 +6,18 @@ pub struct Subtract<A, B> {
     b: B,
 }
 
+impl<A, B> Subtract<A, B>
+where
+    A: View,
+    B: View,
+{
+    /// Create a new instance with Views a and b
+    #[inline]
+    pub fn new(a: A, b: B) -> Self {
+        Self { a, b }
+    }
+}
+
 impl<A, B> View for Subtract<A, B>
 where
     A: View,
