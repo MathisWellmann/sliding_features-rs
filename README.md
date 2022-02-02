@@ -51,6 +51,7 @@ A View defines the function which processes value updates. They currently includ
     * Correlation Trend Indicator (CTI)
     * Polarized Fractal Efficiency
     * Ehlers Fisher Transform
+    * SuperSmoother by JohnEhlers
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
     * Variance Stabilizing Transform (VST)
@@ -202,6 +203,12 @@ Note that each run uses common test data from test_data.rs for consistency.
     width=300px></img>
 </a>
 
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/super_smoother.rs"> 
+    <img style="display: inline!important" 
+    src="img/super_smoother.png" 
+    width=300px></img>
+</a>
+
 ### TODOs:
 Feel free to implement the following and create a PR for some easy open-source contributions:
 - Roofing Filter
@@ -209,7 +216,6 @@ Feel free to implement the following and create a PR for some easy open-source c
 - MAMA
 - FAMA
 - Stochastic
-- Super Smoother
 - Zero Lag
 - gaussian filter
 - correlation cycle indicator
