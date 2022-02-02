@@ -21,6 +21,7 @@ mod noise_elimination_technology;
 mod polarized_fractal_efficiency;
 mod re_flex;
 mod roc;
+mod roofing_filter;
 mod rsi;
 mod sma;
 mod super_smoother;
@@ -29,7 +30,6 @@ mod trend_flex;
 mod variance_stabilizing_transformation;
 mod vsct;
 mod welford_online;
-//pub mod roofing_filter;  // temporarily disabled roofing_filter until it is working properly
 
 mod add;
 mod constant;
@@ -59,6 +59,7 @@ pub use noise_elimination_technology::NET;
 pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
 pub use re_flex::ReFlex;
 pub use roc::ROC;
+pub use roofing_filter::RoofingFilter;
 pub use rsi::RSI;
 pub use sma::SMA;
 pub use super_smoother::SuperSmoother;
@@ -67,7 +68,6 @@ pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::VST;
 pub use vsct::VSCT;
 pub use welford_online::WelfordOnline;
-// Pub use roofing_filter::RoofingFilter
 
 pub use add::Add;
 pub use constant::Constant;

@@ -52,6 +52,7 @@ A View defines the function which processes value updates. They currently includ
     * Polarized Fractal Efficiency
     * Ehlers Fisher Transform
     * SuperSmoother by JohnEhlers
+    * RoofingFilter by JohnEhlers
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
     * Variance Stabilizing Transform (VST)
@@ -209,9 +210,14 @@ Note that each run uses common test data from test_data.rs for consistency.
     width=300px></img>
 </a>
 
+<a href="https://github.com/MathisWellmann/sliding_features-rs/blob/master/src/roofing_filter.rs"> 
+    <img style="display: inline!important" 
+    src="img/roofing_filter.png" 
+    width=300px></img>
+</a>
+
 ### TODOs:
 Feel free to implement the following and create a PR for some easy open-source contributions:
-- Roofing Filter
 - FRAMA
 - MAMA
 - FAMA
