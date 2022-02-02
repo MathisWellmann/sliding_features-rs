@@ -68,6 +68,8 @@ A View defines the function which processes value updates. They currently includ
     * Divide
 * Math functions
     * Tanh
+    * GTE - Greater Than or Equal clipping function
+    * LTE - Lower Than or Equal clipping function
 * Standard deviation sliding window estimation using WelfordOnlineSliding
 * Cumulative
 * Entropy 
