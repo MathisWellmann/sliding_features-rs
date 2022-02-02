@@ -64,6 +64,8 @@ A View defines the function which processes value updates. They currently includ
     * Subtract
     * Multiply
     * Divide
+* Math functions
+    * Tanh
 * Standard deviation sliding window estimation using WelfordOnlineSliding
 * Cumulative
 * Entropy 
