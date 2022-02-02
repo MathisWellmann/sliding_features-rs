@@ -62,13 +62,18 @@ where
         self.val_2 = self.val_1;
         self.val_1 = val;
 
-        self.super_smoother.update(hp);
+        if self.i > self.window_len {
+            // to avoid weird output, only update, once warmup stage is done
+            self.super_smoother.update(hp);
+        }
         self.i += 1;
     }
 
     #[inline(always)]
     fn last(&self) -> f64 {
-        if self.i < self.window_len {
+        // This much warmup was needed in my tests,
+        // otherwise output looks a little weird with a huge dip in early data
+        if self.i < self.window_len * 2 {
             0.0
         } else {
             self.super_smoother.last()
