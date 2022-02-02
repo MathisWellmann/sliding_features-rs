@@ -34,6 +34,8 @@ mod welford_online;
 mod add;
 mod constant;
 mod divide;
+mod gte;
+mod lte;
 mod multiply;
 mod subtract;
 
@@ -72,6 +74,8 @@ pub use welford_online::WelfordOnline;
 pub use add::Add;
 pub use constant::Constant;
 pub use divide::Divide;
+pub use gte::GTE;
+pub use lte::LTE;
 pub use multiply::Multiply;
 pub use subtract::Subtract;
 
