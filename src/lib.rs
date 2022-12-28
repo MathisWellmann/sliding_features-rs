@@ -1,4 +1,8 @@
-#![deny(missing_docs, rustdoc::missing_crate_level_docs)]
+#![deny(
+    missing_docs,
+    rustdoc::missing_crate_level_docs,
+    unused_crate_dependencies
+)]
 #![warn(clippy::all)]
 
 //! The sliding_features crate provides modular, chainable sliding windows
