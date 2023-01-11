@@ -1,7 +1,9 @@
+use std::f64::consts::PI;
+
 use crate::View;
 
 /// John Ehlers SuperSmoother filter
-/// from https://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf
+/// from <https://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf>
 #[derive(Debug, Clone)]
 pub struct SuperSmoother<V> {
     view: V,
@@ -26,7 +28,7 @@ where
     /// Create a new instance of the SuperSmoother with a chained View
     #[inline(always)]
     pub fn new(view: V, window_length: usize) -> Self {
-        let a1 = (-1.414 * 3.14159 / window_length as f64).exp();
+        let a1 = (-1.414 * PI / window_length as f64).exp();
         // NOTE: 4.4422 is radians of 1.414 * 180 degrees
         let b1 = 2.0 * a1 * (4.4422 / window_length as f64).cos();
         let c2 = b1;

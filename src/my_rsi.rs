@@ -1,11 +1,11 @@
 //! John Ehlers MyRSI
-//! from: http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
+//! from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
 use crate::View;
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
-/// from: http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf
+/// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Clone)]
 pub struct MyRSI<V> {
     view: V,

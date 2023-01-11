@@ -1,10 +1,10 @@
 //! John Ehlers Laguerre Filter
-//! from: http://mesasoftware.com/papers/TimeWarp.pdf
+//! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
 use crate::View;
 
 /// John Ehlers Laguerre Filter
-/// from: http://mesasoftware.com/papers/TimeWarp.pdf
+/// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Clone)]
 pub struct LaguerreFilter<V> {
     view: V,

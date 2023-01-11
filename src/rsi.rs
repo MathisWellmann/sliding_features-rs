@@ -84,14 +84,12 @@ where
 
         if self.q_vals.len() < self.window_len {
             self.out = 50.0;
+        } else if self.avg_loss == 0.0 {
+            self.out = 100.0;
         } else {
-            if self.avg_loss == 0.0 {
-                self.out = 100.0;
-            } else {
-                let rs = self.avg_gain / self.avg_loss;
-                let rsi = 100.0 - 100.0 / (1.0 + rs);
-                self.out = rsi;
-            }
+            let rs = self.avg_gain / self.avg_loss;
+            let rsi = 100.0 - 100.0 / (1.0 + rs);
+            self.out = rsi;
         }
     }
 

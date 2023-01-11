@@ -1,7 +1,7 @@
 use crate::{Echo, SuperSmoother, View};
 
 /// Roofing Filter by John Ehlers
-/// From paper: http://www.stockspotter.com/files/PredictiveIndicators.pdf
+/// From paper: <http://www.stockspotter.com/files/PredictiveIndicators.pdf>
 #[derive(Debug, Clone)]
 pub struct RoofingFilter<V> {
     view: V,

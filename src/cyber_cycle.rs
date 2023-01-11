@@ -1,12 +1,12 @@
 //! John Ehlers Cyber Cycle Indicator
-//! from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
+//! from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
 
 use std::collections::VecDeque;
 
 use super::View;
 
 /// John Ehlers Cyber Cycle Indicator
-/// from: https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf
+/// from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
 #[derive(Clone)]
 pub struct CyberCycle<V> {
     view: V,
@@ -67,8 +67,8 @@ where
         }
         let mut smooth: Vec<f64> = vec![0.0; self.vals.len()];
         let last = self.vals.len() - 1;
-        for i in 3..self.vals.len() {
-            smooth[i] = (val
+        for (i, v) in smooth.iter_mut().enumerate().take(self.vals.len()).skip(3) {
+            *v = (val
                 + 2.0 * self.vals.get(i - 1).unwrap()
                 + 2.0 * self.vals.get(i - 2).unwrap()
                 + *self.vals.get(i - 3).unwrap())
@@ -83,7 +83,7 @@ where
 
     #[inline(always)]
     fn last(&self) -> f64 {
-        *self.out.get(self.out.len() - 1).unwrap()
+        *self.out.back().expect("No items in out")
     }
 }
 

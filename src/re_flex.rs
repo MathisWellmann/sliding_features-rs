@@ -1,12 +1,12 @@
 //! John Ehlers ReFlex Indicator
-//! from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+//! from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
 
 use std::collections::VecDeque;
 
 use super::View;
 
 /// John Ehlers ReFlex Indicator
-/// from: https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/
+/// from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
 #[derive(Clone)]
 pub struct ReFlex<V> {
     view: V,

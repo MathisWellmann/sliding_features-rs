@@ -1,12 +1,12 @@
 //! John Ehlers Fisher Transform Indicator
-//! from: http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+//! from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 
 use crate::View;
 use std::collections::VecDeque;
 
 #[derive(Clone)]
 /// John Ehlers Fisher Transform Indicator
-/// from: http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+/// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 pub struct EhlersFisherTransform<V, M> {
     view: V,
     moving_average: M,
@@ -99,12 +99,8 @@ where
         // smooth with moving average
         self.moving_average.update(val);
         let mut smoothed = self.moving_average.last();
-        if smoothed > 0.99 {
-            // slight deviation from paper but clipping the value to 0.99 seems to make more sense
-            smoothed = 0.99;
-        } else if smoothed < -0.99 {
-            smoothed = -0.99;
-        }
+        smoothed = smoothed.clamp(-0.99, 0.99);
+
         if self.q_out.is_empty() {
             // do not insert values when there are not enough values yet
             self.q_out.push_back(0.0);

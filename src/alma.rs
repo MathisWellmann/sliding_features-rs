@@ -1,12 +1,12 @@
 //! ALMA - Arnaud Legoux Moving Average
-//! reference: https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce
+//! reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// ALMA - Arnaud Legoux Moving Average
-/// reference: https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce
+/// reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 #[derive(Clone)]
 pub struct ALMA<V> {
     view: V,

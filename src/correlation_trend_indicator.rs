@@ -1,11 +1,11 @@
 //! John Ehlers Correlation Trend Indicator
-//! from: https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
+//! from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 
 use crate::View;
 use std::collections::VecDeque;
 
 /// John Ehlers Correlation Trend Indicator
-/// from: https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/
+/// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 #[derive(Clone)]
 pub struct CorrelationTrendIndicator<V> {
     view: V,

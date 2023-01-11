@@ -1,12 +1,12 @@
 //! John Ehlers LaguerreRSI
-//! from: http://mesasoftware.com/papers/TimeWarp.pdf
+//! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
 use std::collections::VecDeque;
 
 use super::View;
 
 /// John Ehlers LaguerreRSI
-/// from: http://mesasoftware.com/papers/TimeWarp.pdf
+/// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Clone)]
 pub struct LaguerreRSI<V> {
     view: V,

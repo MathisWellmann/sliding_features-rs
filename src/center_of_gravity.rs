@@ -1,12 +1,12 @@
 //! John Ehlers Center of Gravity Indicator
-//! from: https://mesasoftware.com/papers/TheCGOscillator.pdf
+//! from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
 
 use std::collections::VecDeque;
 
 use super::View;
 
 /// John Ehlers Center of Gravity Indicator
-/// from: https://mesasoftware.com/papers/TheCGOscillator.pdf
+/// from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
 #[derive(Clone)]
 pub struct CenterOfGravity<V> {
     view: V,
