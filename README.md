@@ -1,11 +1,11 @@
-# Sliding Features
+# :chains: Chainable Tree-like Sliding Features
 Modular, chainable sliding windows with various signal processing functions and technical indicators.  
 A [`View`](https://docs.rs/sliding_features/2.5.2/sliding_features/trait.View.html) defines the function which processes the incoming values and provides an output value.  
 `View`'s can easily be added by implementing the Trait which requires two methods:
 - `update(&mut self, val: f64)`: Call whenever you have a new value with which to update the View
 - `last(&self) -> f64`: Retrieve the last value from the View
 
-This enables multiple `View`'s to be chained together to apply many signal processing functions consecutively.  
+This enables multiple `View`'s to be chained together to apply many signal processing functions consecutively with zero-overhead thanks to Rust's zero-cost abstractions.  
 For example you may want to compose a chained function that firstly smoothes the input values using an [`EMA`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.EMA.html),
 applies the rate of change [`ROC`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.ROC.html) function and finally applies normalization to it 
 [`HLNormalizer`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.HLNormalizer.html).
@@ -37,7 +37,9 @@ To create a new View, call the appropriate constructor as such:
 ``` rust
 let mut rsi = RSI::new(Echo::new(), 16);
 ```
-This creates an RSI indicator with window length of 16. Notice that Echo will always be at the end of a View chain, as it just returns the latest observed value.
+This creates an [`RSI`](https://docs.rs/sliding_features/2.5.3/sliding_features/struct.RSI.html) 
+indicator with window length of 16. Notice that [`Echo`](https://docs.rs/sliding_features/2.5.3/sliding_features/struct.Echo.html) 
+will always be at the end of a View chain, as it just returns the latest observed value.
 Now to update the values of the chain, assuming test_values contains f64 values:
 
 ``` rust
@@ -252,6 +254,7 @@ Feel free to implement the following and create a PR for some easy open-source c
 - correlation cycle indicator
 - some indicators can be built with const sized arrays, for better performance
 - add Default impl for all
+- maybe even throw in a generic numeric type
 - and so much more...
 
 ### Contributing
