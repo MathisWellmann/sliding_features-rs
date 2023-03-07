@@ -1,14 +1,25 @@
 # Sliding Features
-Modular, chainable sliding windows with various signal processing functions and technical indicators.
-A [`View`](https://docs.rs/sliding_features/2.5.2/sliding_features/trait.View.html) defines the function which processes the incoming values and provides an output value. 
+Modular, chainable sliding windows with various signal processing functions and technical indicators.  
+A [`View`](https://docs.rs/sliding_features/2.5.2/sliding_features/trait.View.html) defines the function which processes the incoming values and provides an output value.  
 `View`'s can easily be added by implementing the Trait which requires two methods:
 - `update(&mut self, val: f64)`: Call whenever you have a new value with which to update the View
 - `last(&self) -> f64`: Retrieve the last value from the View
-This enables multiple `View`'s to be chained together to combine many signal processing functions consecutively.
 
+This enables multiple `View`'s to be chained together to apply many signal processing functions consecutively.  
+For example you may want to compose a chained function that firstly smoothes the input values using an [`EMA`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.EMA.html),
+applies the rate of change [`ROC`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.ROC.html) function and finally applies normalization to it 
+[`HLNormalizer`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.HLNormalizer.html).
+This can be achieved as such:
+```rust
+let mut chain = HLNormalizer::new(ROC:new(EMA::new(Echo::new(), 10), 15), 20);
+```
+Imagine this process as a tree with nodes (which is more accurate) as you can merge multiple `Views` together.
+An example of such a combining node is the [`Add`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.Add.html) node for example.
+
+### How to use
 To use this crate in your project add this to your Cargo.toml:
 ```toml
-sliding_features = "2.5.2"
+sliding_features = "2.5.3"
 ```
 
 To create a new View, call the appropriate constructor as such:

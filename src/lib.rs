@@ -4,6 +4,7 @@
     unused_crate_dependencies
 )]
 #![warn(clippy::all)]
+#![doc = include_str!("../README.md")]
 
 //! The sliding_features crate provides modular, chainable sliding windows
 //! for various signal processing function and technical indicators
