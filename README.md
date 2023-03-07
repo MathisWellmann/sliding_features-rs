@@ -14,7 +14,18 @@ This can be achieved as such:
 let mut chain = HLNormalizer::new(ROC:new(EMA::new(Echo::new(), 10), 15), 20);
 ```
 Imagine this process as a tree with nodes (which is more accurate) as you can merge multiple `Views` together.
-An example of such a combining node is the [`Add`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.Add.html) node for example.
+An example of such a combining node is the [`Add`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.Add.html) node for example.  
+This is one possible example to visualize the tree-like nature of this chaining process.
+```mermaid
+flowchart TD
+    A[Echo] --> B[EMA]
+    C[Echo] --> D[SMA]
+    B --> E[ROC]
+    D --> F[RSI]
+    E --> G[Add]
+    F --> G
+    G --> H[HLNormalize]
+```
 
 ### How to use
 To use this crate in your project add this to your Cargo.toml:
