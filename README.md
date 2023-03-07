@@ -1,13 +1,14 @@
 # Sliding Features
 Modular, chainable sliding windows with various signal processing functions and technical indicators.
-A View defines the function which processes the incoming values and provides an output value. 
-Views can easily be added by implementing the View Trait which requires two methods:
-- update(&mut self, val: f64): Call whenever you have a new value with which to update the View
-- last(&self) -> f64: Retrieve the last value from the View
+A [`View`](https://docs.rs/sliding_features/2.5.2/sliding_features/trait.View.html) defines the function which processes the incoming values and provides an output value. 
+`View`'s can easily be added by implementing the Trait which requires two methods:
+- `update(&mut self, val: f64)`: Call whenever you have a new value with which to update the View
+- `last(&self) -> f64`: Retrieve the last value from the View
+This enables multiple `View`'s to be chained together to combine many signal processing functions consecutively.
 
 To use this crate in your project add this to your Cargo.toml:
 ```toml
-sliding_features = "2.0.0"
+sliding_features = "2.5.2"
 ```
 
 To create a new View, call the appropriate constructor as such:
