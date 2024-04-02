@@ -83,7 +83,7 @@ where
         self.last_val = val;
         self.q_vals.push_back(filt);
 
-        let slope = (self.q_vals.get(0).unwrap() - filt) / self.window_len as f64;
+        let slope = (self.q_vals.front().unwrap() - filt) / self.window_len as f64;
 
         // sum the differences
         let mut d_sum: f64 = 0.0;
