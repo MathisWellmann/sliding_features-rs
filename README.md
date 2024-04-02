@@ -10,7 +10,7 @@ For example you may want to compose a chained function that firstly smoothes the
 applies the rate of change [`ROC`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.ROC.html) function and finally applies normalization to it 
 [`HLNormalizer`](https://docs.rs/sliding_features/2.5.2/sliding_features/struct.HLNormalizer.html).
 This can be achieved as such:
-```rust
+```ignore
 let mut chain = HLNormalizer::new(ROC:new(EMA::new(Echo::new(), 10), 15), 20);
 ```
 Imagine this process as a tree with nodes (which is more accurate) as you can merge multiple `Views` together.
@@ -34,7 +34,7 @@ sliding_features = "2.5.3"
 ```
 
 To create a new View, call the appropriate constructor as such:
-``` rust
+``` ignore
 let mut rsi = RSI::new(Echo::new(), 16);
 ```
 This creates an [`RSI`](https://docs.rs/sliding_features/2.5.3/sliding_features/struct.RSI.html) 
@@ -42,7 +42,7 @@ indicator with window length of 16. Notice that [`Echo`](https://docs.rs/sliding
 will always be at the end of a View chain, as it just returns the latest observed value.
 Now to update the values of the chain, assuming test_values contains f64 values:
 
-``` rust
+``` ignore
 for v in &test_values {
     rsi.update(v);
     let last = rsi.last();
