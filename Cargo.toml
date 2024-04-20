@@ -5,7 +5,7 @@ authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2018"
 license-file = "LICENSE"
 description = "Modular sliding window with various signal processing functions and technical indicators"
-repository = "https://www.github.com/MathisWellmann/sliding_features-rs"
+repository = "https://github.com/MathisWellmann/sliding_features-rs"
 readme = "README.md"
 keywords = [
   "sliding-window",
