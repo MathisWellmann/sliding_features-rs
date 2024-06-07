@@ -2,4 +2,5 @@
 /.idea
 /vendor
 /img
+/.direnv
 Cargo.lock
