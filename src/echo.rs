@@ -5,25 +5,23 @@ use super::View;
 #[derive(Default, Clone, Debug)]
 /// Echo always return the last value just like an echo
 pub struct Echo {
-    out: f64,
+    out: Option<f64>,
 }
 
 impl Echo {
     /// Create a new Echo View
     #[inline(always)]
     pub fn new() -> Echo {
-        Echo { out: 0.0 }
+        Echo { out: None }
     }
 }
 
 impl View for Echo {
-    #[inline(always)]
     fn update(&mut self, val: f64) {
-        self.out = val;
+        self.out = Some(val);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -40,7 +38,7 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             echo.update(*v);
-            out.push(echo.last());
+            out.push(echo.last().unwrap());
         }
         let filename = "img/echo.png";
         plot_values(out, filename).unwrap();

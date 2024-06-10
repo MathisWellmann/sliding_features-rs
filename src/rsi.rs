@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 use super::View;
 
 /// Relative Strength Index Indicator
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct RSI<V> {
     view: V,
     window_len: usize,
@@ -14,17 +14,7 @@ pub struct RSI<V> {
     old_ref: f64,
     last_val: f64,
     q_vals: VecDeque<f64>,
-    out: f64,
-}
-
-impl<V> std::fmt::Debug for RSI<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "RSI(window_len: {}, avg_gain: {}, avg_loss: {}, old_ref: {}, last_val: {}, q_vals: {:?}, out: {})",
-               self.window_len, self.avg_gain, self.avg_loss, self.old_ref, self.last_val, self.q_vals, self.out)
-    }
+    out: Option<f64>,
 }
 
 impl<V> RSI<V>
@@ -43,7 +33,7 @@ where
             old_ref: 0.0,
             last_val: 0.0,
             q_vals: VecDeque::new(),
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -54,7 +44,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.is_empty() {
             self.old_ref = val;
@@ -83,18 +73,19 @@ where
         }
 
         if self.q_vals.len() < self.window_len {
-            self.out = 50.0;
-        } else if self.avg_loss == 0.0 {
-            self.out = 100.0;
+            return;
+        }
+
+        if self.avg_loss == 0.0 {
+            self.out = Some(100.0);
         } else {
             let rs = self.avg_gain / self.avg_loss;
             let rsi = 100.0 - 100.0 / (1.0 + rs);
-            self.out = rsi;
+            self.out = Some(rsi);
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -112,7 +103,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rsi.update(*v);
-            out.push(rsi.last());
+            if let Some(val) = rsi.last() {
+                out.push(val);
+            }
         }
         let filename = "img/rsi.png";
         plot_values(out, filename).unwrap();
@@ -123,9 +116,10 @@ mod tests {
         let mut rsi = RSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             rsi.update(*v);
-            let last = rsi.last();
-            assert!(last >= 0.0);
-            assert!(last <= 100.0);
+            if let Some(last) = rsi.last() {
+                assert!(last >= 0.0);
+                assert!(last <= 100.0);
+            }
         }
     }
 }

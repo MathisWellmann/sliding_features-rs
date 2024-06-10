@@ -21,7 +21,6 @@ where
     V: View,
 {
     /// Create a new Entropy Sliding Window
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
@@ -37,10 +36,9 @@ where
     V: View,
 {
     /// Update the Entropy calculation with a new boolean value
-    #[inline]
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.pop_back().unwrap();
@@ -55,7 +53,10 @@ where
     }
 
     /// Get the latest entropy value of the sliding window
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
+        if self.q_vals.is_empty() {
+            return None;
+        }
         let pt: f64 = self.p as f64 / self.q_vals.len() as f64; // probability of positive value
         let pn: f64 = 1.0 - pt; // probability of negative value
 
@@ -63,7 +64,7 @@ where
         if value.is_nan() {
             value = 0.0
         }
-        -value
+        Some(-value)
     }
 }
 
@@ -79,14 +80,14 @@ mod tests {
         let mut e = BinaryEntropy::new(Echo::new(), 10);
         for v in &vals {
             e.update(*v);
-            let last = e.last();
+            let last = e.last().unwrap();
             assert_eq!(last, 0.0);
         }
         let vals: Vec<f64> = vec![1.0; 10];
         let mut e = BinaryEntropy::new(Echo::new(), 10);
         for v in &vals {
             e.update(*v);
-            let last = e.last();
+            let last = e.last().unwrap();
             assert_eq!(last, 0.0);
         }
 
@@ -94,11 +95,11 @@ mod tests {
         let mut e = BinaryEntropy::new(Echo::new(), 4);
         for v in &vals {
             e.update(*v);
-            let last = e.last();
+            let last = e.last().unwrap();
             println!("last: {}", last);
             assert!(last >= 0.0);
         }
-        let last = e.last();
+        let last = e.last().unwrap();
         assert_eq!(last, 1.0);
     }
 }

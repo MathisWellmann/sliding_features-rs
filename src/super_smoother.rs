@@ -26,7 +26,6 @@ where
     V: View,
 {
     /// Create a new instance of the SuperSmoother with a chained View
-    #[inline(always)]
     pub fn new(view: V, window_length: usize) -> Self {
         let a1 = (-1.414 * PI / window_length as f64).exp();
         // NOTE: 4.4422 is radians of 1.414 * 180 degrees
@@ -55,7 +54,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         self.filt = self.c1 * (val + self.last_val) / 2.0
             + (self.c2 * self.filt_1)
@@ -66,13 +65,12 @@ where
         self.i += 1;
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         // NOTE: filter only kicks in after warmup steps are done
         if self.i < self.window_length {
-            self.last_val
+            None
         } else {
-            self.filt
+            Some(self.filt)
         }
     }
 }
@@ -89,7 +87,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             ss.update(*v);
-            out.push(ss.last());
+            if let Some(val) = ss.last() {
+                out.push(val);
+            }
         }
         let filename = "img/super_smoother.png";
         plot_values(out, filename).unwrap();

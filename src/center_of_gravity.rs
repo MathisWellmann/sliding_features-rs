@@ -12,7 +12,7 @@ pub struct CenterOfGravity<V> {
     view: V,
     window_len: usize,
     q_vals: VecDeque<f64>,
-    out: f64,
+    out: Option<f64>,
 }
 
 impl<V> std::fmt::Debug for CenterOfGravity<V>
@@ -22,7 +22,7 @@ where
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(
             fmt,
-            "CenterOfGravity(window_len: {}, q_vals: {:?}, out: {})",
+            "CenterOfGravity(window_len: {}, q_vals: {:?}, out: {:?})",
             self.window_len, self.q_vals, self.out
         )
     }
@@ -34,13 +34,12 @@ where
 {
     /// Create a Center of Gravity Indicator with a chained View
     /// and a given sliding window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
             window_len,
             q_vals: VecDeque::new(),
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -52,7 +51,7 @@ where
     // update receives a new value and updates its internal state
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
@@ -62,21 +61,19 @@ where
         let mut denom: f64 = 0.0;
         let mut num: f64 = 0.0;
         let q_len = self.q_vals.len();
-        for i in 0..q_len {
+        for (i, val) in self.q_vals.iter().enumerate() {
             let weight = q_len - i;
-            let val_i = self.q_vals.get(i).unwrap();
-            num += weight as f64 * val_i;
-            denom += *val_i;
+            num += weight as f64 * val;
+            denom += *val;
         }
         if denom != 0.0 {
-            self.out = -num / denom + (self.q_vals.len() as f64 + 1.0) / 2.0
+            self.out = Some(-num / denom + (q_len as f64 + 1.0) / 2.0)
         } else {
-            self.out = 0.0;
+            self.out = Some(0.0);
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -94,7 +91,7 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cgo.update(*v);
-            out.push(cgo.last());
+            out.push(cgo.last().unwrap());
         }
         let filename = "img/center_of_gravity.png";
         plot_values(out, filename).unwrap();

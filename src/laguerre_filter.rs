@@ -5,8 +5,11 @@ use crate::View;
 
 /// John Ehlers Laguerre Filter
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
-#[derive(Clone)]
-pub struct LaguerreFilter<V> {
+#[derive(Debug, Clone)]
+pub struct LaguerreFilter<V>
+where
+    V: View,
+{
     view: V,
     gamma: f64,
     l0s: Vec<f64>,
@@ -14,17 +17,6 @@ pub struct LaguerreFilter<V> {
     l2s: Vec<f64>,
     l3s: Vec<f64>,
     filts: Vec<f64>,
-    init: bool,
-}
-
-impl<V> std::fmt::Debug for LaguerreFilter<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "LaguerreFilter(gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?}, filts: {:?}, init: {})",
-               self.gamma, self.l0s, self.l1s, self.l2s, self.l3s, self.filts, self.init)
-    }
 }
 
 impl<V> LaguerreFilter<V>
@@ -33,17 +25,15 @@ where
 {
     /// Create a new LaguerreFilter with a chained View
     /// and a gamma parameter
-    #[inline]
     pub fn new(view: V, gamma: f64) -> Self {
         LaguerreFilter {
             view,
             gamma,
-            l0s: vec![],
-            l1s: vec![],
-            l2s: vec![],
-            l3s: vec![],
-            filts: vec![],
-            init: true,
+            l0s: Vec::new(),
+            l1s: Vec::new(),
+            l2s: Vec::new(),
+            l3s: Vec::new(),
+            filts: Vec::new(),
         }
     }
 }
@@ -54,10 +44,9 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
-        if self.init {
-            self.init = false;
+        if self.l0s.is_empty() {
             self.l0s.push(val);
             self.l1s.push(val);
             self.l2s.push(val);
@@ -92,9 +81,8 @@ where
         );
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.filts[self.filts.len() - 1]
+    fn last(&self) -> Option<f64> {
+        self.filts.last().copied()
     }
 }
 
@@ -113,7 +101,7 @@ mod tests {
             let v = rng.gen::<f64>();
 
             laguerre.update(v);
-            let last = laguerre.last();
+            let last = laguerre.last().unwrap();
 
             assert!(last <= 1.0);
             assert!(last >= 0.0);
@@ -126,7 +114,7 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             laguerre.update(*v);
-            out.push(laguerre.last());
+            out.push(laguerre.last().unwrap());
         }
         let filename = "img/laguerre_filter.png";
         plot_values(out, filename).unwrap();

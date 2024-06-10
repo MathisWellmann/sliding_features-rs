@@ -3,17 +3,11 @@
 use crate::{Echo, View, WelfordOnline};
 
 /// Variance Stabilizing Centering Transform Sliding Window
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct VSCT<V> {
     view: V,
     welford_online: WelfordOnline<Echo>,
     last: f64,
-}
-
-impl<V> std::fmt::Debug for VSCT<V> {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "VSCT.last: {}", self.last)
-    }
 }
 
 impl<V> VSCT<V>
@@ -38,19 +32,19 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         self.welford_online.update(val);
         self.last = val;
     }
 
-    fn last(&self) -> f64 {
-        let std_dev = self.welford_online.last();
+    fn last(&self) -> Option<f64> {
+        let std_dev = self.welford_online.last()?;
         if std_dev == 0.0 {
-            return 0.0;
+            return Some(0.0);
         }
         let mean = self.welford_online.mean();
-        (self.last - mean) / std_dev
+        Some((self.last - mean) / std_dev)
     }
 }
 
@@ -66,7 +60,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);
-            out.push(vsct.last());
+            if let Some(val) = vsct.last() {
+                out.push(val);
+            }
         }
         let filename = "img/vsct.png";
         plot_values(out, filename).unwrap();

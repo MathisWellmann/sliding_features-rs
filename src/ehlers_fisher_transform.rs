@@ -58,7 +58,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val: f64 = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.is_empty() {
             self.high = val;
@@ -98,7 +98,9 @@ where
         let val: f64 = 2.0 * ((val - self.low) / (self.high - self.low) - 0.5);
         // smooth with moving average
         self.moving_average.update(val);
-        let mut smoothed = self.moving_average.last();
+        let Some(mut smoothed) = self.moving_average.last() else {
+            return;
+        };
         smoothed = smoothed.clamp(-0.99, 0.99);
 
         if self.q_out.is_empty() {
@@ -111,9 +113,8 @@ where
         self.q_out.push_back(fish);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        *self.q_out.back().unwrap()
+    fn last(&self) -> Option<f64> {
+        self.q_out.back().copied()
     }
 }
 
@@ -127,10 +128,10 @@ mod tests {
     #[test]
     fn ehlers_fisher_transform_plot() {
         let mut eft = EhlersFisherTransform::new(Echo::new(), EMA::new(Echo::new(), 16), 16);
-        let mut out: Vec<f64> = vec![];
+        let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             eft.update(*v);
-            out.push(eft.last());
+            out.push(eft.last().unwrap());
         }
         println!("out: {:?}", out);
         let filename = "img/ehlers_fisher_transform.png";

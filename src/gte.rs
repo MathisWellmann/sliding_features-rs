@@ -6,7 +6,7 @@ use crate::View;
 pub struct GTE<V> {
     view: V,
     clipping_point: f64,
-    out: f64,
+    out: Option<f64>,
 }
 
 impl<V> GTE<V>
@@ -14,12 +14,11 @@ where
     V: View,
 {
     /// Create a new instance with a chained View and a given clipping point
-    #[inline(always)]
     pub fn new(view: V, clipping_point: f64) -> Self {
         Self {
             view,
             clipping_point,
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -28,20 +27,18 @@ impl<V> View for GTE<V>
 where
     V: View,
 {
-    #[inline]
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if val >= self.clipping_point {
-            self.out = val;
+            self.out = Some(val);
         } else {
-            self.out = self.clipping_point;
+            self.out = Some(self.clipping_point);
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -56,8 +53,8 @@ mod tests {
     fn gte() {
         let mut gte = GTE::new(Echo::new(), 1.0);
         gte.update(2.0);
-        assert_eq!(gte.last(), 2.0);
+        assert_eq!(gte.last().unwrap(), 2.0);
         gte.update(0.5);
-        assert_eq!(gte.last(), 1.0);
+        assert_eq!(gte.last().unwrap(), 1.0);
     }
 }

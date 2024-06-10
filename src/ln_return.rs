@@ -29,15 +29,18 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         self.last_val = self.current_val;
         self.current_val = val;
     }
 
-    fn last(&self) -> f64 {
-        // TODO: return `None` if `self.last_val == 0`. change api of `View`
-        (self.current_val / self.last_val).ln()
+    fn last(&self) -> Option<f64> {
+        if self.last_val == 0.0 {
+            return None;
+        }
+
+        Some((self.current_val / self.last_val).ln())
     }
 }
 
@@ -51,7 +54,8 @@ mod tests {
     fn ln_return() {
         let mut ln_return = LnReturn::new(Echo::new());
         ln_return.update(100.0);
+        assert!(ln_return.last().is_none());
         ln_return.update(110.0);
-        assert_eq!(ln_return.last(), 0.09531017980432493);
+        assert_eq!(ln_return.last().unwrap(), 0.09531017980432493);
     }
 }

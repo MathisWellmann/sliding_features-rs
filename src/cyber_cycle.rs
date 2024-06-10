@@ -53,7 +53,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.vals.len() >= self.window_len {
             self.vals.pop_front();
@@ -81,9 +81,8 @@ where
         self.out.push_back(cc);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        *self.out.back().expect("No items in out")
+    fn last(&self) -> Option<f64> {
+        self.out.back().copied()
     }
 }
 
@@ -100,7 +99,7 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cc.update(*v);
-            out.push(cc.last());
+            out.push(cc.last().unwrap());
         }
         let filename = "img/cyber_cycle.png";
         plot_values(out, filename).unwrap();

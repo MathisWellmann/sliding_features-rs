@@ -24,7 +24,6 @@ where
     V: View,
 {
     /// Create a Roofing Filter with a chained view
-    #[inline]
     pub fn new(view: V, window_len: usize, super_smoother_len: usize) -> Self {
         // NOTE: 4.4422 radians from  0.707 * 360 degrees
         let alpha_1 = ((4.4422 / window_len as f64).cos() + (4.4422 / window_len as f64).sin()
@@ -51,7 +50,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         let hp = (1.0 - self.alpha_1 / 2.0).powi(2) * (val - 2.0 * self.val_1 + self.val_2)
             + 2.0 * (1.0 - self.alpha_1) * self.hp_1
@@ -69,15 +68,8 @@ where
         self.i += 1;
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        // This much warmup was needed in my tests,
-        // otherwise output looks a little weird with a huge dip in early data
-        if self.i < self.window_len * 2 {
-            0.0
-        } else {
-            self.super_smoother.last()
-        }
+    fn last(&self) -> Option<f64> {
+        self.super_smoother.last()
     }
 }
 
@@ -94,7 +86,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);
-            out.push(rf.last());
+            if let Some(val) = rf.last() {
+                out.push(val);
+            }
         }
         let filename = "img/roofing_filter.png";
         plot_values(out, filename).unwrap();

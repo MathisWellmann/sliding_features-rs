@@ -35,7 +35,6 @@ where
 {
     /// Create a new HLNormalizer with a chained View
     /// and a given sliding window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         HLNormalizer {
             view,
@@ -72,7 +71,9 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let view_last = self.view.last();
+        let Some(view_last) = self.view.last() else {
+            return;
+        };
 
         if self.init {
             self.init = false;
@@ -99,12 +100,11 @@ where
         self.last = view_last;
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         if self.last == self.min && self.last == self.max {
-            0.0
+            Some(0.0)
         } else {
-            -1.0 + (((self.last - self.min) * 2.0) / (self.max - self.min))
+            Some(-1.0 + (((self.last - self.min) * 2.0) / (self.max - self.min)))
         }
     }
 }
@@ -119,7 +119,7 @@ mod tests {
         let mut n = HLNormalizer::new(Echo::new(), 16);
         for v in &TEST_DATA {
             n.update(*v);
-            let last = n.last();
+            let last = n.last().unwrap();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
         }

@@ -7,28 +7,15 @@ use super::View;
 
 /// John Ehlers LaguerreRSI
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LaguerreRSI<V> {
     view: V,
-    value: f64,
+    value: Option<f64>,
     gamma: f64,
     l0s: VecDeque<f64>,
     l1s: VecDeque<f64>,
     l2s: VecDeque<f64>,
     l3s: VecDeque<f64>,
-}
-
-impl<V> std::fmt::Debug for LaguerreRSI<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "LaguerreRSI(value: {}, gamma: {}, l0s: {:?}, l1s: {:?}, l2s: {:?}, l3s: {:?})",
-            self.value, self.gamma, self.l0s, self.l1s, self.l2s, self.l3s
-        )
-    }
 }
 
 impl<V> LaguerreRSI<V>
@@ -37,11 +24,10 @@ where
 {
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         LaguerreRSI {
             view,
-            value: 0.0,
+            value: None,
             gamma: 2.0 / (window_len as f64 + 1.0),
             l0s: VecDeque::new(),
             l1s: VecDeque::new(),
@@ -57,7 +43,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.l0s.len() >= 3 {
             self.l0s.pop_front();
@@ -113,12 +99,11 @@ where
         }
 
         if cu + cd != 0.0 {
-            self.value = cu / (cu + cd);
+            self.value = Some(cu / (cu + cd));
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.value
     }
 }
@@ -135,9 +120,10 @@ mod tests {
         let mut lrsi = LaguerreRSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             lrsi.update(*v);
-            let last = lrsi.last();
-            assert!(last <= 1.0);
-            assert!(last >= -1.0);
+            if let Some(last) = lrsi.last() {
+                assert!(last <= 1.0);
+                assert!(last >= -1.0);
+            }
         }
     }
 
@@ -147,7 +133,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             lrsi.update(*v);
-            out.push(lrsi.last());
+            if let Some(val) = lrsi.last() {
+                out.push(val);
+            }
         }
         // graph the results
         let filename = "img/laguerre_rsi.png";

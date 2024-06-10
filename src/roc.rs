@@ -5,26 +5,13 @@ use std::collections::VecDeque;
 use super::View;
 
 /// Rate of Change Indicator
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ROC<V> {
     view: V,
     window_len: usize,
     oldest: f64,
     q_vals: VecDeque<f64>,
-    out: f64,
-}
-
-impl<V> std::fmt::Debug for ROC<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "ROC(window_len: {}, oldest: {}, q_vals: {:?}, out: {})",
-            self.window_len, self.oldest, self.q_vals, self.out
-        )
-    }
+    out: Option<f64>,
 }
 
 impl<V> ROC<V>
@@ -33,14 +20,13 @@ where
 {
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         ROC {
             view,
             window_len,
             oldest: 0.0,
             q_vals: VecDeque::new(),
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -51,7 +37,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.is_empty() {
             self.oldest = val;
@@ -64,11 +50,10 @@ where
         self.q_vals.push_back(val);
 
         let roc = ((val - self.oldest) / self.oldest) * 100.0;
-        self.out = roc;
+        self.out = Some(roc);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -86,7 +71,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             r.update(*v);
-            out.push(r.last());
+            if let Some(val) = r.last() {
+                out.push(val);
+            }
         }
         let filename = "img/roc.png";
         plot_values(out, filename).unwrap();

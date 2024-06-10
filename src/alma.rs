@@ -36,13 +36,11 @@ where
 {
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length
-    #[inline(always)]
     pub fn new(view: V, window_len: usize) -> Self {
         ALMA::new_custom(view, window_len, 6.0, 0.85)
     }
 
     /// Create a Arnaud Legoux Moving Average with custom parameters
-    #[inline]
     pub fn new_custom(view: V, window_len: usize, sigma: f64, offset: f64) -> Self {
         let m = offset * (window_len as f64 + 1.0);
         let s = window_len as f64 / sigma;
@@ -67,7 +65,7 @@ where
     fn update(&mut self, val: f64) {
         // first, apply the internal view update
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.front().unwrap();
@@ -91,9 +89,8 @@ where
         self.q_out.push_back(ala);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        return *self.q_out.back().unwrap();
+    fn last(&self) -> Option<f64> {
+        self.q_out.back().copied()
     }
 }
 
@@ -111,7 +108,7 @@ mod tests {
         for _ in 0..1_000_000 {
             let v = rng.gen::<f64>();
             alma.update(v);
-            let last = alma.last();
+            let last = alma.last().unwrap();
 
             assert!(last >= 0.0);
             assert!(last <= 1.0);
@@ -124,7 +121,7 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             alma.update(*v);
-            out.push(alma.last())
+            out.push(alma.last().unwrap())
         }
         let filename = "img/alma.png";
         plot_values(out, filename).unwrap();

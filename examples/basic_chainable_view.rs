@@ -24,7 +24,8 @@ fn main() {
         // after that it will apply the VSCT transform
         // and finally apply an Arnaux Legoux moving average
         chain.update(*v);
-        let last_value = chain.last();
-        println!("transformed value: {}", last_value);
+        if let Some(last_value) = chain.last() {
+            println!("transformed value: {}", last_value);
+        }
     }
 }

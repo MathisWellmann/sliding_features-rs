@@ -87,10 +87,10 @@ pub use multiply::Multiply;
 pub use subtract::Subtract;
 
 /// The most important Trait, defining methods which each sliding feature needs to implement
-pub trait View: Send + Sync {
+pub trait View: Send + Sync + std::fmt::Debug {
     /// Update the state with a new value
     fn update(&mut self, val: f64);
 
-    /// Return the last value
-    fn last(&self) -> f64;
+    /// Return the last value, if `Some`, then its ready.
+    fn last(&self) -> Option<f64>;
 }

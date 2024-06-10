@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MyRSI<V> {
     view: V,
     window_len: usize,
@@ -18,22 +18,11 @@ pub struct MyRSI<V> {
     oldest_val: f64,
 }
 
-impl<V> std::fmt::Debug for MyRSI<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "MyRSI(window_len: {}, cu: {}, cd: {}, out: {}, q_vals: {:?}, last_val: {}, oldest_val: {})",
-               self.window_len, self.cu, self.cd, self.out, self.q_vals, self.last_val, self.oldest_val)
-    }
-}
-
 impl<V> MyRSI<V>
 where
     V: View,
 {
     /// Create a new MyRSI indicator with a chained View and a given window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         MyRSI {
             view,
@@ -54,7 +43,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val: f64 = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.is_empty() {
             self.oldest_val = val;
@@ -79,15 +68,16 @@ where
         }
         self.last_val = val;
 
-        // only output value if window length is satisfied with enough values
         if self.cu + self.cd != 0.0 {
             self.out = (self.cu - self.cd) / (self.cu + self.cd);
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.out
+    fn last(&self) -> Option<f64> {
+        if self.q_vals.len() < self.window_len {
+            return None;
+        }
+        Some(self.out)
     }
 }
 
@@ -100,11 +90,14 @@ mod tests {
 
     #[test]
     fn my_rsi() {
+        // TODO: don't be so lazy with this test.
         let mut my_rsi = MyRSI::new(Echo::new(), 16);
         for v in &TEST_DATA {
             my_rsi.update(*v);
-            assert!(my_rsi.last() <= 1.0);
-            assert!(my_rsi.last() >= -1.0);
+            if let Some(val) = my_rsi.last() {
+                assert!(val <= 1.0);
+                assert!(val >= -1.0);
+            }
         }
     }
 
@@ -114,7 +107,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             my_rsi.update(*v);
-            out.push(my_rsi.last());
+            if let Some(rsi) = my_rsi.last() {
+                out.push(rsi);
+            }
         }
         println!("out: {:?}", out);
         let filename = "img/my_rsi.png";

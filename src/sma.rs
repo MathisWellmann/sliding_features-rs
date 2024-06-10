@@ -4,26 +4,13 @@ use std::collections::VecDeque;
 
 use crate::View;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 /// SMA - Simple Moving Average
 pub struct SMA<V> {
     view: V,
     window_len: usize,
     q_vals: VecDeque<f64>,
     sum: f64,
-}
-
-impl<V> std::fmt::Debug for SMA<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "SMA(window_len: {}, q_vals: {:?}, sum: {})",
-            self.window_len, self.q_vals, self.sum
-        )
-    }
 }
 
 impl<V> SMA<V>
@@ -49,7 +36,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() > self.window_len {
             let old_val = self.q_vals.pop_front().unwrap();
@@ -60,9 +47,11 @@ where
         self.sum += val;
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.sum / self.q_vals.len() as f64
+    fn last(&self) -> Option<f64> {
+        if self.q_vals.len() < self.window_len {
+            return None;
+        }
+        Some(self.sum / self.q_vals.len() as f64)
     }
 }
 
@@ -81,9 +70,10 @@ mod tests {
         for _ in 0..1024 {
             let r = rng.gen::<f64>();
             sma.update(r);
-            let last = sma.last();
-            assert!(last >= 0.0);
-            assert!(last <= 1.0);
+            if let Some(last) = sma.last() {
+                assert!(last >= 0.0);
+                assert!(last <= 1.0);
+            }
         }
     }
 
@@ -93,7 +83,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);
-            out.push(sma.last());
+            if let Some(val) = sma.last() {
+                out.push(val);
+            }
         }
         let filename = "img/sma.png";
         plot_values(out, filename).unwrap();

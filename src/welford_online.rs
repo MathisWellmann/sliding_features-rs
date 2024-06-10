@@ -2,31 +2,21 @@
 //! over a sliding window
 
 use crate::View;
+use getset::CopyGetters;
 use std::collections::VecDeque;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
-#[derive(Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct WelfordOnline<V> {
     view: V,
     window_len: usize,
     q_vals: VecDeque<f64>,
+    /// The mean of the observed samples
+    #[getset(get_copy = "pub")]
     mean: f64,
     s: f64,
     n: usize,
-}
-
-impl<V> std::fmt::Debug for WelfordOnline<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "WelfordOnlineSliding(window_len: {}, q_vals: {:?}, mean: {}, s: {}, n: {})",
-            self.window_len, self.q_vals, self.mean, self.s, self.n
-        )
-    }
 }
 
 impl<V> WelfordOnline<V>
@@ -34,7 +24,6 @@ where
     V: View,
 {
     /// Create a WelfordOnline struct with a chained View
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
@@ -47,19 +36,12 @@ where
     }
 
     /// Return the variance of the sliding window
-    #[inline(always)]
     pub fn variance(&self) -> f64 {
         if self.n > 1 {
             self.s / (self.n as f64 - 1.0)
         } else {
             0.0
         }
-    }
-
-    /// Return the mean of the sliding window
-    #[inline(always)]
-    pub fn mean(&self) -> f64 {
-        self.mean
     }
 }
 
@@ -69,7 +51,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             let old_val: f64 = self.q_vals.pop_front().unwrap();
@@ -87,9 +69,12 @@ where
         self.s += (val - old_mean) * (val - self.mean);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.variance().sqrt()
+    fn last(&self) -> Option<f64> {
+        if self.n < self.window_len {
+            // To ensure we don't return anything when there are not enough samples.
+            return None;
+        }
+        Some(self.variance().sqrt())
     }
 }
 
@@ -106,9 +91,11 @@ mod tests {
         let mut wo = WelfordOnline::new(Echo::new(), TEST_DATA.len());
         for v in &TEST_DATA {
             wo.update(*v);
-            assert!(!wo.last().is_nan());
+            if let Some(val) = wo.last() {
+                assert!(!val.is_nan());
+            }
         }
-        let w_std_dev = wo.last();
+        let w_std_dev = wo.last().expect("Is some");
 
         // compute the standard deviation with the regular formula
         let avg: f64 = TEST_DATA.iter().sum::<f64>() / TEST_DATA.len() as f64;
@@ -122,10 +109,12 @@ mod tests {
     #[test]
     fn welford_online_plot() {
         let mut wo = WelfordOnline::new(Echo::new(), 16);
-        let mut out: Vec<f64> = vec![];
+        let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             wo.update(*v);
-            out.push(wo.last());
+            if let Some(val) = wo.last() {
+                out.push(val);
+            }
         }
         let filename = "img/welford_online_sliding.png";
         plot_values(out, filename).unwrap();

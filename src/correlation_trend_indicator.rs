@@ -48,7 +48,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             let _ = self.q_vals.pop_front().unwrap();
@@ -56,7 +56,7 @@ where
         self.q_vals.push_back(val);
     }
 
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         let mut sx: f64 = 0.0;
         let mut sy: f64 = 0.0;
         let mut sxx: f64 = 0.0;
@@ -73,12 +73,14 @@ where
         if self.window_len as f64 * sxx - sx.powi(2) > 0.0
             && self.window_len as f64 * syy - sy.powi(2) > 0.0
         {
-            return (self.window_len as f64 * sxy - sx * sy)
-                / ((self.window_len as f64 * sxx - sx.powi(2))
-                    * (self.window_len as f64 * syy - sy.powi(2)))
-                .sqrt();
+            return Some(
+                (self.window_len as f64 * sxy - sx * sy)
+                    / ((self.window_len as f64 * sxx - sx.powi(2))
+                        * (self.window_len as f64 * syy - sy.powi(2)))
+                    .sqrt(),
+            );
         }
-        0.0
+        Some(0.0)
     }
 }
 
@@ -95,7 +97,7 @@ mod tests {
         let mut cti = CorrelationTrendIndicator::new(Echo::new(), 10);
         for v in &TEST_DATA {
             cti.update(*v);
-            let last = cti.last();
+            let last = cti.last().unwrap();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
         }
@@ -104,10 +106,10 @@ mod tests {
     #[test]
     fn correlation_trend_indicator_plot() {
         let mut cti = CorrelationTrendIndicator::new(Echo::new(), 16);
-        let mut outs: Vec<f64> = vec![];
+        let mut outs: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cti.update(*v);
-            let last = cti.last();
+            let last = cti.last().unwrap();
             assert!(last <= 1.0);
             assert!(last >= -1.0);
             outs.push(last);

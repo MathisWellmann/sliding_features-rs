@@ -8,18 +8,15 @@ pub struct Constant {
 
 impl Constant {
     /// Create a new instance with the given value
-    #[inline(always)]
     pub fn new(val: f64) -> Self {
         Self { val }
     }
 }
 
 impl View for Constant {
-    #[inline(always)]
     fn update(&mut self, _val: f64) {}
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.val
+    fn last(&self) -> Option<f64> {
+        Some(self.val)
     }
 }

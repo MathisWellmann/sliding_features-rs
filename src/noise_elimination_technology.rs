@@ -6,25 +6,12 @@ use std::collections::VecDeque;
 
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NET<V> {
     view: V,
     window_len: usize,
-    out: f64,
+    out: Option<f64>,
     q_vals: VecDeque<f64>,
-}
-
-impl<V> std::fmt::Debug for NET<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "NET(window_len: {}, out: {}, q_vals: {:?})",
-            self.window_len, self.out, self.q_vals
-        )
-    }
 }
 
 impl<V> NET<V>
@@ -32,12 +19,11 @@ where
     V: View,
 {
     /// Create a new NET with a chained View and window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         NET {
             view,
             window_len,
-            out: 0.0,
+            out: None,
             q_vals: VecDeque::new(),
         }
     }
@@ -49,7 +35,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val: f64 = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
@@ -74,11 +60,10 @@ where
         }
 
         let denom: f64 = 0.5 * self.q_vals.len() as f64 * (self.q_vals.len() as f64 - 1.0);
-        self.out = num / denom;
+        self.out = Some(num / denom);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -93,10 +78,12 @@ mod tests {
     #[test]
     fn net_my_rsi_plot() {
         let mut net = NET::new(MyRSI::new(Echo::new(), 16), 16);
-        let mut out: Vec<f64> = vec![];
+        let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             net.update(*v);
-            out.push(net.last());
+            if let Some(val) = net.last() {
+                out.push(val);
+            }
         }
         println!("out: {:?}", out);
 

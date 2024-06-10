@@ -4,20 +4,11 @@ use crate::View;
 use crate::{Echo, WelfordOnline};
 
 /// Variance Stabilizing Transform uses the standard deviation to normalize values
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct VST<V> {
     view: V,
     last: f64,
     welford_online: WelfordOnline<Echo>,
-}
-
-impl<V> std::fmt::Debug for VST<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "VST.last: {}", self.last)
-    }
 }
 
 impl<V> VST<V>
@@ -26,7 +17,6 @@ where
 {
     /// Create a new Variance Stabilizing Transform with a chained View
     /// and a given window length for computing standard deviation
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
@@ -42,18 +32,18 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let view_last: f64 = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
-        self.welford_online.update(view_last);
-        self.last = view_last;
+        self.welford_online.update(val);
+        self.last = val;
     }
 
-    fn last(&self) -> f64 {
-        let std_dev = self.welford_online.last();
+    fn last(&self) -> Option<f64> {
+        let std_dev = self.welford_online.last()?;
         if std_dev == 0.0 {
-            return self.last;
+            return Some(self.last);
         }
-        self.last / std_dev
+        Some(self.last / std_dev)
     }
 }
 
@@ -69,7 +59,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             tf.update(*v);
-            out.push(tf.last());
+            if let Some(val) = tf.last() {
+                out.push(val);
+            }
         }
         let filename = "img/trend_flex.png";
         plot_values(out, filename).unwrap();

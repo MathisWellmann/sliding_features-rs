@@ -11,7 +11,6 @@ where
     V: View,
 {
     /// Create a new instance with a chained View
-    #[inline]
     pub fn new(view: V) -> Self {
         Self { view }
     }
@@ -21,13 +20,11 @@ impl<V> View for Tanh<V>
 where
     V: View,
 {
-    #[inline(always)]
     fn update(&mut self, val: f64) {
         self.view.update(val);
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
-        self.view.last().tanh()
+    fn last(&self) -> Option<f64> {
+        self.view.last().map(|v| v.tanh())
     }
 }

@@ -7,27 +7,14 @@ use super::View;
 
 /// John Ehlers ReFlex Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ReFlex<V> {
     view: V,
     window_len: usize,
     last_val: f64,
     last_m: f64,
     q_vals: VecDeque<f64>,
-    out: f64,
-}
-
-impl<V> std::fmt::Debug for ReFlex<V>
-where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "ReFlex(window_len: {}, last_val: {}, last_m: {}, q_vals: {:?}, out: {})",
-            self.window_len, self.last_val, self.last_m, self.q_vals, self.out
-        )
-    }
+    out: Option<f64>,
 }
 
 impl<V> ReFlex<V>
@@ -36,7 +23,6 @@ where
 {
     /// Create a new ReFlex indicator with a chained View
     /// and a given sliding window length
-    #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
         ReFlex {
             view,
@@ -44,7 +30,7 @@ where
             last_val: 0.0,
             last_m: 0.0,
             q_vals: VecDeque::new(),
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -55,7 +41,7 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.is_empty() {
             self.last_val = val;
@@ -97,12 +83,11 @@ where
         let ms0 = 0.04 * d_sum.powi(2) + 0.96 * self.last_m;
         self.last_m = ms0;
         if ms0 > 0.0 {
-            self.out = d_sum / ms0.sqrt();
+            self.out = Some(d_sum / ms0.sqrt());
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -120,7 +105,9 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);
-            out.push(rf.last());
+            if let Some(val) = rf.last() {
+                out.push(val);
+            }
         }
         let filename = "img/re_flex.png";
         plot_values(out, filename).unwrap();

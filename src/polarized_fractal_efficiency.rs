@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 
 use crate::View;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 /// it is also possible to use a custom moving average instead of the default EMA in the original
 pub struct PolarizedFractalEfficiency<V, M> {
@@ -13,21 +13,7 @@ pub struct PolarizedFractalEfficiency<V, M> {
     moving_average: M, // defines which moving average to use, default is EMA
     window_len: usize,
     q_vals: VecDeque<f64>,
-    out: f64,
-}
-
-impl<V, M> std::fmt::Debug for PolarizedFractalEfficiency<V, M>
-where
-    V: View,
-    M: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "PolarizedFractalEfficiency(window_len: {}, q_vals: {:?}, out: {})",
-            self.window_len, self.q_vals, self.out
-        )
-    }
+    out: Option<f64>,
 }
 
 impl<V, M> PolarizedFractalEfficiency<V, M>
@@ -37,14 +23,13 @@ where
 {
     /// Create a new PolarizedFractalEfficiency indicator with a chained view, custom moving
     /// average and a window length
-    #[inline]
     pub fn new(view: V, moving_average: M, window_len: usize) -> Self {
         Self {
             view,
             moving_average,
             window_len,
             q_vals: VecDeque::new(),
-            out: 0.0,
+            out: None,
         }
     }
 }
@@ -56,16 +41,14 @@ where
 {
     fn update(&mut self, val: f64) {
         self.view.update(val);
-        let val: f64 = self.view.last();
+        let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
         }
         self.q_vals.push_back(val);
 
-        if self.q_vals.len() < self.window_len {
-            self.out = 0.0;
-        } else {
+        if self.q_vals.len() >= self.window_len {
             let mut s: f64 = 0.0;
             let wl: usize = self.window_len - 1;
             for i in 0..self.window_len - 2 {
@@ -86,8 +69,7 @@ where
         }
     }
 
-    #[inline(always)]
-    fn last(&self) -> f64 {
+    fn last(&self) -> Option<f64> {
         self.out
     }
 }
@@ -101,21 +83,26 @@ mod tests {
 
     #[test]
     fn polarized_fractal_efficiency() {
+        // TODO: don't be so lazy with this test. maybe compare against a reference implementation.
         let mut pfe = PolarizedFractalEfficiency::new(Echo::new(), EMA::new(Echo::new(), 16), 16);
         for v in &TEST_DATA {
             pfe.update(*v);
-            assert!(pfe.last() <= 1.0);
-            assert!(pfe.last() >= -1.0);
+            if let Some(val) = pfe.last() {
+                assert!(val <= 1.0);
+                assert!(val >= -1.0);
+            }
         }
     }
 
     #[test]
     fn polarized_fractal_efficiency_plot() {
         let mut pfe = PolarizedFractalEfficiency::new(Echo::new(), EMA::new(Echo::new(), 16), 16);
-        let mut out: Vec<f64> = vec![];
+        let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             pfe.update(*v);
-            out.push(pfe.last());
+            if let Some(val) = pfe.last() {
+                out.push(val);
+            }
         }
         let filename = "img/polarized_fractal_efficiency.png";
         plot_values(out, filename).unwrap();
