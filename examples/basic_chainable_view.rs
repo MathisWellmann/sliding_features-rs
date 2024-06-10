@@ -3,7 +3,11 @@
 //  and after that, smooth the values with an ALMA
 
 // import the needed structs, and the View trait
-use sliding_features::{Echo, View, ALMA, VSCT};
+use sliding_features::{
+    pure_functions::Echo,
+    sliding_windows::{ALMA, VSCT},
+    View,
+};
 
 fn main() {
     // generate random value shifted up by 100.0 and scaled by 20.0,
