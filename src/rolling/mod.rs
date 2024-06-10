@@ -2,8 +2,8 @@
 
 mod drawdown;
 mod ln_return;
-mod welford_online;
+mod welford_rolling;
 
 pub use drawdown::Drawdown;
 pub use ln_return::LnReturn;
-pub use welford_online::WelfordRolling;
+pub use welford_rolling::WelfordRolling;

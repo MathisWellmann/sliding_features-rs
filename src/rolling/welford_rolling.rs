@@ -36,10 +36,10 @@ where
         }
     }
 
-    /// Return the variance of the sliding window
+    /// Return the variance of the sliding window using biased estimator.
     pub fn variance(&self) -> f64 {
         if self.n > 1 {
-            self.s / (self.n as f64 - 1.0)
+            self.s / self.n as f64
         } else {
             0.0
         }
@@ -88,7 +88,7 @@ mod tests {
 
         // compute the standard deviation with the regular formula
         let avg: f64 = TEST_DATA.iter().sum::<f64>() / TEST_DATA.len() as f64;
-        let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64 - 1.0))
+        let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64))
             * TEST_DATA.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
         .sqrt();
 
