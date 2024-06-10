@@ -13,3 +13,7 @@ procs:
     shell: "taplo fmt"
   semver-checks:
     shell: "cargo semver-checks"
+  example-basic-single-view:
+    shell: "cargo run --example basic_single_view"
+  example-basic-chainable-view:
+    shell: "cargo run --example basic_chainable_view"
