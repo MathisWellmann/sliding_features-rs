@@ -1,37 +1,40 @@
 //! Variance Stabilizing Transform uses the standard deviation to normalize values
 
 use crate::{pure_functions::Echo, View};
+use num::Float;
 
 use super::WelfordOnline;
 
 /// Variance Stabilizing Transform uses the standard deviation to normalize values
 #[derive(Debug, Clone)]
-pub struct VST<V> {
+pub struct VST<T: Float, V> {
     view: V,
-    last: f64,
-    welford_online: WelfordOnline<Echo>,
+    last: T,
+    welford_online: WelfordOnline<T, Echo<T>>,
 }
 
-impl<V> VST<V>
+impl<T, V> VST<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Variance Stabilizing Transform with a chained View
     /// and a given window length for computing standard deviation
     pub fn new(view: V, window_len: usize) -> Self {
         Self {
             view,
-            last: 0.0,
+            last: T::zero(),
             welford_online: WelfordOnline::new(Echo::new(), window_len),
         }
     }
 }
 
-impl<V> View for VST<V>
+impl<T, V> View<T> for VST<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -39,9 +42,9 @@ where
         self.last = val;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         let std_dev = self.welford_online.last()?;
-        if std_dev == 0.0 {
+        if std_dev == T::zero() {
             return Some(self.last);
         }
         Some(self.last / std_dev)

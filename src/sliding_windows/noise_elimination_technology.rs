@@ -2,21 +2,23 @@
 //! from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
 use crate::View;
+use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Debug, Clone)]
-pub struct NET<V> {
+pub struct NET<T, V> {
     view: V,
     window_len: usize,
-    out: Option<f64>,
-    q_vals: VecDeque<f64>,
+    out: Option<T>,
+    q_vals: VecDeque<T>,
 }
 
-impl<V> NET<V>
+impl<T, V> NET<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new NET with a chained View and window length
     pub fn new(view: V, window_len: usize) -> Self {
@@ -29,11 +31,12 @@ where
     }
 }
 
-impl<V> View for NET<V>
+impl<T, V> View<T> for NET<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -45,25 +48,26 @@ where
         if self.q_vals.len() < 2 {
             return;
         }
-        let mut x: Vec<f64> = vec![0.0; self.q_vals.len()];
-        let mut y: Vec<f64> = vec![0.0; self.q_vals.len()];
+        let mut x: Vec<T> = vec![T::zero(); self.q_vals.len()];
+        let mut y: Vec<T> = vec![T::zero(); self.q_vals.len()];
         for count in 1..self.q_vals.len() {
             x[count] = *self.q_vals.get(self.q_vals.len() - count).unwrap();
-            y[count] = -(count as f64);
+            y[count] = -T::from(count).expect("can convert");
         }
 
-        let mut num: f64 = 0.0;
+        let mut num = T::zero();
         for count in 2..self.q_vals.len() {
             for k in 1..count - 1 {
-                num -= (x[count] - x[k]).signum();
+                num = num - ((x[count] - x[k]).signum());
             }
         }
 
-        let denom: f64 = 0.5 * self.q_vals.len() as f64 * (self.q_vals.len() as f64 - 1.0);
+        let n = T::from(self.q_vals.len()).expect("can convert");
+        let denom = T::from(0.5).expect("can convert") * n * (n - T::one());
         self.out = Some(num / denom);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

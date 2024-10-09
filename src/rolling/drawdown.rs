@@ -1,38 +1,41 @@
 use crate::{pure_functions::Echo, View};
+use num::Float;
 
 /// Keep track of the current peak to valley.
 #[derive(Debug, Clone)]
-pub struct Drawdown<V> {
+pub struct Drawdown<T, V> {
     view: V,
-    max_val: f64,
-    current_val: Option<f64>,
+    max_val: T,
+    current_val: Option<T>,
 }
 
-impl Default for Drawdown<Echo> {
+impl<T: Float> Default for Drawdown<T, Echo<T>> {
     fn default() -> Self {
         Self::new(Echo::new())
     }
 }
 
-impl<V> Drawdown<V>
+impl<T, V> Drawdown<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new instance of `Self` with a chained `View`, so that the `view` will be updated first and its value will be used by `Self`.
     pub fn new(view: V) -> Self {
         Self {
             view,
-            max_val: f64::MIN,
+            max_val: T::min_value(),
             current_val: None,
         }
     }
 }
 
-impl<V> View for Drawdown<V>
+impl<T, V> View<T> for Drawdown<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -42,7 +45,7 @@ where
         self.current_val = Some(val);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.current_val
             .map(|current| (self.max_val - current) / self.max_val)
     }

@@ -1,36 +1,38 @@
 use crate::{pure_functions::Echo, View};
+use num::Float;
 
 use super::SuperSmoother;
 
 /// Roofing Filter by John Ehlers
 /// From paper: <http://www.stockspotter.com/files/PredictiveIndicators.pdf>
 #[derive(Debug, Clone)]
-pub struct RoofingFilter<V> {
+pub struct RoofingFilter<T, V> {
     view: V,
-    super_smoother: SuperSmoother<Echo>,
+    super_smoother: SuperSmoother<T, Echo<T>>,
     window_len: usize,
     i: usize,
-    alpha_1: f64,
+    alpha_1: T,
     // previous value
-    val_1: f64,
+    val_1: T,
     // value from 2 steps ago
-    val_2: f64,
+    val_2: T,
     // high pass filter value of previous step
-    hp_1: f64,
+    hp_1: T,
     // high pass filter value from two steps ago
-    hp_2: f64,
+    hp_2: T,
 }
 
-impl<V> RoofingFilter<V>
+impl<T, V> RoofingFilter<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a Roofing Filter with a chained view
     pub fn new(view: V, window_len: usize, super_smoother_len: usize) -> Self {
         // NOTE: 4.4422 radians from  0.707 * 360 degrees
-        let alpha_1 = ((4.4422 / window_len as f64).cos() + (4.4422 / window_len as f64).sin()
-            - 1.0)
-            / (4.4422 / window_len as f64).cos();
+        let wl = T::from(window_len).expect("can convert");
+        let f = T::from(4.4422).expect("Can convert");
+        let alpha_1 = ((f / wl).cos() + (f / wl).sin() - T::one()) / (f / wl).cos();
 
         RoofingFilter {
             view,
@@ -38,25 +40,27 @@ where
             window_len,
             i: 0,
             alpha_1,
-            val_1: 0.0,
-            val_2: 0.0,
-            hp_1: 0.0,
-            hp_2: 0.0,
+            val_1: T::zero(),
+            val_2: T::zero(),
+            hp_1: T::zero(),
+            hp_2: T::zero(),
         }
     }
 }
 
-impl<V> View for RoofingFilter<V>
+impl<T, V> View<T> for RoofingFilter<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
-        let hp = (1.0 - self.alpha_1 / 2.0).powi(2) * (val - 2.0 * self.val_1 + self.val_2)
-            + 2.0 * (1.0 - self.alpha_1) * self.hp_1
-            - (1.0 - self.alpha_1).powi(2) * self.hp_2;
+        let two = T::from(2.0).expect("can convert");
+        let hp = (T::one() - self.alpha_1 / two).powi(2) * (val - two * self.val_1 + self.val_2)
+            + two * (T::one() - self.alpha_1) * self.hp_1
+            - (T::one() - self.alpha_1).powi(2) * self.hp_2;
         self.hp_2 = self.hp_1;
         self.hp_1 = hp;
 
@@ -70,7 +74,7 @@ where
         self.i += 1;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.super_smoother.last()
     }
 }

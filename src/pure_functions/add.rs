@@ -1,37 +1,45 @@
 use crate::View;
+use num::Float;
 
 /// Add View a to b
 #[derive(Debug)]
-pub struct Add<A, B> {
+pub struct Add<T, A, B> {
     a: A,
     b: B,
+    _marker: std::marker::PhantomData<T>,
 }
 
-impl<A, B> Add<A, B>
+impl<T, A, B> Add<T, A, B>
 where
-    A: View,
-    B: View,
+    A: View<T>,
+    B: View<T>,
+    T: Float,
 {
     /// Create a new instance with Views a and b
     #[inline]
     pub fn new(a: A, b: B) -> Self {
-        Self { a, b }
+        Self {
+            a,
+            b,
+            _marker: Default::default(),
+        }
     }
 }
 
-impl<A, B> View for Add<A, B>
+impl<T, A, B> View<T> for Add<T, A, B>
 where
-    A: View,
-    B: View,
+    A: View<T>,
+    B: View<T>,
+    T: Float,
 {
     #[inline]
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.a.update(val);
         self.b.update(val);
     }
 
     #[inline]
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         match (self.a.last(), self.b.last()) {
             (Some(a), Some(b)) => Some(a + b),
             (None, None) | (None, Some(_)) | (Some(_), None) => None,

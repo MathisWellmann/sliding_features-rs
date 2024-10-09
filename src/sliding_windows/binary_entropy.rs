@@ -1,6 +1,7 @@
 //! Shannon entropy sliding window over values,
 //! where a positive / negative values are interpreted as true / false
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
@@ -8,17 +9,18 @@ use crate::View;
 #[derive(Debug, Clone)]
 /// Shannon entropy sliding window over values,
 /// where a positive / negative values are interpreted as true / false
-pub struct BinaryEntropy<V> {
+pub struct BinaryEntropy<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
+    q_vals: VecDeque<T>,
     // number of positive values
     p: usize,
 }
 
-impl<V> BinaryEntropy<V>
+impl<T, V> BinaryEntropy<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Entropy Sliding Window
     pub fn new(view: V, window_len: usize) -> Self {
@@ -31,38 +33,40 @@ where
     }
 }
 
-impl<V> View for BinaryEntropy<V>
+impl<T, V> View<T> for BinaryEntropy<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Update the Entropy calculation with a new boolean value
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.pop_back().unwrap();
-            if old_val >= 0.0 {
+            if old_val >= T::zero() {
                 self.p -= 1;
             }
         }
-        if val >= 0.0 {
+        if val >= T::zero() {
             self.p += 1;
         }
         self.q_vals.push_front(val);
     }
 
     /// Get the latest entropy value of the sliding window
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.q_vals.is_empty() {
             return None;
         }
-        let pt: f64 = self.p as f64 / self.q_vals.len() as f64; // probability of positive value
-        let pn: f64 = 1.0 - pt; // probability of negative value
+        let pt = T::from(self.p).expect("can convert")
+            / T::from(self.q_vals.len()).expect("can convert"); // probability of positive value
+        let pn = T::one() - pt; // probability of negative value
 
         let mut value = pt * pt.log2() + pn * pn.log2();
         if value.is_nan() {
-            value = 0.0
+            value = T::zero()
         }
         Some(-value)
     }

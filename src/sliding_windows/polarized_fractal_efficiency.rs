@@ -1,25 +1,26 @@
 //! A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 //! it is also possible to use a custom moving average instead of the default EMA in the original
 
-use std::collections::VecDeque;
-
 use crate::View;
+use num::Float;
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 /// it is also possible to use a custom moving average instead of the default EMA in the original
-pub struct PolarizedFractalEfficiency<V, M> {
+pub struct PolarizedFractalEfficiency<T, V, M> {
     view: V,
     moving_average: M, // defines which moving average to use, default is EMA
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    out: Option<f64>,
+    q_vals: VecDeque<T>,
+    out: Option<T>,
 }
 
-impl<V, M> PolarizedFractalEfficiency<V, M>
+impl<T, V, M> PolarizedFractalEfficiency<T, V, M>
 where
-    V: View,
-    M: View,
+    V: View<T>,
+    M: View<T>,
+    T: Float,
 {
     /// Create a new PolarizedFractalEfficiency indicator with a chained view, custom moving
     /// average and a window length
@@ -34,12 +35,13 @@ where
     }
 }
 
-impl<V, M> View for PolarizedFractalEfficiency<V, M>
+impl<T, V, M> View<T> for PolarizedFractalEfficiency<T, V, M>
 where
-    V: View,
-    M: View,
+    V: View<T>,
+    M: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -48,18 +50,17 @@ where
         }
         self.q_vals.push_back(val);
 
+        let window_len = T::from(self.window_len).expect("can convert");
         if self.q_vals.len() >= self.window_len {
-            let mut s: f64 = 0.0;
+            let mut s = T::zero();
             let wl: usize = self.window_len - 1;
             for i in 0..self.window_len - 2 {
-                let v_0: f64 = *self.q_vals.get(wl - i).unwrap();
-                let v_1: f64 = *self.q_vals.get(wl - i - 1).unwrap();
-                s += ((v_0 - v_1).powi(2) + 1.0).sqrt();
+                let v_0 = *self.q_vals.get(wl - i).unwrap();
+                let v_1 = *self.q_vals.get(wl - i - 1).unwrap();
+                s = s + ((v_0 - v_1).powi(2) + T::one()).sqrt();
             }
-            let mut p: f64 = ((val - self.q_vals.front().unwrap()).powi(2)
-                + (self.window_len as f64).powi(2))
-            .sqrt()
-                / s;
+            let mut p =
+                ((val - *self.q_vals.front().unwrap()).powi(2) + window_len.powi(2)).sqrt() / s;
             if val < *self.q_vals.get(self.window_len - 2).unwrap() {
                 p = -p;
             }
@@ -69,7 +70,7 @@ where
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

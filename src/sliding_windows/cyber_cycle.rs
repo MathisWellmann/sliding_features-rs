@@ -1,37 +1,26 @@
 //! John Ehlers Cyber Cycle Indicator
 //! from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// John Ehlers Cyber Cycle Indicator
 /// from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
-#[derive(Clone)]
-pub struct CyberCycle<V> {
+#[derive(Clone, Debug)]
+pub struct CyberCycle<T, V> {
     view: V,
     window_len: usize,
-    alpha: f64,
-    vals: VecDeque<f64>,
-    out: VecDeque<f64>,
+    alpha: T,
+    vals: VecDeque<T>,
+    out: VecDeque<T>,
 }
 
-impl<V> std::fmt::Debug for CyberCycle<V>
+impl<T, V> CyberCycle<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "CyberCycle(window_len: {}, alpha: {}, vals: {:?}, out: {:?})",
-            self.window_len, self.alpha, self.vals, self.out
-        )
-    }
-}
-
-impl<V> CyberCycle<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Cyber Cycle Indicator with a chained View
     /// and a given window length
@@ -40,18 +29,20 @@ where
         CyberCycle {
             view,
             window_len,
-            alpha: 2.0 / (window_len as f64 + 1.0),
+            alpha: T::from(2.0).expect("can convert")
+                / (T::from(window_len).expect("can convert") + T::one()),
             vals: VecDeque::new(),
             out: VecDeque::new(),
         }
     }
 }
 
-impl<V> View for CyberCycle<V>
+impl<T, V> View<T> for CyberCycle<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -62,26 +53,27 @@ where
         self.vals.push_back(val);
 
         if self.vals.len() < self.window_len {
-            self.out.push_back(0.0);
+            self.out.push_back(T::zero());
             return;
         }
-        let mut smooth: Vec<f64> = vec![0.0; self.vals.len()];
+        let mut smooth: Vec<T> = vec![T::zero(); self.vals.len()];
         let last = self.vals.len() - 1;
+        let two = T::from(2.0).expect("can convert");
         for (i, v) in smooth.iter_mut().enumerate().take(self.vals.len()).skip(3) {
             *v = (val
-                + 2.0 * self.vals.get(i - 1).unwrap()
-                + 2.0 * self.vals.get(i - 2).unwrap()
+                + two * *self.vals.get(i - 1).unwrap()
+                + two * *self.vals.get(i - 2).unwrap()
                 + *self.vals.get(i - 3).unwrap())
-                / 6.0
+                / T::from(6.0).expect("can convert")
         }
-        let cc = (1.0 - 0.5 * self.alpha).powi(2)
-            * (smooth[last] - 2.0 * smooth[last - 1] + smooth[last - 2])
-            + 2.0 * (1.0 - self.alpha) * self.out.get(last - 1).unwrap()
-            - (1.0 - self.alpha).powi(2) * self.out.get(last - 2).unwrap();
+        let cc = (T::one() - T::from(0.5).expect("can convert") * self.alpha).powi(2)
+            * (smooth[last] - two * smooth[last - 1] + smooth[last - 2])
+            + two * (T::one() - self.alpha) * *self.out.get(last - 1).unwrap()
+            - (T::one() - self.alpha).powi(2) * *self.out.get(last - 2).unwrap();
         self.out.push_back(cc);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out.back().copied()
     }
 }

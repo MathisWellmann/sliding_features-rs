@@ -1,20 +1,22 @@
 use crate::View;
+use num::Float;
 
 /// Greater Than or Equal
 /// Will allow values >= clipping_point through and clip other values to the clipping point
 #[derive(Debug, Clone)]
-pub struct GTE<V> {
+pub struct GTE<T, V> {
     view: V,
-    clipping_point: f64,
-    out: Option<f64>,
+    clipping_point: T,
+    out: Option<T>,
 }
 
-impl<V> GTE<V>
+impl<T, V> GTE<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new instance with a chained View and a given clipping point
-    pub fn new(view: V, clipping_point: f64) -> Self {
+    pub fn new(view: V, clipping_point: T) -> Self {
         Self {
             view,
             clipping_point,
@@ -23,11 +25,12 @@ where
     }
 }
 
-impl<V> View for GTE<V>
+impl<T, V> View<T> for GTE<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -38,7 +41,7 @@ where
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

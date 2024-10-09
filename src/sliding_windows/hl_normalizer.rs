@@ -1,37 +1,26 @@
 //! A sliding High - Low Normalizer
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// A sliding High - Low Normalizer
-#[derive(Clone)]
-pub struct HLNormalizer<V> {
+#[derive(Clone, Debug)]
+pub struct HLNormalizer<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    min: f64,
-    max: f64,
-    last: f64,
+    q_vals: VecDeque<T>,
+    min: T,
+    max: T,
+    last: T,
     init: bool,
 }
 
-impl<V> std::fmt::Debug for HLNormalizer<V>
+impl<T, V> HLNormalizer<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "HLNormalizer(window_len: {}, q_vals: {:?}, min: {}, max: {}, last: {}, init: {})",
-            self.window_len, self.q_vals, self.min, self.max, self.last, self.init
-        )
-    }
-}
-
-impl<V> HLNormalizer<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new HLNormalizer with a chained View
     /// and a given sliding window length
@@ -40,20 +29,20 @@ where
             view,
             window_len,
             q_vals: VecDeque::new(),
-            min: 0.0,
-            max: 0.0,
-            last: 0.0,
+            min: T::zero(),
+            max: T::zero(),
+            last: T::zero(),
             init: true,
         }
     }
 }
 
-fn extent_queue(q: &VecDeque<f64>) -> (f64, f64) {
-    let mut min: &f64 = q.front().unwrap();
-    let mut max: &f64 = q.front().unwrap();
+fn extent_queue<T: Float>(q: &VecDeque<T>) -> (T, T) {
+    let mut min = *q.front().unwrap();
+    let mut max = *q.front().unwrap();
 
     for i in 0..q.len() {
-        let val = q.get(i).unwrap();
+        let val = *q.get(i).unwrap();
         if val > max {
             max = val;
         }
@@ -62,14 +51,15 @@ fn extent_queue(q: &VecDeque<f64>) -> (f64, f64) {
         }
     }
 
-    (*min, *max)
+    (min, max)
 }
 
-impl<V> View for HLNormalizer<V>
+impl<T, V> View<T> for HLNormalizer<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(view_last) = self.view.last() else {
             return;
@@ -100,11 +90,15 @@ where
         self.last = view_last;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.last == self.min && self.last == self.max {
-            Some(0.0)
+            Some(T::zero())
         } else {
-            Some(-1.0 + (((self.last - self.min) * 2.0) / (self.max - self.min)))
+            Some(
+                -T::one()
+                    + (((self.last - self.min) * T::from(2.0).expect("can convert"))
+                        / (self.max - self.min)),
+            )
         }
     }
 }

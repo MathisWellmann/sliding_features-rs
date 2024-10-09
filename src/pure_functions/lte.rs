@@ -1,20 +1,22 @@
 use crate::View;
+use num::Float;
 
 /// Lower Than or Equal filter,
 /// which only allows values lower than the specified clipping point through
 #[derive(Debug, Clone)]
-pub struct LTE<V> {
+pub struct LTE<T, V> {
     view: V,
-    clipping_value: f64,
-    out: Option<f64>,
+    clipping_value: T,
+    out: Option<T>,
 }
 
-impl<V> LTE<V>
+impl<T, V> LTE<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new instance with a chained View
-    pub fn new(view: V, clipping_value: f64) -> Self {
+    pub fn new(view: V, clipping_value: T) -> Self {
         Self {
             view,
             clipping_value,
@@ -23,11 +25,12 @@ where
     }
 }
 
-impl<V> View for LTE<V>
+impl<T, V> View<T> for LTE<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -38,7 +41,7 @@ where
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

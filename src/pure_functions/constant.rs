@@ -2,21 +2,21 @@ use crate::View;
 
 /// Provides a float value to other views
 #[derive(Default, Debug, Clone)]
-pub struct Constant {
-    val: f64,
+pub struct Constant<T> {
+    val: T,
 }
 
-impl Constant {
+impl<T> Constant<T> {
     /// Create a new instance with the given value
-    pub fn new(val: f64) -> Self {
+    pub fn new(val: T) -> Self {
         Self { val }
     }
 }
 
-impl View for Constant {
-    fn update(&mut self, _val: f64) {}
+impl<T: num::Float> View<T> for Constant<T> {
+    fn update(&mut self, _val: T) {}
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         Some(self.val)
     }
 }

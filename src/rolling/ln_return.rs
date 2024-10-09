@@ -1,39 +1,42 @@
 use crate::{pure_functions::Echo, View};
+use num::Float;
 
 /// Computes the natural logarithm and keep track of the last value.
 /// Usually applied to price data.
 #[derive(Debug, Clone)]
-pub struct LnReturn<V> {
+pub struct LnReturn<T, V> {
     view: V,
-    last_val: f64,
-    current_val: f64,
+    last_val: T,
+    current_val: T,
 }
 
-impl Default for LnReturn<Echo> {
+impl<T: Float> Default for LnReturn<T, Echo<T>> {
     fn default() -> Self {
         Self::new(Echo::new())
     }
 }
 
-impl<V> LnReturn<V>
+impl<T, V> LnReturn<T, V>
 where
-    V: View,
+    T: Float,
+    V: View<T>,
 {
     /// Create a new instance of `Self` with a chained `View`, whose output will be used to feed the ln return computation.
     pub fn new(view: V) -> Self {
         Self {
             view,
-            last_val: 0.0,
-            current_val: 0.0,
+            last_val: T::zero(),
+            current_val: T::zero(),
         }
     }
 }
 
-impl<V> View for LnReturn<V>
+impl<T, V> View<T> for LnReturn<T, V>
 where
-    V: View,
+    T: Float,
+    V: View<T>,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -41,8 +44,8 @@ where
         self.current_val = val;
     }
 
-    fn last(&self) -> Option<f64> {
-        if self.last_val == 0.0 {
+    fn last(&self) -> Option<T> {
+        if self.last_val == T::zero() {
             return None;
         }
 

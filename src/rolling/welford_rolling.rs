@@ -3,64 +3,67 @@
 
 use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
+use num::Float;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
 #[derive(Debug, Clone, CopyGetters)]
-pub struct WelfordRolling<V> {
+pub struct WelfordRolling<T: Float, V> {
     view: V,
     /// The mean of the observed samples
     #[getset(get_copy = "pub")]
-    mean: f64,
-    s: f64,
+    mean: T,
+    s: T,
     n: usize,
 }
 
-impl Default for WelfordRolling<Echo> {
+impl<T: Float> Default for WelfordRolling<T, Echo<T>> {
     fn default() -> Self {
         Self::new(Echo::new())
     }
 }
 
-impl<V> WelfordRolling<V>
+impl<T, V> WelfordRolling<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a WelfordOnline struct with a chained View
     pub fn new(view: V) -> Self {
         Self {
             view,
-            mean: 0.0,
-            s: 0.0,
+            mean: T::zero(),
+            s: T::zero(),
             n: 0,
         }
     }
 
     /// Return the variance of the sliding window using biased estimator.
-    pub fn variance(&self) -> f64 {
+    pub fn variance(&self) -> T {
         if self.n > 1 {
-            self.s / self.n as f64
+            self.s / T::from(self.n).expect("Can convert")
         } else {
-            0.0
+            T::zero()
         }
     }
 }
 
-impl<V> View for WelfordRolling<V>
+impl<T, V> View<T> for WelfordRolling<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
         self.n += 1;
         let old_mean = self.mean;
-        self.mean += (val - old_mean) / self.n as f64;
-        self.s += (val - old_mean) * (val - self.mean);
+        self.mean = self.mean + (val - old_mean) / T::from(self.n).expect("Can convert");
+        self.s = self.s + (val - old_mean) * (val - self.mean);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.n == 0 {
             return None;
         }

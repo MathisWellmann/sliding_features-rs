@@ -1,3 +1,4 @@
+use num::Float;
 use std::f64::consts::PI;
 
 use crate::View;
@@ -5,31 +6,36 @@ use crate::View;
 /// John Ehlers SuperSmoother filter
 /// from <https://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf>
 #[derive(Debug, Clone)]
-pub struct SuperSmoother<V> {
+pub struct SuperSmoother<T, V> {
     view: V,
     window_length: usize,
     i: usize,
-    c1: f64,
-    c2: f64,
-    c3: f64,
+    c1: T,
+    c2: T,
+    c3: T,
     /// filter value at current step
-    filt: f64,
+    filt: T,
     // filter one step ago
-    filt_1: f64,
+    filt_1: T,
     // filter two steps ago
-    filt_2: f64,
-    last_val: f64,
+    filt_2: T,
+    last_val: T,
 }
 
-impl<V> SuperSmoother<V>
+impl<T, V> SuperSmoother<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new instance of the SuperSmoother with a chained View
     pub fn new(view: V, window_length: usize) -> Self {
-        let a1 = (-1.414 * PI / window_length as f64).exp();
+        let wl = T::from(window_length).expect("can convert");
+        let a1 =
+            (-T::from(1.414).expect("can convert") * T::from(PI).expect("can convert") / wl).exp();
         // NOTE: 4.4422 is radians of 1.414 * 180 degrees
-        let b1 = 2.0 * a1 * (4.4422 / window_length as f64).cos();
+        let b1 = T::from(2.0).expect("can convert")
+            * a1
+            * (T::from(4.4422).expect("can convert") / wl).cos();
         let c2 = b1;
         let c3 = -a1 * a1;
 
@@ -37,26 +43,27 @@ where
             view,
             window_length,
             i: 0,
-            c1: 1.0 - c2 - c3,
+            c1: T::one() - c2 - c3,
             c2,
             c3,
-            filt: 0.0,
-            filt_1: 0.0,
-            filt_2: 0.0,
-            last_val: 0.0,
+            filt: T::zero(),
+            filt_1: T::zero(),
+            filt_2: T::zero(),
+            last_val: T::zero(),
         }
     }
 }
 
-impl<V> View for SuperSmoother<V>
+impl<T, V> View<T> for SuperSmoother<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
-        self.filt = self.c1 * (val + self.last_val) / 2.0
+        self.filt = self.c1 * (val + self.last_val) / T::from(2.0).expect("can convert")
             + (self.c2 * self.filt_1)
             + (self.c3 * self.filt_2);
         self.filt_2 = self.filt_1;
@@ -65,7 +72,7 @@ where
         self.i += 1;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         // NOTE: filter only kicks in after warmup steps are done
         if self.i < self.window_length {
             None

@@ -2,39 +2,27 @@
 //! from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 
 use crate::View;
+use num::Float;
 use std::collections::VecDeque;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
-pub struct EhlersFisherTransform<V, M> {
+pub struct EhlersFisherTransform<T, V, M> {
     view: V,
     moving_average: M,
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    high: f64,
-    low: f64,
-    q_out: VecDeque<f64>,
+    q_vals: VecDeque<T>,
+    high: T,
+    low: T,
+    q_out: VecDeque<T>,
 }
 
-impl<V, M> std::fmt::Debug for EhlersFisherTransform<V, M>
+impl<T, V, M> EhlersFisherTransform<T, V, M>
 where
-    V: View,
-    M: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "EhlersFisherTransform(window_len: {}, q_vals: {:?}, high: {}, low: {}, q_out: {:?})",
-            self.window_len, self.q_vals, self.high, self.low, self.q_out
-        )
-    }
-}
-
-impl<V, M> EhlersFisherTransform<V, M>
-where
-    V: View,
-    M: View,
+    V: View<T>,
+    M: View<T>,
+    T: Float,
 {
     /// Create a new indicator with a view, moving average and window length
     #[inline]
@@ -44,19 +32,20 @@ where
             moving_average: ma,
             window_len,
             q_vals: VecDeque::new(),
-            high: 0.0,
-            low: 0.0,
+            high: T::zero(),
+            low: T::zero(),
             q_out: VecDeque::new(),
         }
     }
 }
 
-impl<V, M> View for EhlersFisherTransform<V, M>
+impl<T, V, M> View<T> for EhlersFisherTransform<T, V, M>
 where
-    V: View,
-    M: View,
+    V: View<T>,
+    M: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -92,28 +81,33 @@ where
         }
 
         if self.high == self.low {
-            self.q_out.push_back(0.0);
+            self.q_out.push_back(T::zero());
             return;
         }
-        let val: f64 = 2.0 * ((val - self.low) / (self.high - self.low) - 0.5);
+        let half = T::from(0.5).expect("can convert");
+        let val =
+            T::from(2.0).expect("can convert") * ((val - self.low) / (self.high - self.low) - half);
         // smooth with moving average
         self.moving_average.update(val);
         let Some(mut smoothed) = self.moving_average.last() else {
             return;
         };
-        smoothed = smoothed.clamp(-0.99, 0.99);
+        smoothed = smoothed.clamp(
+            T::from(-0.99).expect("can convert"),
+            T::from(0.99).expect("can convert"),
+        );
 
         if self.q_out.is_empty() {
             // do not insert values when there are not enough values yet
-            self.q_out.push_back(0.0);
+            self.q_out.push_back(T::zero());
             return;
         }
-        let fish: f64 =
-            0.5 * ((1.0 + smoothed) / (1.0 - smoothed)).ln() + 0.5 * self.q_out.back().unwrap();
+        let fish = half * ((T::one() + smoothed) / (T::one() - smoothed)).ln()
+            + half * *self.q_out.back().unwrap();
         self.q_out.push_back(fish);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.q_out.back().copied()
     }
 }

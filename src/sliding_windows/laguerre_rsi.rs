@@ -1,6 +1,7 @@
 //! John Ehlers LaguerreRSI
 //! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
@@ -8,19 +9,20 @@ use crate::View;
 /// John Ehlers LaguerreRSI
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Debug, Clone)]
-pub struct LaguerreRSI<V> {
+pub struct LaguerreRSI<T, V> {
     view: V,
-    value: Option<f64>,
-    gamma: f64,
-    l0s: VecDeque<f64>,
-    l1s: VecDeque<f64>,
-    l2s: VecDeque<f64>,
-    l3s: VecDeque<f64>,
+    value: Option<T>,
+    gamma: T,
+    l0s: VecDeque<T>,
+    l1s: VecDeque<T>,
+    l2s: VecDeque<T>,
+    l3s: VecDeque<T>,
 }
 
-impl<V> LaguerreRSI<V>
+impl<T, V> LaguerreRSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length
@@ -28,7 +30,8 @@ where
         LaguerreRSI {
             view,
             value: None,
-            gamma: 2.0 / (window_len as f64 + 1.0),
+            gamma: T::from(2.0).expect("can convert")
+                / (T::from(window_len).expect("can convert") + T::one()),
             l0s: VecDeque::new(),
             l1s: VecDeque::new(),
             l2s: VecDeque::new(),
@@ -37,11 +40,12 @@ where
     }
 }
 
-impl<V> View for LaguerreRSI<V>
+impl<T, V> View<T> for LaguerreRSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -53,57 +57,58 @@ where
         }
 
         if self.l0s.len() < 2 {
-            self.l0s.push_back(0.0);
-            self.l1s.push_back(0.0);
-            self.l2s.push_back(0.0);
-            self.l3s.push_back(0.0);
+            self.l0s.push_back(T::zero());
+            self.l1s.push_back(T::zero());
+            self.l2s.push_back(T::zero());
+            self.l3s.push_back(T::zero());
             return;
         } else {
             let last = self.l0s.len() - 1;
-            self.l0s
-                .push_back((1.0 - self.gamma) * val + self.gamma * self.l0s.get(last - 1).unwrap());
+            self.l0s.push_back(
+                (T::one() - self.gamma) * val + self.gamma * *self.l0s.get(last - 1).unwrap(),
+            );
             self.l1s.push_back(
-                -self.gamma * self.l0s.get(last).unwrap()
-                    + self.l0s.get(last - 1).unwrap()
-                    + self.gamma * self.l1s.get(last - 1).unwrap(),
+                -self.gamma * *self.l0s.get(last).unwrap()
+                    + *self.l0s.get(last - 1).unwrap()
+                    + self.gamma * *self.l1s.get(last - 1).unwrap(),
             );
             self.l2s.push_back(
-                -self.gamma * self.l1s.get(last).unwrap()
-                    + self.l1s.get(last - 1).unwrap()
-                    + self.gamma * self.l2s.get(last - 1).unwrap(),
+                -self.gamma * *self.l1s.get(last).unwrap()
+                    + *self.l1s.get(last - 1).unwrap()
+                    + self.gamma * *self.l2s.get(last - 1).unwrap(),
             );
             self.l3s.push_back(
-                -self.gamma * self.l2s.get(last).unwrap()
-                    + self.l2s.get(last - 1).unwrap()
-                    + self.gamma * self.l3s.get(last - 1).unwrap(),
+                -self.gamma * *self.l2s.get(last).unwrap()
+                    + *self.l2s.get(last - 1).unwrap()
+                    + self.gamma * *self.l3s.get(last - 1).unwrap(),
             );
         }
         let last = self.l0s.len() - 1;
 
-        let mut cu: f64 = 0.0;
-        let mut cd: f64 = 0.0;
+        let mut cu = T::zero();
+        let mut cd = T::zero();
         if self.l0s.get(last) >= self.l1s.get(last) {
-            cu = self.l0s.get(last).unwrap() - self.l1s.get(last).unwrap();
+            cu = *self.l0s.get(last).unwrap() - *self.l1s.get(last).unwrap();
         } else {
-            cd = self.l1s.get(last).unwrap() - self.l0s.get(last).unwrap();
+            cd = *self.l1s.get(last).unwrap() - *self.l0s.get(last).unwrap();
         }
         if self.l1s.get(last) >= self.l2s.get(last) {
-            cu += self.l1s.get(last).unwrap() - self.l2s.get(last).unwrap();
+            cu = cu + (*self.l1s.get(last).unwrap() - *self.l2s.get(last).unwrap());
         } else {
-            cd += self.l2s.get(last).unwrap() - self.l1s.get(last).unwrap();
+            cd = cd + (*self.l2s.get(last).unwrap() - *self.l1s.get(last).unwrap());
         }
         if self.l2s.get(last) >= self.l3s.get(last) {
-            cu += self.l2s.get(last).unwrap() - self.l3s.get(last).unwrap();
+            cu = cu + (*self.l2s.get(last).unwrap() - *self.l3s.get(last).unwrap());
         } else {
-            cd += self.l3s.get(last).unwrap() - self.l2s.get(last).unwrap();
+            cd = cd + (*self.l3s.get(last).unwrap() - *self.l2s.get(last).unwrap());
         }
 
-        if cu + cd != 0.0 {
+        if cu + cd != T::zero() {
             self.value = Some(cu / (cu + cd));
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.value
     }
 }

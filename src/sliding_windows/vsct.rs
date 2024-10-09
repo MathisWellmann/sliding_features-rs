@@ -1,20 +1,22 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
 use crate::{pure_functions::Echo, View};
+use num::Float;
 
 use super::WelfordOnline;
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Debug, Clone)]
-pub struct VSCT<V> {
+pub struct VSCT<T: Float, V> {
     view: V,
-    welford_online: WelfordOnline<Echo>,
-    last: f64,
+    welford_online: WelfordOnline<T, Echo<T>>,
+    last: T,
 }
 
-impl<V> VSCT<V>
+impl<T, V> VSCT<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Variance Stabilizing Centering Transform with a chained View
     /// and a given sliding window length
@@ -23,16 +25,17 @@ where
         VSCT {
             view,
             welford_online: WelfordOnline::new(Echo::new(), window_len),
-            last: 0.0,
+            last: T::zero(),
         }
     }
 }
 
-impl<V> View for VSCT<V>
+impl<T, V> View<T> for VSCT<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -40,10 +43,10 @@ where
         self.last = val;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         let std_dev = self.welford_online.last()?;
-        if std_dev == 0.0 {
-            return Some(0.0);
+        if std_dev == T::zero() {
+            return Some(T::zero());
         }
         let mean = self.welford_online.mean();
         Some((self.last - mean) / std_dev)

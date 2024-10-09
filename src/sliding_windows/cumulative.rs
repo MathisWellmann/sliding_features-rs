@@ -1,21 +1,23 @@
 //! Cumulative sliding window
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Cumulative Sliding Window with a chained view
 #[derive(Debug, Clone)]
-pub struct Cumulative<V> {
+pub struct Cumulative<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    out: Option<f64>,
+    q_vals: VecDeque<T>,
+    out: Option<T>,
 }
 
-impl<V> Cumulative<V>
+impl<T, V> Cumulative<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new cumulative sliding window with a chained view and a window length
     pub fn new(view: V, window_len: usize) -> Self {
@@ -28,11 +30,12 @@ where
     }
 }
 
-impl<V> View for Cumulative<V>
+impl<T, V> View<T> for Cumulative<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -42,13 +45,15 @@ where
 
         if self.q_vals.len() >= self.window_len {
             let old = self.q_vals.pop_front().unwrap();
-            *self.out.as_mut().expect("Is some at this point") -= old;
+            let out = self.out.as_mut().expect("Is some at this point");
+            *out = *out - old;
         }
         self.q_vals.push_back(val);
-        *self.out.as_mut().expect("Is some as this point") += val;
+        let out = self.out.as_mut().expect("Is some at this point");
+        *out = *out + val;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

@@ -4,24 +4,24 @@ use crate::View;
 
 #[derive(Default, Clone, Debug)]
 /// Echo always return the last value just like an echo
-pub struct Echo {
-    out: Option<f64>,
+pub struct Echo<T> {
+    out: Option<T>,
 }
 
-impl Echo {
+impl<T> Echo<T> {
     /// Create a new Echo View
     #[inline(always)]
-    pub fn new() -> Echo {
+    pub fn new() -> Echo<T> {
         Echo { out: None }
     }
 }
 
-impl View for Echo {
-    fn update(&mut self, val: f64) {
+impl<T: num::Float> View<T> for Echo<T> {
+    fn update(&mut self, val: T) {
         self.out = Some(val);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

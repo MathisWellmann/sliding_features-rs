@@ -1,36 +1,25 @@
 //! John Ehlers Center of Gravity Indicator
 //! from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// John Ehlers Center of Gravity Indicator
 /// from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
-#[derive(Clone)]
-pub struct CenterOfGravity<V> {
+#[derive(Clone, Debug)]
+pub struct CenterOfGravity<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    out: Option<f64>,
+    q_vals: VecDeque<T>,
+    out: Option<T>,
 }
 
-impl<V> std::fmt::Debug for CenterOfGravity<V>
+impl<T, V> CenterOfGravity<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "CenterOfGravity(window_len: {}, q_vals: {:?}, out: {:?})",
-            self.window_len, self.q_vals, self.out
-        )
-    }
-}
-
-impl<V> CenterOfGravity<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a Center of Gravity Indicator with a chained View
     /// and a given sliding window length
@@ -44,12 +33,13 @@ where
     }
 }
 
-impl<V> View for CenterOfGravity<V>
+impl<T, V> View<T> for CenterOfGravity<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     // update receives a new value and updates its internal state
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -58,22 +48,26 @@ where
         }
         self.q_vals.push_back(val);
 
-        let mut denom: f64 = 0.0;
-        let mut num: f64 = 0.0;
+        let mut denom = T::zero();
+        let mut num = T::zero();
         let q_len = self.q_vals.len();
         for (i, val) in self.q_vals.iter().enumerate() {
             let weight = q_len - i;
-            num += weight as f64 * val;
-            denom += *val;
+            num = num + T::from(weight).expect("can convert") * *val;
+            denom = denom + *val;
         }
-        if denom != 0.0 {
-            self.out = Some(-num / denom + (q_len as f64 + 1.0) / 2.0)
+        if denom != T::zero() {
+            self.out = Some(
+                -num / denom
+                    + (T::from(q_len).expect("can convert") + T::one())
+                        / T::from(2.0).expect("can convert"),
+            )
         } else {
-            self.out = Some(0.0);
+            self.out = Some(T::zero());
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

@@ -19,10 +19,10 @@ mod plot;
 mod test_data;
 
 /// The most important Trait, defining methods which each sliding feature needs to implement
-pub trait View: Send + Sync + std::fmt::Debug {
+pub trait View<T: num::Float> {
     /// Update the state with a new value
-    fn update(&mut self, val: f64);
+    fn update(&mut self, val: T);
 
     /// Return the last value, if `Some`, then its ready.
-    fn last(&self) -> Option<f64>;
+    fn last(&self) -> Option<T>;
 }

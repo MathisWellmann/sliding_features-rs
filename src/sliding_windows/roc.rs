@@ -1,22 +1,24 @@
 //! Rate of Change Indicator
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Rate of Change Indicator
 #[derive(Debug, Clone)]
-pub struct ROC<V> {
+pub struct ROC<T, V> {
     view: V,
     window_len: usize,
-    oldest: f64,
-    q_vals: VecDeque<f64>,
-    out: Option<f64>,
+    oldest: T,
+    q_vals: VecDeque<T>,
+    out: Option<T>,
 }
 
-impl<V> ROC<V>
+impl<T, V> ROC<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
@@ -24,18 +26,19 @@ where
         ROC {
             view,
             window_len,
-            oldest: 0.0,
+            oldest: T::zero(),
             q_vals: VecDeque::new(),
             out: None,
         }
     }
 }
 
-impl<V> View for ROC<V>
+impl<T, V> View<T> for ROC<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -49,11 +52,11 @@ where
         }
         self.q_vals.push_back(val);
 
-        let roc = ((val - self.oldest) / self.oldest) * 100.0;
+        let roc = ((val - self.oldest) / self.oldest) * T::from(100.0).expect("can convert");
         self.out = Some(roc);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

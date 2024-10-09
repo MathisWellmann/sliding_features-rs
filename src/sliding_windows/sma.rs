@@ -1,21 +1,23 @@
 //! SMA - Simple Moving Average
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 #[derive(Debug, Clone)]
 /// SMA - Simple Moving Average
-pub struct SMA<V> {
+pub struct SMA<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
-    sum: f64,
+    q_vals: VecDeque<T>,
+    sum: T,
 }
 
-impl<V> SMA<V>
+impl<T, V> SMA<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new simple moving average with a chained View
     /// and a given sliding window length
@@ -25,33 +27,34 @@ where
             view,
             window_len,
             q_vals: VecDeque::new(),
-            sum: 0.0,
+            sum: T::zero(),
         }
     }
 }
 
-impl<V> View for SMA<V>
+impl<T, V> View<T> for SMA<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
         if self.q_vals.len() > self.window_len {
             let old_val = self.q_vals.pop_front().unwrap();
-            self.sum -= old_val;
+            self.sum = self.sum - old_val;
         }
         self.q_vals.push_back(val);
 
-        self.sum += val;
+        self.sum = self.sum + val;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.q_vals.len() < self.window_len {
             return None;
         }
-        Some(self.sum / self.q_vals.len() as f64)
+        Some(self.sum / T::from(self.q_vals.len()).expect("can convert"))
     }
 }
 

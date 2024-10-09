@@ -1,25 +1,27 @@
 //! Relative Strength Index Indicator
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Relative Strength Index Indicator
 #[derive(Debug, Clone)]
-pub struct RSI<V> {
+pub struct RSI<T, V> {
     view: V,
     window_len: usize,
-    avg_gain: f64,
-    avg_loss: f64,
-    old_ref: f64,
-    last_val: f64,
-    q_vals: VecDeque<f64>,
-    out: Option<f64>,
+    avg_gain: T,
+    avg_loss: T,
+    old_ref: T,
+    last_val: T,
+    q_vals: VecDeque<T>,
+    out: Option<T>,
 }
 
-impl<V> RSI<V>
+impl<T, V> RSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a Relative Strength Index Indicator with a chained View
     /// and a given sliding window length
@@ -28,21 +30,22 @@ where
         RSI {
             view,
             window_len,
-            avg_gain: 0.0,
-            avg_loss: 0.0,
-            old_ref: 0.0,
-            last_val: 0.0,
+            avg_gain: T::zero(),
+            avg_loss: T::zero(),
+            old_ref: T::zero(),
+            last_val: T::zero(),
             q_vals: VecDeque::new(),
             out: None,
         }
     }
 }
 
-impl<V> View for RSI<V>
+impl<T, V> View<T> for RSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -50,42 +53,44 @@ where
             self.old_ref = val;
             self.last_val = val;
         }
+        let window_len = T::from(self.window_len).expect("can convert");
         if self.q_vals.len() >= self.window_len {
             // remove old
-            let old_val = self.q_vals.front().unwrap();
+            let old_val = *self.q_vals.front().unwrap();
             let change = old_val - self.old_ref;
-            self.old_ref = *old_val;
+            self.old_ref = old_val;
             self.q_vals.pop_front();
-            if change > 0.0 {
-                self.avg_gain -= change / self.window_len as f64;
+            if change > T::zero() {
+                self.avg_gain = self.avg_gain - change / window_len;
             } else {
-                self.avg_loss -= change.abs() / self.window_len as f64;
+                self.avg_loss = self.avg_loss - change.abs() / window_len;
             }
         }
         self.q_vals.push_back(val);
 
         let change = val - self.last_val;
         self.last_val = val;
-        if change > 0.0 {
-            self.avg_gain += change / self.window_len as f64;
+        if change > T::zero() {
+            self.avg_gain = self.avg_gain + change / window_len;
         } else {
-            self.avg_loss += change.abs() / self.window_len as f64;
+            self.avg_loss = self.avg_loss + change.abs() / window_len;
         }
 
         if self.q_vals.len() < self.window_len {
             return;
         }
 
-        if self.avg_loss == 0.0 {
-            self.out = Some(100.0);
+        let hundred = T::from(100.0).expect("can convert");
+        if self.avg_loss == T::zero() {
+            self.out = Some(hundred);
         } else {
             let rs = self.avg_gain / self.avg_loss;
-            let rsi = 100.0 - 100.0 / (1.0 + rs);
+            let rsi = hundred - hundred / (T::one() + rs);
             self.out = Some(rsi);
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.out
     }
 }

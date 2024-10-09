@@ -2,30 +2,33 @@
 //! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
 use crate::View;
+use num::Float;
 
 /// John Ehlers Laguerre Filter
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Debug, Clone)]
-pub struct LaguerreFilter<V>
+pub struct LaguerreFilter<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     view: V,
-    gamma: f64,
-    l0s: Vec<f64>,
-    l1s: Vec<f64>,
-    l2s: Vec<f64>,
-    l3s: Vec<f64>,
-    filts: Vec<f64>,
+    gamma: T,
+    l0s: Vec<T>,
+    l1s: Vec<T>,
+    l2s: Vec<T>,
+    l3s: Vec<T>,
+    filts: Vec<T>,
 }
 
-impl<V> LaguerreFilter<V>
+impl<T, V> LaguerreFilter<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new LaguerreFilter with a chained View
     /// and a gamma parameter
-    pub fn new(view: V, gamma: f64) -> Self {
+    pub fn new(view: V, gamma: T) -> Self {
         LaguerreFilter {
             view,
             gamma,
@@ -38,25 +41,29 @@ where
     }
 }
 
-impl<V> View for LaguerreFilter<V>
+impl<T, V> View<T> for LaguerreFilter<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
+        let two = T::from(2.0).expect("can convert");
         if self.l0s.is_empty() {
             self.l0s.push(val);
             self.l1s.push(val);
             self.l2s.push(val);
             self.l3s.push(val);
-            self.filts
-                .push((self.l0s[0] + 2.0 * self.l1s[0] + 2.0 * self.l2s[0] + self.l3s[0]) / 6.0);
+            self.filts.push(
+                (self.l0s[0] + two * self.l1s[0] + two * self.l2s[0] + self.l3s[0])
+                    / T::from(6.0).expect("can convert"),
+            );
             return;
         }
         self.l0s
-            .push((1.0 - self.gamma) * val + self.gamma * self.l0s[self.l0s.len() - 1]);
+            .push((T::one() - self.gamma) * val + self.gamma * self.l0s[self.l0s.len() - 1]);
         self.l1s.push(
             -self.gamma * self.l0s[self.l0s.len() - 1]
                 + self.l0s[self.l0s.len() - 2]
@@ -74,14 +81,14 @@ where
         );
         self.filts.push(
             (self.l0s[self.l0s.len() - 1]
-                + 2.0 * self.l1s[self.l1s.len() - 1]
-                + 2.0 * self.l2s[self.l2s.len() - 1]
+                + two * self.l1s[self.l1s.len() - 1]
+                + two * self.l2s[self.l2s.len() - 1]
                 + self.l3s[self.l3s.len() - 1])
-                / 6.0,
+                / T::from(6.0).expect("can convert"),
         );
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.filts.last().copied()
     }
 }

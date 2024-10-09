@@ -1,76 +1,66 @@
 //! EMA - Exponential Moving Average
 
 use crate::View;
+use num::Float;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// EMA - Exponential Moving Average
-pub struct Ema<V> {
+pub struct Ema<T, V> {
     view: V,
     window_len: usize,
-    alpha: f64,
-    last_ema: f64,
-    out: f64,
+    alpha: T,
+    last_ema: T,
+    out: T,
     n_observed_values: usize,
 }
 
-impl<V> std::fmt::Debug for Ema<V>
+impl<T, V> Ema<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "EMA(window_len: {}, alpha: {}, last_ema: {}, out: {})",
-            self.window_len, self.alpha, self.last_ema, self.out
-        )
-    }
-}
-
-impl<V> Ema<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new EMA with a chained view and a given window length
     /// and a default alpha value of 2.0
     pub fn new(view: V, window_len: usize) -> Self {
-        Self::with_alpha(view, window_len, 2.0)
+        Self::with_alpha(view, window_len, T::from(2.0).expect("can convert"))
     }
 
     /// Create a new EMA with a custom alpha as well
-    pub fn with_alpha(view: V, window_len: usize, alpha: f64) -> Self {
+    pub fn with_alpha(view: V, window_len: usize, alpha: T) -> Self {
         Self {
             view,
             window_len,
             alpha,
-            last_ema: 0.0,
-            out: 0.0,
+            last_ema: T::zero(),
+            out: T::zero(),
             n_observed_values: 0,
         }
     }
 }
 
-impl<V> View for Ema<V>
+impl<T, V> View<T> for Ema<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
         self.n_observed_values += 1;
-        let weight: f64 = self.alpha / (1.0 + self.window_len as f64);
+        let weight = self.alpha / (T::one() + T::from(self.window_len).expect("can convert"));
 
-        if self.last_ema == 0.0 {
+        if self.last_ema == T::zero() {
             self.out = val;
             self.last_ema = val;
             return;
         }
 
-        self.out = val * weight + self.last_ema * (1.0 - weight);
+        self.out = val * weight + self.last_ema * (T::one() - weight);
         self.last_ema = self.out;
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.n_observed_values < self.window_len {
             return None;
         }

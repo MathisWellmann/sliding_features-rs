@@ -1,56 +1,54 @@
 //! ALMA - Arnaud Legoux Moving Average
 //! reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 
+use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// ALMA - Arnaud Legoux Moving Average
 /// reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
-#[derive(Clone)]
-pub struct ALMA<V> {
+#[derive(Clone, Debug)]
+pub struct ALMA<T, V> {
     view: V,
     window_len: usize,
-    wtd_sum: f64,
-    cum_wt: f64,
-    m: f64,
-    s: f64,
-    q_vals: VecDeque<f64>,
-    q_wtd: VecDeque<f64>,
-    q_out: VecDeque<f64>,
+    wtd_sum: T,
+    cum_wt: T,
+    m: T,
+    s: T,
+    q_vals: VecDeque<T>,
+    q_wtd: VecDeque<T>,
+    q_out: VecDeque<T>,
 }
 
-impl<V> std::fmt::Debug for ALMA<V>
+impl<T, V> ALMA<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "ALMA(window_len: {}, wtd_sum: {}, cum_wt: {}, m: {}, s: {}, q_vals: {:?}, q_wtd: {:?}, q_out: {:?})",
-               self.window_len, self.wtd_sum, self.cum_wt, self.m, self.s, self.q_vals, self.q_wtd, self.q_out)
-    }
-}
-
-impl<V> ALMA<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length
     pub fn new(view: V, window_len: usize) -> Self {
-        ALMA::new_custom(view, window_len, 6.0, 0.85)
+        ALMA::new_custom(
+            view,
+            window_len,
+            T::from(6.0).expect("Can convert"),
+            T::from(0.85).expect("Can convert"),
+        )
     }
 
     /// Create a Arnaud Legoux Moving Average with custom parameters
-    pub fn new_custom(view: V, window_len: usize, sigma: f64, offset: f64) -> Self {
-        let m = offset * (window_len as f64 + 1.0);
-        let s = window_len as f64 / sigma;
+    pub fn new_custom(view: V, window_len: usize, sigma: T, offset: T) -> Self {
+        let wl = T::from(window_len).expect("can convert");
+        let m = offset * (wl + T::one());
+        let s = wl / sigma;
         ALMA {
             view,
             window_len,
             m,
             s,
-            wtd_sum: 0.0,
-            cum_wt: 0.0,
+            wtd_sum: T::zero(),
+            cum_wt: T::zero(),
             q_vals: VecDeque::new(),
             q_wtd: VecDeque::new(),
             q_out: VecDeque::new(),
@@ -58,11 +56,12 @@ where
     }
 }
 
-impl<V> View for ALMA<V>
+impl<T, V> View<T> for ALMA<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         // first, apply the internal view update
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
@@ -70,17 +69,19 @@ where
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.front().unwrap();
             let old_wtd = self.q_wtd.front().unwrap();
-            self.wtd_sum -= old_wtd * old_val;
-            self.cum_wt -= *old_wtd;
+            self.wtd_sum = self.wtd_sum - *old_wtd * *old_val;
+            self.cum_wt = self.cum_wt - *old_wtd;
 
             self.q_vals.pop_front();
             self.q_wtd.pop_front();
             self.q_out.pop_front();
         }
-        let count = self.q_vals.len() as f64;
-        let wtd = (-(count - self.m).powi(2) / (2.0 * self.s * self.s)).exp();
-        self.wtd_sum += wtd * val;
-        self.cum_wt += wtd;
+        let count = T::from(self.q_vals.len()).expect("can convert");
+        let wtd = (-(count - self.m).powi(2)
+            / (T::from(2.0).expect("can convert") * self.s * self.s))
+            .exp();
+        self.wtd_sum = self.wtd_sum + wtd * val;
+        self.cum_wt = self.cum_wt + wtd;
 
         self.q_vals.push_back(val);
         self.q_wtd.push_back(wtd);
@@ -89,7 +90,7 @@ where
         self.q_out.push_back(ala);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         self.q_out.back().copied()
     }
 }

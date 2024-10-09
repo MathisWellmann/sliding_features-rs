@@ -3,25 +3,27 @@
 
 use crate::View;
 use getset::CopyGetters;
+use num::Float;
 use std::collections::VecDeque;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
 #[derive(Debug, Clone, CopyGetters)]
-pub struct WelfordOnline<V> {
+pub struct WelfordOnline<T: Float, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
+    q_vals: VecDeque<T>,
     /// The mean of the observed samples
     #[getset(get_copy = "pub")]
-    mean: f64,
-    s: f64,
+    mean: T,
+    s: T,
     n: usize,
 }
 
-impl<V> WelfordOnline<V>
+impl<T, V> WelfordOnline<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a WelfordOnline struct with a chained View
     pub fn new(view: V, window_len: usize) -> Self {
@@ -29,35 +31,37 @@ where
             view,
             window_len,
             q_vals: VecDeque::new(),
-            mean: 0.0,
-            s: 0.0,
+            mean: T::zero(),
+            s: T::zero(),
             n: 0,
         }
     }
 
     /// Return the variance of the sliding window using biased estimator.
-    pub fn variance(&self) -> f64 {
+    pub fn variance(&self) -> T {
         if self.n > 1 {
-            self.s / self.n as f64
+            self.s / T::from(self.n).expect("can convert")
         } else {
-            0.0
+            T::zero()
         }
     }
 }
 
-impl<V> View for WelfordOnline<V>
+impl<T, V> View<T> for WelfordOnline<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
+        let n = T::from(self.n).expect("can convert");
         if self.q_vals.len() >= self.window_len {
-            let old_val: f64 = self.q_vals.pop_front().unwrap();
+            let old_val = self.q_vals.pop_front().unwrap();
             // remove old value from estimation
-            let new_mean = (self.n as f64 * self.mean - old_val) / (self.n as f64 - 1.0);
-            self.s -= (old_val - self.mean) * (old_val - new_mean);
+            let new_mean = (n * self.mean - old_val) / (n - T::one());
+            self.s = self.s - (old_val - self.mean) * (old_val - new_mean);
             self.mean = new_mean;
             self.n -= 1;
         }
@@ -65,11 +69,12 @@ where
 
         self.n += 1;
         let old_mean = self.mean;
-        self.mean += (val - old_mean) / self.n as f64;
-        self.s += (val - old_mean) * (val - self.mean);
+        let n = T::from(self.n).expect("can convert");
+        self.mean = self.mean + (val - old_mean) / n;
+        self.s = self.s + (val - old_mean) * (val - self.mean);
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.n < self.window_len {
             // To ensure we don't return anything when there are not enough samples.
             return None;

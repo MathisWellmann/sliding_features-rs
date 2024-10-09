@@ -2,46 +2,49 @@
 //! from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
 use crate::View;
+use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Debug, Clone)]
-pub struct MyRSI<V> {
+pub struct MyRSI<T, V> {
     view: V,
     window_len: usize,
-    cu: f64,
-    cd: f64,
-    out: f64,
-    q_vals: VecDeque<f64>,
-    last_val: f64,
-    oldest_val: f64,
+    cu: T,
+    cd: T,
+    out: T,
+    q_vals: VecDeque<T>,
+    last_val: T,
+    oldest_val: T,
 }
 
-impl<V> MyRSI<V>
+impl<T, V> MyRSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new MyRSI indicator with a chained View and a given window length
     pub fn new(view: V, window_len: usize) -> Self {
         MyRSI {
             view,
             window_len,
-            cu: 0.0,
-            cd: 0.0,
-            out: 0.0,
+            cu: T::zero(),
+            cd: T::zero(),
+            out: T::zero(),
             q_vals: VecDeque::new(),
-            last_val: 0.0,
-            oldest_val: 0.0,
+            last_val: T::zero(),
+            oldest_val: T::zero(),
         }
     }
 }
 
-impl<V> View for MyRSI<V>
+impl<T, V> View<T> for MyRSI<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -50,11 +53,11 @@ where
             self.last_val = val;
         }
         if self.q_vals.len() >= self.window_len {
-            let old_val: f64 = self.q_vals.pop_front().unwrap();
+            let old_val = self.q_vals.pop_front().unwrap();
             if old_val > self.oldest_val {
-                self.cu -= old_val - self.oldest_val;
+                self.cu = self.cu - (old_val - self.oldest_val);
             } else {
-                self.cd -= self.oldest_val - old_val;
+                self.cd = self.cd - (self.oldest_val - old_val);
             }
             self.oldest_val = old_val;
         }
@@ -62,18 +65,18 @@ where
 
         // accumulate 'closes up' and 'closes down'
         if val > self.last_val {
-            self.cu += val - self.last_val;
+            self.cu = self.cu + val - self.last_val;
         } else {
-            self.cd += self.last_val - val;
+            self.cd = self.cd + self.last_val - val;
         }
         self.last_val = val;
 
-        if self.cu + self.cd != 0.0 {
+        if self.cu + self.cd != T::zero() {
             self.out = (self.cu - self.cd) / (self.cu + self.cd);
         }
     }
 
-    fn last(&self) -> Option<f64> {
+    fn last(&self) -> Option<T> {
         if self.q_vals.len() < self.window_len {
             return None;
         }
@@ -91,10 +94,11 @@ mod tests {
     #[test]
     fn my_rsi() {
         // TODO: don't be so lazy with this test.
-        let mut my_rsi = MyRSI::new(Echo::new(), 16);
+        let mut my_rsi = MyRSI::<f64, _>::new(Echo::new(), 16);
         for v in &TEST_DATA {
             my_rsi.update(*v);
             if let Some(val) = my_rsi.last() {
+                dbg!(val);
                 assert!(val <= 1.0);
                 assert!(val >= -1.0);
             }

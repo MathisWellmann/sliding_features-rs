@@ -2,33 +2,22 @@
 //! from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 
 use crate::View;
+use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers Correlation Trend Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
-#[derive(Clone)]
-pub struct CorrelationTrendIndicator<V> {
+#[derive(Clone, Debug)]
+pub struct CorrelationTrendIndicator<T, V> {
     view: V,
     window_len: usize,
-    q_vals: VecDeque<f64>,
+    q_vals: VecDeque<T>,
 }
 
-impl<V> std::fmt::Debug for CorrelationTrendIndicator<V>
+impl<T, V> CorrelationTrendIndicator<T, V>
 where
-    V: View,
-{
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(
-            fmt,
-            "CorrelationTrendIndicator(window_len: {}, q_vals: {:?})",
-            self.window_len, self.q_vals
-        )
-    }
-}
-
-impl<V> CorrelationTrendIndicator<V>
-where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
     /// Create a new Correlation Trend Indicator with a chained View
     /// and a given sliding window length
@@ -42,11 +31,12 @@ where
     }
 }
 
-impl<V> View for CorrelationTrendIndicator<V>
+impl<T, V> View<T> for CorrelationTrendIndicator<T, V>
 where
-    V: View,
+    V: View<T>,
+    T: Float,
 {
-    fn update(&mut self, val: f64) {
+    fn update(&mut self, val: T) {
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
@@ -56,31 +46,29 @@ where
         self.q_vals.push_back(val);
     }
 
-    fn last(&self) -> Option<f64> {
-        let mut sx: f64 = 0.0;
-        let mut sy: f64 = 0.0;
-        let mut sxx: f64 = 0.0;
-        let mut sxy: f64 = 0.0;
-        let mut syy: f64 = 0.0;
+    fn last(&self) -> Option<T> {
+        let mut sx = T::zero();
+        let mut sy = T::zero();
+        let mut sxx = T::zero();
+        let mut sxy = T::zero();
+        let mut syy = T::zero();
 
-        for (count, v) in self.q_vals.iter().enumerate() {
-            sx += v;
-            sy += count as f64;
-            sxx += v.powi(2);
-            sxy += v * count as f64;
-            syy += (count as f64).powi(2);
+        for (i, v) in self.q_vals.iter().enumerate() {
+            let count = T::from(i).expect("can convert");
+            sx = sx + *v;
+            sy = sy + count;
+            sxx = sxx + v.powi(2);
+            sxy = sxy + *v * count;
+            syy = syy + count.powi(2);
         }
-        if self.window_len as f64 * sxx - sx.powi(2) > 0.0
-            && self.window_len as f64 * syy - sy.powi(2) > 0.0
-        {
+        let window_len = T::from(self.window_len).expect("Can convert");
+        if window_len * sxx - sx.powi(2) > T::zero() && window_len * syy - sy.powi(2) > T::zero() {
             return Some(
-                (self.window_len as f64 * sxy - sx * sy)
-                    / ((self.window_len as f64 * sxx - sx.powi(2))
-                        * (self.window_len as f64 * syy - sy.powi(2)))
-                    .sqrt(),
+                (window_len * sxy - sx * sy)
+                    / ((window_len * sxx - sx.powi(2)) * (window_len * syy - sy.powi(2))).sqrt(),
             );
         }
-        Some(0.0)
+        Some(T::zero())
     }
 }
 
