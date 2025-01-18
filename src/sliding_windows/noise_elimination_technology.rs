@@ -8,21 +8,21 @@ use std::collections::VecDeque;
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Debug, Clone)]
-pub struct NET<T, V> {
+pub struct NoiseEliminationTechnology<T, V> {
     view: V,
     window_len: usize,
     out: Option<T>,
     q_vals: VecDeque<T>,
 }
 
-impl<T, V> NET<T, V>
+impl<T, V> NoiseEliminationTechnology<T, V>
 where
     V: View<T>,
     T: Float,
 {
     /// Create a new NET with a chained View and window length
     pub fn new(view: V, window_len: usize) -> Self {
-        NET {
+        NoiseEliminationTechnology {
             view,
             window_len,
             out: None,
@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<T, V> View<T> for NET<T, V>
+impl<T, V> View<T> for NoiseEliminationTechnology<T, V>
 where
     V: View<T>,
     T: Float,
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn net_my_rsi_plot() {
-        let mut net = NET::new(MyRSI::new(Echo::new(), 16), 16);
+        let mut net = NoiseEliminationTechnology::new(MyRSI::new(Echo::new(), 16), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             net.update(*v);

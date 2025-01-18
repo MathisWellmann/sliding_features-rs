@@ -7,13 +7,13 @@ use super::WelfordOnline;
 
 /// Variance Stabilizing Transform uses the standard deviation to normalize values
 #[derive(Debug, Clone)]
-pub struct VST<T: Float, V> {
+pub struct Vst<T: Float, V> {
     view: V,
     last: T,
     welford_online: WelfordOnline<T, Echo<T>>,
 }
 
-impl<T, V> VST<T, V>
+impl<T, V> Vst<T, V>
 where
     V: View<T>,
     T: Float,
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<T, V> View<T> for VST<T, V>
+impl<T, V> View<T> for Vst<T, V>
 where
     V: View<T>,
     T: Float,
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn variance_stabilizing_transform_plot() {
-        let mut tf = VST::new(Echo::new(), 16);
+        let mut tf = Vst::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             tf.update(*v);

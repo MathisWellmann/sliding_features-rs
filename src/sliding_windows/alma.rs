@@ -9,7 +9,7 @@ use crate::View;
 /// ALMA - Arnaud Legoux Moving Average
 /// reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 #[derive(Clone, Debug)]
-pub struct ALMA<T, V> {
+pub struct Alma<T, V> {
     view: V,
     window_len: usize,
     wtd_sum: T,
@@ -21,7 +21,7 @@ pub struct ALMA<T, V> {
     q_out: VecDeque<T>,
 }
 
-impl<T, V> ALMA<T, V>
+impl<T, V> Alma<T, V>
 where
     V: View<T>,
     T: Float,
@@ -29,7 +29,7 @@ where
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length
     pub fn new(view: V, window_len: usize) -> Self {
-        ALMA::new_custom(
+        Alma::new_custom(
             view,
             window_len,
             T::from(6.0).expect("Can convert"),
@@ -42,7 +42,7 @@ where
         let wl = T::from(window_len).expect("can convert");
         let m = offset * (wl + T::one());
         let s = wl / sigma;
-        ALMA {
+        Alma {
             view,
             window_len,
             m,
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<T, V> View<T> for ALMA<T, V>
+impl<T, V> View<T> for Alma<T, V>
 where
     V: View<T>,
     T: Float,
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     fn alma() {
         let mut rng = thread_rng();
-        let mut alma = ALMA::new(Echo::new(), 16);
+        let mut alma = Alma::new(Echo::new(), 16);
         for _ in 0..1_000_000 {
             let v = rng.gen::<f64>();
             alma.update(v);
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn alma_plot() {
-        let mut alma = ALMA::new(Echo::new(), 16);
+        let mut alma = Alma::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             alma.update(*v);

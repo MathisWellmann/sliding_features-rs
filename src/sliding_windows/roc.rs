@@ -7,7 +7,7 @@ use crate::View;
 
 /// Rate of Change Indicator
 #[derive(Debug, Clone)]
-pub struct ROC<T, V> {
+pub struct Roc<T, V> {
     view: V,
     window_len: usize,
     oldest: T,
@@ -15,7 +15,7 @@ pub struct ROC<T, V> {
     out: Option<T>,
 }
 
-impl<T, V> ROC<T, V>
+impl<T, V> Roc<T, V>
 where
     V: View<T>,
     T: Float,
@@ -23,7 +23,7 @@ where
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
     pub fn new(view: V, window_len: usize) -> Self {
-        ROC {
+        Roc {
             view,
             window_len,
             oldest: T::zero(),
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<T, V> View<T> for ROC<T, V>
+impl<T, V> View<T> for Roc<T, V>
 where
     V: View<T>,
     T: Float,
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn roc_plot() {
-        let mut r = ROC::new(Echo::new(), 16);
+        let mut r = Roc::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             r.update(*v);

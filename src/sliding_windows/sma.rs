@@ -7,14 +7,14 @@ use crate::View;
 
 #[derive(Debug, Clone)]
 /// SMA - Simple Moving Average
-pub struct SMA<T, V> {
+pub struct Sma<T, V> {
     view: V,
     window_len: usize,
     q_vals: VecDeque<T>,
     sum: T,
 }
 
-impl<T, V> SMA<T, V>
+impl<T, V> Sma<T, V>
 where
     V: View<T>,
     T: Float,
@@ -23,7 +23,7 @@ where
     /// and a given sliding window length
     #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
-        SMA {
+        Sma {
             view,
             window_len,
             q_vals: VecDeque::new(),
@@ -32,7 +32,7 @@ where
     }
 }
 
-impl<T, V> View<T> for SMA<T, V>
+impl<T, V> View<T> for Sma<T, V>
 where
     V: View<T>,
     T: Float,
@@ -69,7 +69,7 @@ mod tests {
     fn sma() {
         let mut rng = thread_rng();
 
-        let mut sma = SMA::new(Echo::new(), 16);
+        let mut sma = Sma::new(Echo::new(), 16);
         for _ in 0..1024 {
             let r = rng.gen::<f64>();
             sma.update(r);
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn sma_plot() {
-        let mut sma = SMA::new(Echo::new(), 16);
+        let mut sma = Sma::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);

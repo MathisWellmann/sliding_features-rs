@@ -7,7 +7,7 @@ use crate::View;
 
 /// Relative Strength Index Indicator
 #[derive(Debug, Clone)]
-pub struct RSI<T, V> {
+pub struct Rsi<T, V> {
     view: V,
     window_len: usize,
     avg_gain: T,
@@ -18,7 +18,7 @@ pub struct RSI<T, V> {
     out: Option<T>,
 }
 
-impl<T, V> RSI<T, V>
+impl<T, V> Rsi<T, V>
 where
     V: View<T>,
     T: Float,
@@ -27,7 +27,7 @@ where
     /// and a given sliding window length
     #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
-        RSI {
+        Rsi {
             view,
             window_len,
             avg_gain: T::zero(),
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<T, V> View<T> for RSI<T, V>
+impl<T, V> View<T> for Rsi<T, V>
 where
     V: View<T>,
     T: Float,
@@ -104,7 +104,7 @@ mod tests {
 
     #[test]
     fn rsi_plot() {
-        let mut rsi = RSI::new(Echo::new(), 16);
+        let mut rsi = Rsi::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rsi.update(*v);
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn rsi_range() {
-        let mut rsi = RSI::new(Echo::new(), 16);
+        let mut rsi = Rsi::new(Echo::new(), 16);
         for v in &TEST_DATA {
             rsi.update(*v);
             if let Some(last) = rsi.last() {

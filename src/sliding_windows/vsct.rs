@@ -7,13 +7,13 @@ use super::WelfordOnline;
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Debug, Clone)]
-pub struct VSCT<T: Float, V> {
+pub struct Vsct<T: Float, V> {
     view: V,
     welford_online: WelfordOnline<T, Echo<T>>,
     last: T,
 }
 
-impl<T, V> VSCT<T, V>
+impl<T, V> Vsct<T, V>
 where
     V: View<T>,
     T: Float,
@@ -22,7 +22,7 @@ where
     /// and a given sliding window length
     #[inline]
     pub fn new(view: V, window_len: usize) -> Self {
-        VSCT {
+        Vsct {
             view,
             welford_online: WelfordOnline::new(Echo::new(), window_len),
             last: T::zero(),
@@ -30,7 +30,7 @@ where
     }
 }
 
-impl<T, V> View<T> for VSCT<T, V>
+impl<T, V> View<T> for Vsct<T, V>
 where
     V: View<T>,
     T: Float,
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = VSCT::new(Echo::new(), 16);
+        let mut vsct = Vsct::new(Echo::new(), 16);
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

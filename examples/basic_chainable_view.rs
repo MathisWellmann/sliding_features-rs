@@ -5,7 +5,7 @@
 // import the needed structs, and the View trait
 use sliding_features::{
     pure_functions::Echo,
-    sliding_windows::{ALMA, VSCT},
+    sliding_windows::{Alma, Vsct},
     View,
 };
 
@@ -18,9 +18,9 @@ fn main() {
     println!("rands: {:?}", rands);
 
     let window_len: usize = 20;
-    let mut chain = ALMA::new(
+    let mut chain = Alma::new(
         // first, define the last function which gets applied in the chain
-        VSCT::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT
+        Vsct::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT
         window_len,
     );
     for v in &rands {
