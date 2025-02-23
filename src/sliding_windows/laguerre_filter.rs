@@ -105,7 +105,7 @@ mod tests {
         let mut laguerre = LaguerreFilter::new(Echo::new(), 0.8);
         let mut rng = thread_rng();
         for _ in 0..10_000 {
-            let v = rng.gen::<f64>();
+            let v = rng.r#gen::<f64>();
 
             laguerre.update(v);
             let last = laguerre.last().unwrap();

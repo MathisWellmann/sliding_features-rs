@@ -71,7 +71,7 @@ mod tests {
 
         let mut sma = Sma::new(Echo::new(), 16);
         for _ in 0..1024 {
-            let r = rng.gen::<f64>();
+            let r = rng.r#gen::<f64>();
             sma.update(r);
             if let Some(last) = sma.last() {
                 assert!(last >= 0.0);

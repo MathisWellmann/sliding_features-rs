@@ -2,7 +2,7 @@
 name = "sliding_features"
 version = "6.0.0"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
-edition = "2018"
+edition = "2024"
 license-file = "LICENSE"
 description = "Modular sliding window with various signal processing functions and technical indicators"
 repository = "https://github.com/MathisWellmann/sliding_features-rs"

@@ -107,7 +107,7 @@ mod tests {
         let mut rng = thread_rng();
         let mut alma = Alma::new(Echo::new(), 16);
         for _ in 0..1_000_000 {
-            let v = rng.gen::<f64>();
+            let v = rng.r#gen::<f64>();
             alma.update(v);
             let last = alma.last().unwrap();
 
