@@ -2,14 +2,17 @@
 //! from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 
 use crate::View;
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers Correlation Trend Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 pub struct CorrelationTrendIndicator<T, V> {
     view: V,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
 }

@@ -1,14 +1,17 @@
 //! Cumulative sliding window
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Cumulative Sliding Window with a chained view
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct Cumulative<T, V> {
     view: V,
+    /// The length of the sliding window.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     out: Option<T>,
