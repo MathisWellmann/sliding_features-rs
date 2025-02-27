@@ -1,6 +1,7 @@
 //! John Ehlers Center of Gravity Indicator
 //! from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
@@ -8,9 +9,11 @@ use crate::View;
 
 /// John Ehlers Center of Gravity Indicator
 /// from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 pub struct CenterOfGravity<T, V> {
     view: V,
+    /// The length of the sliding window.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     out: Option<T>,

@@ -1,6 +1,7 @@
 //! ALMA - Arnaud Legoux Moving Average
 //! reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
@@ -8,9 +9,11 @@ use crate::View;
 
 /// ALMA - Arnaud Legoux Moving Average
 /// reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 pub struct Alma<T, V> {
     view: V,
+    /// The configured window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     wtd_sum: T,
     cum_wt: T,
@@ -100,7 +103,7 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{thread_rng, Rng};
+    use rand::{Rng, thread_rng};
 
     #[test]
     fn alma() {
