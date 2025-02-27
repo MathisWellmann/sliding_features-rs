@@ -1,6 +1,7 @@
 //! John Ehlers Cyber Cycle Indicator
 //! from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
@@ -8,9 +9,11 @@ use crate::View;
 
 /// John Ehlers Cyber Cycle Indicator
 /// from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 pub struct CyberCycle<T, V> {
     view: V,
+    /// The sliding window length
+    #[getset(get_copy = "pub")]
     window_len: usize,
     alpha: T,
     vals: VecDeque<T>,

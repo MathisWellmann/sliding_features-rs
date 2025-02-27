@@ -1,14 +1,17 @@
 //! A sliding High - Low Normalizer
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// A sliding High - Low Normalizer
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 pub struct HLNormalizer<T, V> {
     view: V,
+    /// The sliding window length
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     min: T,

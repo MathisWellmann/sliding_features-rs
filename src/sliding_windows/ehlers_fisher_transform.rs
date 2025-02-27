@@ -2,15 +2,18 @@
 //! from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 
 use crate::View;
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
-#[derive(Clone, Debug)]
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
+#[derive(Clone, Debug, CopyGetters)]
 pub struct EhlersFisherTransform<T, V, M> {
     view: V,
     moving_average: M,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     high: T,
