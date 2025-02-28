@@ -1,3 +1,4 @@
+use getset::CopyGetters;
 use num::Float;
 use std::f64::consts::PI;
 
@@ -5,10 +6,12 @@ use crate::View;
 
 /// John Ehlers SuperSmoother filter
 /// from <https://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct SuperSmoother<T, V> {
     view: V,
-    window_length: usize,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
+    window_len: usize,
     i: usize,
     c1: T,
     c2: T,
@@ -41,7 +44,7 @@ where
 
         Self {
             view,
-            window_length,
+            window_len: window_length,
             i: 0,
             c1: T::one() - c2 - c3,
             c2,
@@ -74,7 +77,7 @@ where
 
     fn last(&self) -> Option<T> {
         // NOTE: filter only kicks in after warmup steps are done
-        if self.i < self.window_length {
+        if self.i < self.window_len {
             None
         } else {
             Some(self.filt)

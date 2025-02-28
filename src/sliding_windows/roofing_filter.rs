@@ -1,14 +1,17 @@
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
+use getset::CopyGetters;
 use num::Float;
 
 use super::SuperSmoother;
 
 /// Roofing Filter by John Ehlers
 /// From paper: <http://www.stockspotter.com/files/PredictiveIndicators.pdf>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct RoofingFilter<T, V> {
     view: V,
     super_smoother: SuperSmoother<T, Echo<T>>,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     i: usize,
     alpha_1: T,
@@ -28,16 +31,16 @@ where
     T: Float,
 {
     /// Create a Roofing Filter with a chained view
-    pub fn new(view: V, window_len: usize, super_smoother_len: usize) -> Self {
+    pub fn new(view: V, window_len_low_pass: usize, super_smoother_len_high_pass: usize) -> Self {
         // NOTE: 4.4422 radians from  0.707 * 360 degrees
-        let wl = T::from(window_len).expect("can convert");
+        let wl = T::from(window_len_low_pass).expect("can convert");
         let f = T::from(4.4422).expect("Can convert");
         let alpha_1 = ((f / wl).cos() + (f / wl).sin() - T::one()) / (f / wl).cos();
 
         RoofingFilter {
             view,
-            super_smoother: SuperSmoother::new(Echo::new(), super_smoother_len),
-            window_len,
+            super_smoother: SuperSmoother::new(Echo::new(), super_smoother_len_high_pass),
+            window_len: window_len_low_pass,
             i: 0,
             alpha_1,
             val_1: T::zero(),

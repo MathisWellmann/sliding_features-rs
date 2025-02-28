@@ -2,14 +2,17 @@
 //! from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
 use crate::View;
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct NoiseEliminationTechnology<T, V> {
     view: V,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     out: Option<T>,
     q_vals: VecDeque<T>,
@@ -26,7 +29,7 @@ where
             view,
             window_len,
             out: None,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
         }
     }
 }

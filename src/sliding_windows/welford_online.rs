@@ -11,6 +11,8 @@ use std::collections::VecDeque;
 #[derive(Debug, Clone, CopyGetters)]
 pub struct WelfordOnline<T: Float, V> {
     view: V,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     /// The mean of the observed samples

@@ -1,6 +1,7 @@
 //! John Ehlers ReFlex Indicator
 //! from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
@@ -8,9 +9,11 @@ use crate::View;
 
 /// John Ehlers ReFlex Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct ReFlex<T, V> {
     view: V,
+    /// The sliding window length
+    #[getset(get_copy = "pub")]
     window_len: usize,
     last_val: T,
     last_m: T,
@@ -31,7 +34,7 @@ where
             window_len,
             last_val: T::zero(),
             last_m: T::zero(),
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
     }

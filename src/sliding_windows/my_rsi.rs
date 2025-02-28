@@ -2,14 +2,17 @@
 //! from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
 use crate::View;
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct MyRSI<T, V> {
     view: V,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     cu: T,
     cd: T,

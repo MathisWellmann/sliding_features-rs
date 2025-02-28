@@ -1,6 +1,6 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
 use num::Float;
 
 use super::WelfordOnline;
@@ -27,6 +27,12 @@ where
             welford_online: WelfordOnline::new(Echo::new(), window_len),
             last: T::zero(),
         }
+    }
+
+    /// The sliding window length.
+    #[inline(always)]
+    pub fn window_len(&self) -> usize {
+        self.welford_online.window_len()
     }
 }
 

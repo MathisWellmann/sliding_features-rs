@@ -1,14 +1,17 @@
 //! Rate of Change Indicator
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Rate of Change Indicator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct Roc<T, V> {
     view: V,
+    /// The sliding window length
+    #[getset(get_copy = "pub")]
     window_len: usize,
     oldest: T,
     q_vals: VecDeque<T>,
@@ -27,7 +30,7 @@ where
             view,
             window_len,
             oldest: T::zero(),
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
     }

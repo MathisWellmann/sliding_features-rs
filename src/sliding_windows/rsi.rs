@@ -1,14 +1,17 @@
 //! Relative Strength Index Indicator
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
 use crate::View;
 
 /// Relative Strength Index Indicator
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct Rsi<T, V> {
     view: V,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
     window_len: usize,
     avg_gain: T,
     avg_loss: T,
@@ -34,7 +37,7 @@ where
             avg_loss: T::zero(),
             old_ref: T::zero(),
             last_val: T::zero(),
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
     }

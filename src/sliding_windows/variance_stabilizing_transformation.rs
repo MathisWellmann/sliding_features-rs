@@ -1,6 +1,6 @@
 //! Variance Stabilizing Transform uses the standard deviation to normalize values
 
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
 use num::Float;
 
 use super::WelfordOnline;
@@ -26,6 +26,12 @@ where
             last: T::zero(),
             welford_online: WelfordOnline::new(Echo::new(), window_len),
         }
+    }
+
+    /// The sliding window length.
+    #[inline]
+    pub fn window_len(&self) -> usize {
+        self.welford_online.window_len()
     }
 }
 

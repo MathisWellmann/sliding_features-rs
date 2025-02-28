@@ -2,15 +2,18 @@
 //! it is also possible to use a custom moving average instead of the default EMA in the original
 
 use crate::View;
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 /// it is also possible to use a custom moving average instead of the default EMA in the original
 pub struct PolarizedFractalEfficiency<T, V, M> {
     view: V,
     moving_average: M, // defines which moving average to use, default is EMA
+    /// The sliding window length
+    #[getset(get_copy = "pub")]
     window_len: usize,
     q_vals: VecDeque<T>,
     out: Option<T>,
@@ -29,7 +32,7 @@ where
             view,
             moving_average,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
     }

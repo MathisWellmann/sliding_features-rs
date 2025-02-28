@@ -1,6 +1,7 @@
 //! John Ehlers LaguerreRSI
 //! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
+use getset::CopyGetters;
 use num::Float;
 use std::collections::VecDeque;
 
@@ -8,7 +9,7 @@ use crate::View;
 
 /// John Ehlers LaguerreRSI
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct LaguerreRSI<T, V> {
     view: V,
     value: Option<T>,
@@ -17,6 +18,9 @@ pub struct LaguerreRSI<T, V> {
     l1s: VecDeque<T>,
     l2s: VecDeque<T>,
     l3s: VecDeque<T>,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
+    window_len: usize,
 }
 
 impl<T, V> LaguerreRSI<T, V>
@@ -32,10 +36,11 @@ where
             value: None,
             gamma: T::from(2.0).expect("can convert")
                 / (T::from(window_len).expect("can convert") + T::one()),
-            l0s: VecDeque::new(),
-            l1s: VecDeque::new(),
-            l2s: VecDeque::new(),
-            l3s: VecDeque::new(),
+            l0s: VecDeque::with_capacity(window_len),
+            l1s: VecDeque::with_capacity(window_len),
+            l2s: VecDeque::with_capacity(window_len),
+            l3s: VecDeque::with_capacity(window_len),
+            window_len,
         }
     }
 }
