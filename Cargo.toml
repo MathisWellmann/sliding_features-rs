@@ -49,3 +49,7 @@ harness = false
 [[bench]]
 name = "cyber_cycle"
 harness = false
+
+[[bench]]
+name = "ehlers_fisher_transform"
+harness = false
