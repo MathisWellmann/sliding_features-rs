@@ -85,3 +85,7 @@ harness = false
 [[bench]]
 name = "re_flex"
 harness = false
+
+[[bench]]
+name = "roc"
+harness = false
