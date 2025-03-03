@@ -61,3 +61,7 @@ harness = false
 [[bench]]
 name = "hl_normalizer"
 harness = false
+
+[[bench]]
+name = "laguerre_filter"
+harness = false
