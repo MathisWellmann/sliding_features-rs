@@ -89,3 +89,7 @@ harness = false
 [[bench]]
 name = "roc"
 harness = false
+
+[[bench]]
+name = "roofing_filter"
+harness = false
