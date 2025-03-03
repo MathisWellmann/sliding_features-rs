@@ -81,3 +81,7 @@ harness = false
 [[bench]]
 name = "polarized_fractal_efficiency"
 harness = false
+
+[[bench]]
+name = "re_flex"
+harness = false
