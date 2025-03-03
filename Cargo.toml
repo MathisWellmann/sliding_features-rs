@@ -37,3 +37,7 @@ harness = false
 [[bench]]
 name = "center_of_gravity"
 harness = false
+
+[[bench]]
+name = "correlation_trend_indicator"
+harness = false
