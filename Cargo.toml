@@ -117,3 +117,7 @@ harness = false
 [[bench]]
 name = "vsct"
 harness = false
+
+[[bench]]
+name = "welford_online"
+harness = false
