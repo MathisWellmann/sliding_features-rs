@@ -14,28 +14,28 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("f64", |b| {
         let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut alma = EhlersFisherTransform::<f64, _, _>::new(
+            let mut view = EhlersFisherTransform::<f64, _, _>::new(
                 Echo::new(),
                 Ema::new(Echo::new(), 1024),
                 1024,
             );
             for v in vals.iter() {
-                alma.update(*v);
-                let _ = black_box(alma.last());
+                view.update(*v);
+                let _ = black_box(view.last());
             }
         })
     });
     group.bench_function("f32", |b| {
         let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut alma = EhlersFisherTransform::<f32, _, _>::new(
+            let mut view = EhlersFisherTransform::<f32, _, _>::new(
                 Echo::new(),
                 Ema::new(Echo::new(), 1024),
                 1024,
             );
             for v in vals.iter() {
-                alma.update(*v);
-                let _ = black_box(alma.last());
+                view.update(*v);
+                let _ = black_box(view.last());
             }
         })
     });

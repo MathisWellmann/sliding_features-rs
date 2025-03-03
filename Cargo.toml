@@ -57,3 +57,7 @@ harness = false
 [[bench]]
 name = "ema"
 harness = false
+
+[[bench]]
+name = "hl_normalizer"
+harness = false

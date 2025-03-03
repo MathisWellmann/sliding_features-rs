@@ -1,16 +1,16 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::{rng, Rng};
-use sliding_features::{pure_functions::Echo, sliding_windows::CorrelationTrendIndicator, View};
+use sliding_features::{pure_functions::Echo, sliding_windows::HLNormalizer, View};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = rng();
     const N: usize = 100_000;
 
-    let mut group = c.benchmark_group("correlation_trend_indicator_100k");
+    let mut group = c.benchmark_group("hl_normalizer_100k");
     group.bench_function("f64", |b| {
         let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut view = CorrelationTrendIndicator::<f64, _>::new(Echo::new(), 1024);
+            let mut view = HLNormalizer::<f64, _>::new(Echo::new(), 1024);
             for v in vals.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());
@@ -20,7 +20,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("f32", |b| {
         let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut view = CorrelationTrendIndicator::<f32, _>::new(Echo::new(), 1024);
+            let mut view = HLNormalizer::<f32, _>::new(Echo::new(), 1024);
             for v in vals.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());
