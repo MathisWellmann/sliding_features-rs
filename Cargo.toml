@@ -65,3 +65,7 @@ harness = false
 [[bench]]
 name = "laguerre_filter"
 harness = false
+
+[[bench]]
+name = "laguerre_rsi"
+harness = false
