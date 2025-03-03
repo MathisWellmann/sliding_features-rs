@@ -4,9 +4,9 @@ use sliding_features::{pure_functions::Echo, sliding_windows::Alma, View};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = rng();
-    const N: usize = 1_000_000;
+    const N: usize = 100_000;
 
-    let mut group = c.benchmark_group("alma_1M");
+    let mut group = c.benchmark_group("alma_100k");
     group.bench_function("f64", |b| {
         let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {

@@ -41,3 +41,7 @@ harness = false
 [[bench]]
 name = "correlation_trend_indicator"
 harness = false
+
+[[bench]]
+name = "cumulative"
+harness = false
