@@ -31,7 +31,7 @@ where
         HLNormalizer {
             view,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             min: T::zero(),
             max: T::zero(),
             last: T::zero(),

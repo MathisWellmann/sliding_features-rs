@@ -1,6 +1,6 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use num::Float;
 
 use super::WelfordOnline;

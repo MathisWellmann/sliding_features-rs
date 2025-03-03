@@ -31,8 +31,8 @@ where
     T: Float,
 {
     /// Create a new instance of the SuperSmoother with a chained View
-    pub fn new(view: V, window_length: usize) -> Self {
-        let wl = T::from(window_length).expect("can convert");
+    pub fn new(view: V, window_len: usize) -> Self {
+        let wl = T::from(window_len).expect("can convert");
         let a1 =
             (-T::from(1.414).expect("can convert") * T::from(PI).expect("can convert") / wl).exp();
         // NOTE: 4.4422 is radians of 1.414 * 180 degrees
@@ -44,7 +44,7 @@ where
 
         Self {
             view,
-            window_len: window_length,
+            window_len,
             i: 0,
             c1: T::one() - c2 - c3,
             c2,
@@ -75,6 +75,7 @@ where
         self.i += 1;
     }
 
+    #[inline]
     fn last(&self) -> Option<T> {
         // NOTE: filter only kicks in after warmup steps are done
         if self.i < self.window_len {

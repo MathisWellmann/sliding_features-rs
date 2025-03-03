@@ -30,7 +30,7 @@ where
         Self {
             view,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
     }
@@ -70,6 +70,7 @@ where
         }
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.out
     }

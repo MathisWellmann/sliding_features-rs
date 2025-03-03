@@ -59,6 +59,7 @@ where
         self.out = Some(roc);
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.out
     }

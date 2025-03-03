@@ -34,8 +34,8 @@ where
             window_len,
             alpha: T::from(2.0).expect("can convert")
                 / (T::from(window_len).expect("can convert") + T::one()),
-            vals: VecDeque::new(),
-            out: VecDeque::new(),
+            vals: VecDeque::with_capacity(window_len),
+            out: VecDeque::with_capacity(window_len),
         }
     }
 }
@@ -76,6 +76,7 @@ where
         self.out.push_back(cc);
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.out.back().copied()
     }

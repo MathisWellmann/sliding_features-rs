@@ -29,7 +29,7 @@ where
         Self {
             view,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
         }
     }
 }

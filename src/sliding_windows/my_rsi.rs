@@ -35,7 +35,7 @@ where
             cu: T::zero(),
             cd: T::zero(),
             out: T::zero(),
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             last_val: T::zero(),
             oldest_val: T::zero(),
         }
@@ -79,6 +79,7 @@ where
         }
     }
 
+    #[inline]
     fn last(&self) -> Option<T> {
         if self.q_vals.len() < self.window_len {
             return None;

@@ -1,4 +1,4 @@
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
 use num::Float;
 
@@ -77,6 +77,7 @@ where
         self.i += 1;
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.super_smoother.last()
     }

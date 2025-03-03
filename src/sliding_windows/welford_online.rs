@@ -32,7 +32,7 @@ where
         Self {
             view,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             mean: T::zero(),
             s: T::zero(),
             n: 0,
@@ -76,6 +76,7 @@ where
         self.s = self.s + (val - old_mean) * (val - self.mean);
     }
 
+    #[inline]
     fn last(&self) -> Option<T> {
         if self.n < self.window_len {
             // To ensure we don't return anything when there are not enough samples.

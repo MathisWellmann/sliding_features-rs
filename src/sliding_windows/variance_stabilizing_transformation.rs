@@ -1,6 +1,6 @@
 //! Variance Stabilizing Transform uses the standard deviation to normalize values
 
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use num::Float;
 
 use super::WelfordOnline;

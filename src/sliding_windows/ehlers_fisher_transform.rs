@@ -34,10 +34,10 @@ where
             view,
             moving_average: ma,
             window_len,
-            q_vals: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len),
             high: T::zero(),
             low: T::zero(),
-            q_out: VecDeque::new(),
+            q_out: VecDeque::with_capacity(window_len),
         }
     }
 }
@@ -110,6 +110,7 @@ where
         self.q_out.push_back(fish);
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.q_out.back().copied()
     }

@@ -103,7 +103,7 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{Rng, thread_rng};
+    use rand::{thread_rng, Rng};
 
     #[test]
     fn alma() {

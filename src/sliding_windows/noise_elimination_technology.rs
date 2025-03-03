@@ -70,6 +70,7 @@ where
         self.out = Some(num / denom);
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
         self.out
     }
