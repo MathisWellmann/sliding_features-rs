@@ -101,3 +101,7 @@ harness = false
 [[bench]]
 name = "sma"
 harness = false
+
+[[bench]]
+name = "super_smoother"
+harness = false
