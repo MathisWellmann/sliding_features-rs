@@ -26,3 +26,10 @@ pub trait View<T: num::Float> {
     /// Return the last value, if `Some`, then its ready.
     fn last(&self) -> Option<T>;
 }
+
+#[cfg(test)]
+mod tests {
+    // Used in benchmarks.
+    #[allow(unused_imports)]
+    use criterion::*;
+}
