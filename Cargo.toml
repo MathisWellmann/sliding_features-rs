@@ -69,3 +69,7 @@ harness = false
 [[bench]]
 name = "laguerre_rsi"
 harness = false
+
+[[bench]]
+name = "my_rsi"
+harness = false
