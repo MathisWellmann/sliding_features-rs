@@ -53,7 +53,7 @@ where
         if self.q_filts.is_empty() {
             self.last_val = val;
         }
-        if self.q_filts.len() > self.window_len {
+        if self.q_filts.len() >= self.window_len {
             self.q_filts.pop_front();
         }
         let window_len = T::from(self.window_len).expect("can convert");
@@ -82,7 +82,7 @@ where
         let mut d_sum = T::zero();
         for i in 0..self.q_filts.len() {
             let index: usize = self.q_filts.len() - 1 - i;
-            d_sum = d_sum + (filt - *self.q_filts.get(index).unwrap());
+            d_sum = d_sum + (filt - self.q_filts[index]);
         }
         d_sum = d_sum / window_len;
 

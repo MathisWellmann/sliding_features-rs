@@ -105,3 +105,7 @@ harness = false
 [[bench]]
 name = "super_smoother"
 harness = false
+
+[[bench]]
+name = "trend_flex"
+harness = false
