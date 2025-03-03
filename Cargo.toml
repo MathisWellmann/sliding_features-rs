@@ -33,3 +33,7 @@ criterion = "0.5"
 [[bench]]
 name = "alma"
 harness = false
+
+[[bench]]
+name = "center_of_gravity"
+harness = false
