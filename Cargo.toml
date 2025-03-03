@@ -45,3 +45,7 @@ harness = false
 [[bench]]
 name = "cumulative"
 harness = false
+
+[[bench]]
+name = "cyber_cycle"
+harness = false

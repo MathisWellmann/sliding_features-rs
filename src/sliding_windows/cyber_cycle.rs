@@ -18,6 +18,8 @@ pub struct CyberCycle<T, V> {
     alpha: T,
     vals: VecDeque<T>,
     out: VecDeque<T>,
+    // avoid allocation in `update` step by re-using this buffer.
+    smooth: Vec<T>,
 }
 
 impl<T, V> CyberCycle<T, V>
@@ -36,6 +38,7 @@ where
                 / (T::from(window_len).expect("can convert") + T::one()),
             vals: VecDeque::with_capacity(window_len),
             out: VecDeque::with_capacity(window_len),
+            smooth: vec![T::zero(); window_len],
         }
     }
 }
@@ -59,10 +62,15 @@ where
             self.out.push_back(T::zero());
             return;
         }
-        let mut smooth: Vec<T> = vec![T::zero(); self.vals.len()];
         let last = self.vals.len() - 1;
         let two = T::from(2.0).expect("can convert");
-        for (i, v) in smooth.iter_mut().enumerate().take(self.vals.len()).skip(3) {
+        for (i, v) in self
+            .smooth
+            .iter_mut()
+            .enumerate()
+            .take(self.vals.len())
+            .skip(3)
+        {
             *v = (val
                 + two * *self.vals.get(i - 1).unwrap()
                 + two * *self.vals.get(i - 2).unwrap()
@@ -70,7 +78,7 @@ where
                 / T::from(6.0).expect("can convert")
         }
         let cc = (T::one() - T::from(0.5).expect("can convert") * self.alpha).powi(2)
-            * (smooth[last] - two * smooth[last - 1] + smooth[last - 2])
+            * (self.smooth[last] - two * self.smooth[last - 1] + self.smooth[last - 2])
             + two * (T::one() - self.alpha) * *self.out.get(last - 1).unwrap()
             - (T::one() - self.alpha).powi(2) * *self.out.get(last - 2).unwrap();
         self.out.push_back(cc);
