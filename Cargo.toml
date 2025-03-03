@@ -113,3 +113,7 @@ harness = false
 [[bench]]
 name = "vst"
 harness = false
+
+[[bench]]
+name = "vsct"
+harness = false
