@@ -73,3 +73,7 @@ harness = false
 [[bench]]
 name = "my_rsi"
 harness = false
+
+[[bench]]
+name = "noise_elimination_technology"
+harness = false
