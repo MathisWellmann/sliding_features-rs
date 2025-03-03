@@ -109,3 +109,7 @@ harness = false
 [[bench]]
 name = "trend_flex"
 harness = false
+
+[[bench]]
+name = "vst"
+harness = false
