@@ -103,14 +103,14 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{thread_rng, Rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn alma() {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let mut alma = Alma::new(Echo::new(), 16);
         for _ in 0..1_000_000 {
-            let v = rng.r#gen::<f64>();
+            let v = rng.random::<f64>();
             alma.update(v);
             let last = alma.last().unwrap();
 

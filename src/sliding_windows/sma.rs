@@ -63,15 +63,15 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{thread_rng, Rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn sma() {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
         let mut sma = Sma::new(Echo::new(), 16);
         for _ in 0..1024 {
-            let r = rng.r#gen::<f64>();
+            let r = rng.random::<f64>();
             sma.update(r);
             if let Some(last) = sma.last() {
                 assert!(last >= 0.0);

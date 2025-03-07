@@ -98,14 +98,14 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{thread_rng, Rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn laguerre_filter() {
         let mut laguerre = LaguerreFilter::new(Echo::new(), 0.8);
-        let mut rng = thread_rng();
+        let mut rng = rng();
         for _ in 0..10_000 {
-            let v = rng.r#gen::<f64>();
+            let v = rng.random::<f64>();
 
             laguerre.update(v);
             let last = laguerre.last().unwrap();
