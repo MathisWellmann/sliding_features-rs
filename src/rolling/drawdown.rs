@@ -5,8 +5,9 @@ use num::Float;
 #[derive(Debug, Clone)]
 pub struct Drawdown<T, V> {
     view: V,
-    max_val: T,
-    current_val: Option<T>,
+    max_drawdown: T,
+    peak: T,
+    min_after_peak: T,
 }
 
 impl<T: Float> Default for Drawdown<T, Echo<T>> {
@@ -24,8 +25,11 @@ where
     pub fn new(view: V) -> Self {
         Self {
             view,
-            max_val: T::min_value(),
-            current_val: None,
+            max_drawdown: T::zero(),
+            // The highest value observed.
+            peak: T::min_value(),
+            // The minimum value observed after the peak.
+            min_after_peak: T::max_value(),
         }
     }
 }
@@ -39,15 +43,22 @@ where
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
 
-        if val > self.max_val {
-            self.max_val = val;
+        if val > self.peak {
+            self.peak = val;
+            self.min_after_peak = val;
         }
-        self.current_val = Some(val);
+        if val < self.min_after_peak {
+            self.min_after_peak = val;
+        }
+        let dd = (self.peak - self.min_after_peak) / self.peak;
+        if dd > self.max_drawdown {
+            self.max_drawdown = dd;
+        }
     }
 
+    #[inline(always)]
     fn last(&self) -> Option<T> {
-        self.current_val
-            .map(|current| (self.max_val - current) / self.max_val)
+        Some(self.max_drawdown)
     }
 }
 
@@ -63,6 +74,10 @@ mod tests {
         dd.update(80.0);
         assert_eq!(dd.last().unwrap(), 0.2);
         dd.update(110.0);
-        assert_eq!(dd.last().unwrap(), 0.0);
+        assert_eq!(dd.last().unwrap(), 0.2);
+        dd.update(95.0);
+        assert_eq!(dd.last().unwrap(), 0.2);
+        dd.update(87.0);
+        assert_eq!(dd.last().unwrap(), 0.20909090909090908);
     }
 }
