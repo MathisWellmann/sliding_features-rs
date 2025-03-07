@@ -1,10 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::{rng, Rng};
+use rand::{rng, rngs::SmallRng, Rng, SeedableRng};
 use sliding_features::{
     pure_functions::Echo,
-    sliding_windows::{Alma, EhlersFisherTransform, Ema},
+    sliding_windows::{EhlersFisherTransform, Ema},
     View,
 };
+use time_series_generator::generate_standard_normal;
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = rng();
@@ -34,6 +35,36 @@ fn criterion_benchmark(c: &mut Criterion) {
                 1024,
             );
             for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+
+    let mut rng = SmallRng::seed_from_u64(0);
+    group.bench_function("brownian_motion_f64", |b| {
+        let motion = generate_standard_normal(&mut rng, N, 1000.0);
+        b.iter(|| {
+            let mut view = EhlersFisherTransform::<f64, _, _>::new(
+                Echo::new(),
+                Ema::new(Echo::new(), 1024),
+                1024,
+            );
+            for v in motion.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("brownian_motion_f32", |b| {
+        let motion = generate_standard_normal(&mut rng, N, 1000.0);
+        b.iter(|| {
+            let mut view = EhlersFisherTransform::<f32, _, _>::new(
+                Echo::new(),
+                Ema::new(Echo::new(), 1024),
+                1024,
+            );
+            for v in motion.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());
             }
