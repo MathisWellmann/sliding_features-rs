@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{cmp::Ordering, collections::VecDeque};
 
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
@@ -64,7 +64,7 @@ where
                 self.high = *self
                     .q_vals
                     .iter()
-                    .max_by(|x, y| x.partial_cmp(y).unwrap())
+                    .max_by(|x, y| x.partial_cmp(y).unwrap_or(Ordering::Equal))
                     .unwrap();
             }
             if old_val <= self.low {
@@ -72,7 +72,7 @@ where
                 self.low = *self
                     .q_vals
                     .iter()
-                    .min_by(|x, y| x.partial_cmp(y).unwrap())
+                    .min_by(|x, y| x.partial_cmp(y).unwrap_or(Ordering::Equal))
                     .unwrap();
             }
         }
