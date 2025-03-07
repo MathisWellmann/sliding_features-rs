@@ -260,12 +260,14 @@ pub const TEST_DATA: [f64; 256] = [
 
 #[cfg(test)]
 mod tests {
+    use rand::{rngs::SmallRng, SeedableRng};
     use time_series_generator::generate_standard_normal;
 
     #[test]
     fn generate_test_data() {
         let data_len: usize = 256;
-        let vals: Vec<f64> = generate_standard_normal(data_len, 100.0);
+        let mut rng = SmallRng::seed_from_u64(0);
+        let vals: Vec<f64> = generate_standard_normal(&mut rng, data_len, 100.0);
         println!("vals: {:?}", vals);
     }
 }
