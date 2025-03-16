@@ -4,15 +4,15 @@ use num::Float;
 
 use crate::View;
 
-/// Keep track of the minimum value observed over the sliding window.
+/// Keep track of the maximum value observed over the sliding window.
 #[derive(Clone, Debug)]
-pub struct Min<T, V> {
+pub struct Max<T, V> {
     view: V,
-    opt_min: Option<T>,
+    opt_max: Option<T>,
     q_vals: VecDeque<T>,
 }
 
-impl<T, V> Min<T, V>
+impl<T, V> Max<T, V>
 where
     T: Float,
     V: View<T>,
@@ -22,7 +22,7 @@ where
         assert!(window_len > 0, "Window length must be greater than zero");
         Self {
             view,
-            opt_min: None,
+            opt_max: None,
             q_vals: VecDeque::with_capacity(window_len),
         }
     }
@@ -34,7 +34,7 @@ where
     }
 }
 
-impl<T, V> View<T> for Min<T, V>
+impl<T, V> View<T> for Max<T, V>
 where
     T: Float,
     V: View<T>,
@@ -45,28 +45,28 @@ where
 
         if self.q_vals.len() >= self.q_vals.capacity() {
             let popped = self.q_vals.pop_front().expect("There is a value");
-            if popped == self.opt_min.expect("Has a minimum value") {
+            if popped == self.opt_max.expect("Has a minimum value") {
                 // re-compute the min value.
-                self.opt_min = self
+                self.opt_max = self
                     .q_vals
                     .iter()
                     .copied()
-                    .min_by(|a, b| a.partial_cmp(b).expect("Can compare elements"));
+                    .max_by(|a, b| a.partial_cmp(b).expect("Can compare elements"));
             }
         }
         self.q_vals.push_back(val);
-        if let Some(min) = self.opt_min.as_mut() {
-            if val < *min {
-                *min = val;
+        if let Some(max) = self.opt_max.as_mut() {
+            if val > *max {
+                *max = val;
             }
         } else {
-            self.opt_min = Some(val);
+            self.opt_max = Some(val);
         }
     }
 
     #[inline(always)]
     fn last(&self) -> Option<T> {
-        self.opt_min
+        self.opt_max
     }
 }
 
@@ -77,30 +77,30 @@ mod test {
     use super::*;
 
     #[test]
-    fn min() {
+    fn max() {
         const WINDOW_LEN: usize = 3;
-        let mut v = Min::new(Echo::new(), WINDOW_LEN);
+        let mut v = Max::new(Echo::new(), 3);
         assert_eq!(v.last(), None);
         v.update(1.0);
-        assert_eq!(v.last(), Some(1.0));
         assert_eq!(v.window_len(), WINDOW_LEN);
-        v.update(2.0);
         assert_eq!(v.last(), Some(1.0));
+        v.update(2.0);
+        assert_eq!(v.last(), Some(2.0));
         assert_eq!(v.window_len(), WINDOW_LEN);
         v.update(0.5);
-        assert_eq!(v.last(), Some(0.5));
+        assert_eq!(v.last(), Some(2.0));
         assert_eq!(v.window_len(), WINDOW_LEN);
         v.update(1.1);
-        assert_eq!(v.last(), Some(0.5));
+        assert_eq!(v.last(), Some(2.0));
         assert_eq!(v.window_len(), WINDOW_LEN);
         v.update(1.2);
-        assert_eq!(v.last(), Some(0.5));
+        assert_eq!(v.last(), Some(1.2));
         assert_eq!(v.window_len(), WINDOW_LEN);
         v.update(1.3);
-        assert_eq!(v.last(), Some(1.1));
+        assert_eq!(v.last(), Some(1.3));
         assert_eq!(v.window_len(), WINDOW_LEN);
         v.update(1.4);
-        assert_eq!(v.last(), Some(1.2));
+        assert_eq!(v.last(), Some(1.4));
         assert_eq!(v.window_len(), WINDOW_LEN);
     }
 }
