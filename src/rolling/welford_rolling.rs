@@ -1,7 +1,7 @@
 //! Welford online algorithm for computing mean and variance on-the-fly
 //! over a sliding window
 
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
 use getset::CopyGetters;
 use num::Float;
 

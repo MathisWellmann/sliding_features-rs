@@ -260,7 +260,7 @@ pub const TEST_DATA: [f64; 256] = [
 
 #[cfg(test)]
 mod tests {
-    use rand::{rngs::SmallRng, SeedableRng};
+    use rand::{SeedableRng, rngs::SmallRng};
     use time_series_generator::generate_standard_normal;
 
     #[test]

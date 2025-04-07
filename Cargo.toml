@@ -2,7 +2,7 @@ cargo-features = ["edition2024"]
 
 [package]
 name = "sliding_features"
-version = "6.0.3"
+version = "6.0.4"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2024"
 license-file = "LICENSE"

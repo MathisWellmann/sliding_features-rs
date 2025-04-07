@@ -1,6 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::{rng, Rng};
-use sliding_features::{pure_functions::Echo, sliding_windows::Ema, View};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use rand::{Rng, rng};
+use sliding_features::{View, pure_functions::Echo, sliding_windows::Ema};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = rng();

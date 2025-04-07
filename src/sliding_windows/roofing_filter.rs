@@ -1,4 +1,4 @@
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
 use getset::CopyGetters;
 use num::Float;
 

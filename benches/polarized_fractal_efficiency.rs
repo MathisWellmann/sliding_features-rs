@@ -1,9 +1,9 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::{rng, Rng};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use rand::{Rng, rng};
 use sliding_features::{
+    View,
     pure_functions::Echo,
     sliding_windows::{Ema, PolarizedFractalEfficiency},
-    View,
 };
 
 fn criterion_benchmark(c: &mut Criterion) {

@@ -1,4 +1,4 @@
-use crate::{pure_functions::Echo, View};
+use crate::{View, pure_functions::Echo};
 use num::Float;
 
 /// Computes the natural logarithm and keep track of the last value.
