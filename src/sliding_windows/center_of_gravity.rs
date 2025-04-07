@@ -43,8 +43,10 @@ where
 {
     // update receives a new value and updates its internal state
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
@@ -60,11 +62,12 @@ where
             denom = denom + *val;
         }
         if denom != T::zero() {
-            self.out = Some(
-                -num / denom
-                    + (T::from(q_len).expect("can convert") + T::one())
-                        / T::from(2.0).expect("can convert"),
-            )
+            let out = -num / denom
+                + (T::from(q_len).expect("can convert") + T::one())
+                    / T::from(2.0).expect("can convert");
+
+            debug_assert!(out.is_finite(), "value must be finite");
+            self.out = Some(out);
         } else {
             self.out = Some(T::zero());
         }

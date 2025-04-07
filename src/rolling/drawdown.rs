@@ -1,4 +1,4 @@
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use num::Float;
 
 /// Keep track of the current peak to valley.
@@ -40,8 +40,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if val > self.peak {
             self.peak = val;
@@ -58,6 +60,7 @@ where
 
     #[inline(always)]
     fn last(&self) -> Option<T> {
+        debug_assert!(self.max_drawdown.is_finite(), "value must be finite");
         Some(self.max_drawdown)
     }
 }

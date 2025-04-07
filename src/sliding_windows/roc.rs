@@ -13,7 +13,7 @@ pub struct Roc<T, V> {
     /// The sliding window length
     #[getset(get_copy = "pub")]
     window_len: usize,
-    oldest: T,
+    oldest: Option<T>,
     q_vals: VecDeque<T>,
     out: Option<T>,
 }
@@ -29,7 +29,7 @@ where
         Roc {
             view,
             window_len,
-            oldest: T::zero(),
+            oldest: None,
             q_vals: VecDeque::with_capacity(window_len),
             out: None,
         }
@@ -42,20 +42,27 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.is_empty() {
-            self.oldest = val;
+            self.oldest = Some(val);
         }
         if self.q_vals.len() >= self.window_len {
             let old = self.q_vals.front().unwrap();
-            self.oldest = *old;
+            self.oldest = Some(*old);
             self.q_vals.pop_front();
         }
         self.q_vals.push_back(val);
 
-        let roc = ((val - self.oldest) / self.oldest) * T::from(100.0).expect("can convert");
+        let Some(oldest) = self.oldest else { return };
+        if oldest == T::zero() {
+            return;
+        }
+        let roc = ((val - oldest) / oldest) * T::from(100.0).expect("can convert");
+        debug_assert!(roc.is_finite(), "value must be finite");
         self.out = Some(roc);
     }
 

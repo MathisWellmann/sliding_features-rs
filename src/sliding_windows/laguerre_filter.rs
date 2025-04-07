@@ -14,6 +14,7 @@ where
 {
     view: V,
     gamma: T,
+    // TODO: use `VecDeque` and remove unused values again.
     l0s: Vec<T>,
     l1s: Vec<T>,
     l2s: Vec<T>,
@@ -47,8 +48,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         let two = T::from(2.0).expect("can convert");
         if self.l0s.is_empty() {
@@ -79,13 +82,13 @@ where
                 + self.l2s[self.l2s.len() - 2]
                 + self.gamma * self.l3s[self.l3s.len() - 1],
         );
-        self.filts.push(
-            (self.l0s[self.l0s.len() - 1]
-                + two * self.l1s[self.l1s.len() - 1]
-                + two * self.l2s[self.l2s.len() - 1]
-                + self.l3s[self.l3s.len() - 1])
-                / T::from(6.0).expect("can convert"),
-        );
+        let out = (self.l0s[self.l0s.len() - 1]
+            + two * self.l1s[self.l1s.len() - 1]
+            + two * self.l2s[self.l2s.len() - 1]
+            + self.l3s[self.l3s.len() - 1])
+            / T::from(6.0).expect("can convert");
+        debug_assert!(out.is_finite(), "value must be finite");
+        self.filts.push(out);
     }
 
     fn last(&self) -> Option<T> {
@@ -98,7 +101,7 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{Rng, rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn laguerre_filter() {

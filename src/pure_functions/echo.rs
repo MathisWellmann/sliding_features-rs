@@ -18,6 +18,7 @@ impl<T> Echo<T> {
 
 impl<T: num::Float> View<T> for Echo<T> {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.out = Some(val);
     }
 

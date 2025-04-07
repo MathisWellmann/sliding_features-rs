@@ -51,8 +51,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.l0s.len() >= 3 {
             self.l0s.pop_front();
@@ -109,7 +111,9 @@ where
         }
 
         if cu + cd != T::zero() {
-            self.value = Some(cu / (cu + cd));
+            let value = cu / (cu + cd);
+            debug_assert!(value.is_finite(), "value must be finite");
+            self.value = Some(value);
         }
     }
 

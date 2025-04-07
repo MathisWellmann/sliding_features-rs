@@ -1,7 +1,7 @@
 //! Welford online algorithm for computing mean and variance on-the-fly
 //! over a sliding window
 
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
 use num::Float;
 
@@ -54,8 +54,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         self.n += 1;
         let old_mean = self.mean;
@@ -67,7 +69,9 @@ where
         if self.n == 0 {
             return None;
         }
-        Some(self.variance().sqrt())
+        let out = self.variance().sqrt();
+        debug_assert!(out.is_finite(), "value must be finite");
+        Some(out)
     }
 }
 

@@ -39,8 +39,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.out.is_none() {
             self.out = Some(val);
@@ -54,6 +56,7 @@ where
         self.q_vals.push_back(val);
         let out = self.out.as_mut().expect("Is some at this point");
         *out = *out + val;
+        debug_assert!(out.is_finite(), "value must be finite");
     }
 
     #[inline(always)]

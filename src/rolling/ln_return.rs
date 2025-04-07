@@ -1,4 +1,4 @@
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use num::Float;
 
 /// Computes the natural logarithm and keep track of the last value.
@@ -37,8 +37,10 @@ where
     V: View<T>,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         self.last_val = self.current_val;
         self.current_val = val;
@@ -49,7 +51,9 @@ where
             return None;
         }
 
-        Some((self.current_val / self.last_val).ln())
+        let out = (self.current_val / self.last_val).ln();
+        debug_assert!(out.is_finite(), "value must be finite");
+        Some(out)
     }
 }
 

@@ -63,10 +63,12 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(view_last) = self.view.last() else {
             return;
         };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.init {
             self.init = false;
@@ -97,11 +99,12 @@ where
         if self.last == self.min && self.last == self.max {
             Some(T::zero())
         } else {
-            Some(
-                -T::one()
-                    + (((self.last - self.min) * T::from(2.0).expect("can convert"))
-                        / (self.max - self.min)),
-            )
+            let out = -T::one()
+                + (((self.last - self.min) * T::from(2.0).expect("can convert"))
+                    / (self.max - self.min));
+
+            debug_assert!(out.is_finite(), "value must be finite");
+            Some(out)
         }
     }
 }

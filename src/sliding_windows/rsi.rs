@@ -49,8 +49,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.is_empty() {
             self.old_ref = val;
@@ -89,6 +91,7 @@ where
         } else {
             let rs = self.avg_gain / self.avg_loss;
             let rsi = hundred - hundred / (T::one() + rs);
+            debug_assert!(rsi.is_finite(), "value must be finite");
             self.out = Some(rsi);
         }
     }

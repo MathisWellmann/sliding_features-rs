@@ -38,8 +38,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.len() > self.window_len {
             let old_val = self.q_vals.pop_front().unwrap();
@@ -54,7 +56,9 @@ where
         if self.q_vals.len() < self.window_len {
             return None;
         }
-        Some(self.sum / T::from(self.q_vals.len()).expect("can convert"))
+        let sma = self.sum / T::from(self.q_vals.len()).expect("can convert");
+        debug_assert!(sma.is_finite(), "value must be finite");
+        Some(sma)
     }
 }
 
@@ -63,7 +67,7 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{Rng, rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn sma() {

@@ -18,8 +18,8 @@ pub struct WelfordOnline<T: Float, V> {
     /// The mean of the observed samples
     #[getset(get_copy = "pub")]
     mean: T,
-    s: T,
-    n: usize,
+    m2: T,
+    count: usize,
 }
 
 impl<T, V> WelfordOnline<T, V>
@@ -34,15 +34,32 @@ where
             window_len,
             q_vals: VecDeque::with_capacity(window_len),
             mean: T::zero(),
-            s: T::zero(),
-            n: 0,
+            m2: T::zero(),
+            count: 0,
         }
     }
 
+    #[inline]
+    fn update_stats_add(&mut self, x: T) {
+        let delta = x - self.mean;
+        self.mean = self.mean + (delta / T::from(self.count + 1).unwrap());
+        self.m2 = self.m2 + (delta * (x - self.mean));
+        self.count += 1;
+    }
+
+    #[inline]
+    fn update_stats_remove(&mut self, old_value: T) {
+        let delta = old_value - self.mean;
+        self.mean = self.mean - (delta / T::from(self.count).unwrap());
+        self.m2 = self.m2 - (delta * (old_value - self.mean));
+        self.count -= 1;
+    }
+
     /// Return the variance of the sliding window using biased estimator.
+    #[inline]
     pub fn variance(&self) -> T {
-        if self.n > 1 {
-            self.s / T::from(self.n).expect("can convert")
+        if self.count > 1 {
+            self.m2 / T::from(self.count).expect("can convert")
         } else {
             T::zero()
         }
@@ -55,34 +72,34 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
-        let n = T::from(self.n).expect("can convert");
-        if self.q_vals.len() >= self.window_len {
-            let old_val = self.q_vals.pop_front().unwrap();
-            // remove old value from estimation
-            let new_mean = (n * self.mean - old_val) / (n - T::one());
-            self.s = self.s - (old_val - self.mean) * (old_val - new_mean);
-            self.mean = new_mean;
-            self.n -= 1;
-        }
         self.q_vals.push_back(val);
 
-        self.n += 1;
-        let old_mean = self.mean;
-        let n = T::from(self.n).expect("can convert");
-        self.mean = self.mean + (val - old_mean) / n;
-        self.s = self.s + (val - old_mean) * (val - self.mean);
+        if self.q_vals.len() >= self.window_len {
+            let old_val = self.q_vals.pop_front().unwrap();
+            self.update_stats_remove(old_val);
+        }
+        self.update_stats_add(val);
     }
 
     #[inline]
     fn last(&self) -> Option<T> {
-        if self.n < self.window_len {
+        if self.count < self.window_len {
             // To ensure we don't return anything when there are not enough samples.
             return None;
         }
-        Some(self.variance().sqrt())
+        let var = self.variance();
+        debug_assert!(var >= T::zero(), "Variance must be positive");
+        if var == T::zero() {
+            return Some(T::zero());
+        }
+        let out = var.sqrt();
+        debug_assert!(out.is_finite(), "value must be finite");
+        Some(out)
     }
 }
 

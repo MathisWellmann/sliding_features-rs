@@ -1,4 +1,4 @@
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
 use num::Float;
 
@@ -57,8 +57,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         let two = T::from(2.0).expect("can convert");
         let hp = (T::one() - self.alpha_1 / two).powi(2) * (val - two * self.val_1 + self.val_2)
@@ -79,7 +81,10 @@ where
 
     #[inline(always)]
     fn last(&self) -> Option<T> {
-        self.super_smoother.last()
+        self.super_smoother.last().map(|v| {
+            debug_assert!(v.is_finite(), "value must be finite");
+            v
+        })
     }
 }
 

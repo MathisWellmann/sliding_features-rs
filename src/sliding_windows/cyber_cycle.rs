@@ -49,8 +49,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.vals.len() >= self.window_len {
             self.vals.pop_front();
@@ -81,6 +83,7 @@ where
             * (self.smooth[last] - two * self.smooth[last - 1] + self.smooth[last - 2])
             + two * (T::one() - self.alpha) * *self.out.get(last - 1).unwrap()
             - (T::one() - self.alpha).powi(2) * *self.out.get(last - 2).unwrap();
+        debug_assert!(cc.is_finite(), "value must be finite");
         self.out.push_back(cc);
     }
 

@@ -48,8 +48,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.is_empty() {
             self.oldest_val = val;
@@ -84,6 +86,7 @@ where
         if self.q_vals.len() < self.window_len {
             return None;
         }
+        debug_assert!(self.out.is_finite(), "value must be finite");
         Some(self.out)
     }
 }

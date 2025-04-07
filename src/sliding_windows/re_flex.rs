@@ -46,8 +46,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.is_empty() {
             self.last_val = val;
@@ -94,7 +96,9 @@ where
             + T::from(0.96).expect("can convert") * self.last_m;
         self.last_m = ms0;
         if ms0 > T::zero() {
-            self.out = Some(d_sum / ms0.sqrt());
+            let out = d_sum / ms0.sqrt();
+            debug_assert!(out.is_finite(), "value must be finite");
+            self.out = Some(out);
         }
     }
 

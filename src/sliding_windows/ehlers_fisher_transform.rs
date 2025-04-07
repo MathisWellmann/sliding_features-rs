@@ -49,8 +49,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.is_empty() {
             self.high = val;
@@ -107,6 +109,7 @@ where
         }
         let fish = half * ((T::one() + smoothed) / (T::one() - smoothed)).ln()
             + half * *self.q_out.back().unwrap();
+        debug_assert!(fish.is_finite(), "value must be finite");
         self.q_out.push_back(fish);
     }
 

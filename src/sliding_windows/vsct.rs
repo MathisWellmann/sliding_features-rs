@@ -1,6 +1,6 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
-use crate::{View, pure_functions::Echo};
+use crate::{pure_functions::Echo, View};
 use num::Float;
 
 use super::WelfordOnline;
@@ -42,8 +42,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         self.welford_online.update(val);
         self.last = val;
@@ -55,7 +57,9 @@ where
             return Some(T::zero());
         }
         let mean = self.welford_online.mean();
-        Some((self.last - mean) / std_dev)
+        let out = (self.last - mean) / std_dev;
+        debug_assert!(out.is_finite(), "value must be finite");
+        Some(out)
     }
 }
 

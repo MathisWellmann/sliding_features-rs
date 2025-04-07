@@ -40,8 +40,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.len() >= self.window_len {
             let _ = self.q_vals.pop_front().unwrap();
@@ -66,10 +68,10 @@ where
         }
         let window_len = T::from(self.window_len).expect("Can convert");
         if window_len * sxx - sx.powi(2) > T::zero() && window_len * syy - sy.powi(2) > T::zero() {
-            return Some(
-                (window_len * sxy - sx * sy)
-                    / ((window_len * sxx - sx.powi(2)) * (window_len * syy - sy.powi(2))).sqrt(),
-            );
+            let out = (window_len * sxy - sx * sy)
+                / ((window_len * sxx - sx.powi(2)) * (window_len * syy - sy.powi(2))).sqrt();
+            debug_assert!(out.is_finite(), "value must be finite");
+            return Some(out);
         }
         Some(T::zero())
     }

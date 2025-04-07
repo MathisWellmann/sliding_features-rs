@@ -40,8 +40,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.len() >= self.window_len {
             self.q_vals.pop_front();
@@ -67,7 +69,9 @@ where
 
         let n = T::from(self.q_vals.len()).expect("can convert");
         let denom = T::from(0.5).expect("can convert") * n * (n - T::one());
-        self.out = Some(num / denom);
+        let out = num / denom;
+        debug_assert!(out.is_finite(), "value must be finite");
+        self.out = Some(out)
     }
 
     #[inline(always)]

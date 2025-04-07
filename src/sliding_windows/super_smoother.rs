@@ -63,8 +63,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         self.filt = self.c1 * (val + self.last_val) / T::from(2.0).expect("can convert")
             + (self.c2 * self.filt_1)
@@ -81,6 +83,8 @@ where
         if self.i < self.window_len {
             None
         } else {
+            let out = self.filt;
+            debug_assert!(out.is_finite(), "value must be finite");
             Some(self.filt)
         }
     }

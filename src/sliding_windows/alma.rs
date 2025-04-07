@@ -65,9 +65,11 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         // first, apply the internal view update
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if self.q_vals.len() >= self.window_len {
             let old_val = self.q_vals.front().unwrap();
@@ -90,6 +92,7 @@ where
         self.q_wtd.push_back(wtd);
 
         let ala = self.wtd_sum / self.cum_wt;
+        debug_assert!(ala.is_finite(), "value must be finite");
         self.q_out.push_back(ala);
     }
 
@@ -103,7 +106,7 @@ mod tests {
     use super::*;
     use crate::test_data::TEST_DATA;
     use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{Rng, rng};
+    use rand::{rng, Rng};
 
     #[test]
     fn alma() {

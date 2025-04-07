@@ -17,6 +17,7 @@ where
 {
     /// Create a new instance with a chained View and a given clipping point
     pub fn new(view: V, clipping_point: T) -> Self {
+        debug_assert!(clipping_point.is_finite(), "value must be finite");
         Self {
             view,
             clipping_point,
@@ -31,8 +32,10 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
+        debug_assert!(val.is_finite(), "value must be finite");
 
         if val >= self.clipping_point {
             self.out = Some(val);

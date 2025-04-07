@@ -28,10 +28,14 @@ where
     T: Float,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
     }
 
     fn last(&self) -> Option<T> {
-        self.view.last().map(|v| v.tanh())
+        self.view.last().map(|v| {
+            debug_assert!(v.is_finite(), "value must be finite");
+            v.tanh()
+        })
     }
 }

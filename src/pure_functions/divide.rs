@@ -29,16 +29,22 @@ impl<T, A, B> View<T> for Divide<T, A, B>
 where
     A: View<T>,
     B: View<T>,
-    T: Float,
+    T: Float + std::fmt::Debug,
 {
     fn update(&mut self, val: T) {
+        debug_assert!(val.is_finite(), "value must be finite");
         self.a.update(val);
         self.b.update(val);
     }
 
     fn last(&self) -> Option<T> {
         match (self.a.last(), self.b.last()) {
-            (Some(a), Some(b)) => Some(a / b),
+            (Some(a), Some(b)) => {
+                debug_assert!(a.is_finite(), "value must be finite");
+                debug_assert!(b.is_finite(), "value must be finite");
+                debug_assert_ne!(b, T::zero(), "cannot divide by zero");
+                Some(a / b)
+            }
             (None, None) | (None, Some(_)) | (Some(_), None) => None,
         }
     }
