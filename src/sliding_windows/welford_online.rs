@@ -29,6 +29,7 @@ where
 {
     /// Create a WelfordOnline struct with a chained View
     pub fn new(view: V, window_len: usize) -> Self {
+        assert!(window_len > 0, "window_len must be > 0");
         Self {
             view,
             window_len,
@@ -55,11 +56,11 @@ where
         self.count -= 1;
     }
 
-    /// Return the variance of the sliding window using biased estimator.
+    /// Return the variance of the sliding window
     #[inline]
     pub fn variance(&self) -> T {
         if self.count > 1 {
-            self.m2 / T::from(self.count).expect("can convert")
+            self.m2 / T::from(self.count - 1).expect("can convert")
         } else {
             T::zero()
         }
@@ -79,7 +80,7 @@ where
 
         self.q_vals.push_back(val);
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() > self.window_len {
             let old_val = self.q_vals.pop_front().unwrap();
             self.update_stats_remove(old_val);
         }
@@ -88,15 +89,15 @@ where
 
     #[inline]
     fn last(&self) -> Option<T> {
-        if self.count < self.window_len {
+        if self.count < self.window_len - 1 {
             // To ensure we don't return anything when there are not enough samples.
             return None;
         }
         let var = self.variance();
-        debug_assert!(var >= T::zero(), "Variance must be positive");
-        if var == T::zero() {
+        if var <= T::zero() {
             return Some(T::zero());
         }
+        debug_assert!(var >= T::zero(), "Variance must be positive");
         let out = var.sqrt();
         debug_assert!(out.is_finite(), "value must be finite");
         Some(out)
@@ -124,7 +125,7 @@ mod tests {
 
         // compute the standard deviation with the regular formula
         let avg: f64 = TEST_DATA.iter().sum::<f64>() / TEST_DATA.len() as f64;
-        let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64))
+        let std_dev: f64 = ((1.0 / (TEST_DATA.len() as f64 - 1.0))
             * TEST_DATA.iter().map(|v| (v - avg).powi(2)).sum::<f64>())
         .sqrt();
 

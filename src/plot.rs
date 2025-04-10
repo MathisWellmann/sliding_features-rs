@@ -2,6 +2,7 @@ use plotters::prelude::*;
 
 /// prepare_vec returns a 2d vector suitable for plotting and also min, max values of input vector
 fn prepare_vec(vals: Vec<f64>) -> (Vec<(f64, f64)>, f64, f64) {
+    assert!(!vals.is_empty());
     let mut out = vec![(0.0, 0.0); vals.len()];
     let mut min = vals[0];
     let mut max = vals[0];
