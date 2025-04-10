@@ -1,8 +1,8 @@
 /// Example showing how to use a single View
 extern crate time_series_generator;
 
-use rand::{SeedableRng, rngs::SmallRng};
-use sliding_features::{View, pure_functions::Echo, sliding_windows::Rsi};
+use rand::{rngs::SmallRng, SeedableRng};
+use sliding_features::{pure_functions::Echo, sliding_windows::Rsi, View};
 use time_series_generator::generate_standard_normal;
 
 fn main() {

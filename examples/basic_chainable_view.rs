@@ -4,9 +4,9 @@
 
 // import the needed structs, and the View trait
 use sliding_features::{
-    View,
     pure_functions::Echo,
     sliding_windows::{Alma, Vsct},
+    View,
 };
 
 fn main() {
