@@ -1,6 +1,6 @@
 use getset::CopyGetters;
 use num::Float;
-use std::f64::consts::PI;
+use std::{f64::consts::PI, num::NonZeroUsize};
 
 use crate::View;
 
@@ -11,7 +11,7 @@ pub struct SuperSmoother<T, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     i: usize,
     c1: T,
     c2: T,
@@ -31,8 +31,8 @@ where
     T: Float,
 {
     /// Create a new instance of the SuperSmoother with a chained View
-    pub fn new(view: V, window_len: usize) -> Self {
-        let wl = T::from(window_len).expect("can convert");
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
+        let wl = T::from(window_len.get()).expect("can convert");
         let a1 =
             (-T::from(1.414).expect("can convert") * T::from(PI).expect("can convert") / wl).exp();
         // NOTE: 4.4422 is radians of 1.414 * 180 degrees
@@ -80,7 +80,7 @@ where
     #[inline]
     fn last(&self) -> Option<T> {
         // NOTE: filter only kicks in after warmup steps are done
-        if self.i < self.window_len {
+        if self.i < self.window_len.get() {
             None
         } else {
             let out = self.filt;
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn super_smoother_plot() {
-        let mut ss = SuperSmoother::new(Echo::new(), 20);
+        let mut ss = SuperSmoother::new(Echo::new(), NonZeroUsize::new(20).unwrap());
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             ss.update(*v);

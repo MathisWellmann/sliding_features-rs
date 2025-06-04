@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 /// John Ehlers Correlation Trend Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
@@ -13,7 +13,7 @@ pub struct CorrelationTrendIndicator<T, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
 }
 
@@ -25,11 +25,11 @@ where
     /// Create a new Correlation Trend Indicator with a chained View
     /// and a given sliding window length
     #[inline]
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
         }
     }
 }
@@ -45,7 +45,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let _ = self.q_vals.pop_front().unwrap();
         }
         self.q_vals.push_back(val);
@@ -66,7 +66,7 @@ where
             sxy = sxy + *v * count;
             syy = syy + count.powi(2);
         }
-        let window_len = T::from(self.window_len).expect("Can convert");
+        let window_len = T::from(self.window_len.get()).expect("Can convert");
         if window_len * sxx - sx.powi(2) > T::zero() && window_len * syy - sy.powi(2) > T::zero() {
             let out = (window_len * sxy - sx * sy)
                 / ((window_len * sxx - sx.powi(2)) * (window_len * syy - sy.powi(2))).sqrt();
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn correlation_trend_indicator() {
         // Test if indicator is bounded in range [-1, 1.0]
-        let mut cti = CorrelationTrendIndicator::new(Echo::new(), 10);
+        let mut cti = CorrelationTrendIndicator::new(Echo::new(), NonZeroUsize::new(10).unwrap());
         for v in &TEST_DATA {
             cti.update(*v);
             let last = cti.last().unwrap();
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn correlation_trend_indicator_plot() {
-        let mut cti = CorrelationTrendIndicator::new(Echo::new(), 16);
+        let mut cti = CorrelationTrendIndicator::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut outs: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cti.update(*v);

@@ -42,6 +42,7 @@
               # Use nightly formatter, but otherwise stable channel
               (lib.hiPrio rust-bin.nightly."2024-04-01".rustfmt)
               rust
+              taplo
             ];
           };
         }

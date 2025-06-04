@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
@@ -13,7 +13,7 @@ pub struct MyRSI<T, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     cu: T,
     cd: T,
     out: T,
@@ -28,14 +28,14 @@ where
     T: Float,
 {
     /// Create a new MyRSI indicator with a chained View and a given window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         MyRSI {
             view,
             window_len,
             cu: T::zero(),
             cd: T::zero(),
             out: T::zero(),
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             last_val: T::zero(),
             oldest_val: T::zero(),
         }
@@ -57,7 +57,7 @@ where
             self.oldest_val = val;
             self.last_val = val;
         }
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old_val = self.q_vals.pop_front().unwrap();
             if old_val > self.oldest_val {
                 self.cu = self.cu - (old_val - self.oldest_val);
@@ -83,7 +83,7 @@ where
 
     #[inline]
     fn last(&self) -> Option<T> {
-        if self.q_vals.len() < self.window_len {
+        if self.q_vals.len() < self.window_len.get() {
             return None;
         }
         debug_assert!(self.out.is_finite(), "value must be finite");
@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn my_rsi() {
         // TODO: don't be so lazy with this test.
-        let mut my_rsi = MyRSI::<f64, _>::new(Echo::new(), 16);
+        let mut my_rsi = MyRSI::<f64, _>::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             my_rsi.update(*v);
             if let Some(val) = my_rsi.last() {
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn my_rsi_plot() {
-        let mut my_rsi = MyRSI::new(Echo::new(), 16);
+        let mut my_rsi = MyRSI::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             my_rsi.update(*v);

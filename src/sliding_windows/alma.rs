@@ -3,7 +3,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -14,7 +14,7 @@ pub struct Alma<T, V> {
     view: V,
     /// The configured window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     wtd_sum: T,
     cum_wt: T,
     m: T,
@@ -31,7 +31,7 @@ where
 {
     /// Create a new Arnaud Legoux Moving Average with a chained View
     /// and a given window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Alma::new_custom(
             view,
             window_len,
@@ -41,8 +41,8 @@ where
     }
 
     /// Create a Arnaud Legoux Moving Average with custom parameters
-    pub fn new_custom(view: V, window_len: usize, sigma: T, offset: T) -> Self {
-        let wl = T::from(window_len).expect("can convert");
+    pub fn new_custom(view: V, window_len: NonZeroUsize, sigma: T, offset: T) -> Self {
+        let wl = T::from(window_len.get()).expect("can convert");
         let m = offset * (wl + T::one());
         let s = wl / sigma;
         Alma {
@@ -52,9 +52,9 @@ where
             s,
             wtd_sum: T::zero(),
             cum_wt: T::zero(),
-            q_vals: VecDeque::new(),
-            q_wtd: VecDeque::new(),
-            q_out: VecDeque::new(),
+            q_vals: VecDeque::with_capacity(window_len.get()),
+            q_wtd: VecDeque::with_capacity(window_len.get()),
+            q_out: VecDeque::with_capacity(window_len.get()),
         }
     }
 }
@@ -71,7 +71,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old_val = self.q_vals.front().unwrap();
             let old_wtd = self.q_wtd.front().unwrap();
             self.wtd_sum = self.wtd_sum - *old_wtd * *old_val;
@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn alma() {
         let mut rng = rng();
-        let mut alma = Alma::new(Echo::new(), 16);
+        let mut alma = Alma::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for _ in 0..1_000_000 {
             let v = rng.random::<f64>();
             alma.update(v);
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn alma_plot() {
-        let mut alma = Alma::new(Echo::new(), 16);
+        let mut alma = Alma::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             alma.update(*v);

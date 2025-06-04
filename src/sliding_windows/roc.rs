@@ -2,7 +2,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -12,7 +12,7 @@ pub struct Roc<T, V> {
     view: V,
     /// The sliding window length
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     oldest: Option<T>,
     q_vals: VecDeque<T>,
     out: Option<T>,
@@ -25,12 +25,12 @@ where
 {
     /// Create a new Rate of Change Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Roc {
             view,
             window_len,
             oldest: None,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             out: None,
         }
     }
@@ -50,7 +50,7 @@ where
         if self.q_vals.is_empty() {
             self.oldest = Some(val);
         }
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old = self.q_vals.front().unwrap();
             self.oldest = Some(*old);
             self.q_vals.pop_front();
@@ -62,7 +62,7 @@ where
             return;
         }
         let roc = ((val - oldest) / oldest) * T::from(100.0).expect("can convert");
-        debug_assert!(roc.is_finite(), "value must be finite");
+        debug_assert!(roc.is_finite(), "`roc` must be finite");
         self.out = Some(roc);
     }
 
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn roc_plot() {
-        let mut r = Roc::new(Echo::new(), 16);
+        let mut r = Roc::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             r.update(*v);

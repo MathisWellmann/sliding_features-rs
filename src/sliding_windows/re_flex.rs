@@ -3,7 +3,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -14,7 +14,7 @@ pub struct ReFlex<T, V> {
     view: V,
     /// The sliding window length
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     last_val: T,
     last_m: T,
     q_vals: VecDeque<T>,
@@ -28,13 +28,13 @@ where
 {
     /// Create a new ReFlex indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         ReFlex {
             view,
             window_len,
             last_val: T::zero(),
             last_m: T::zero(),
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             out: None,
         }
     }
@@ -54,10 +54,10 @@ where
         if self.q_vals.is_empty() {
             self.last_val = val;
         }
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             self.q_vals.pop_front();
         }
-        let window_len = T::from(self.window_len).expect("can convert");
+        let window_len = T::from(self.window_len.get()).expect("can convert");
         let two = T::from(2.0).expect("can convert");
         let a1 = T::from(8.88442402435).expect("can convert") / window_len;
         let b1 = two * a1 * (T::from(4.44221201218).expect("can convert") / window_len).cos();
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn re_flex_plot() {
-        let mut rf = ReFlex::new(Echo::new(), 16);
+        let mut rf = ReFlex::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);

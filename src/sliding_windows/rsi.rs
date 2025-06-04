@@ -2,7 +2,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -12,7 +12,7 @@ pub struct Rsi<T, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     avg_gain: T,
     avg_loss: T,
     old_ref: T,
@@ -29,7 +29,7 @@ where
     /// Create a Relative Strength Index Indicator with a chained View
     /// and a given sliding window length
     #[inline]
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Rsi {
             view,
             window_len,
@@ -37,7 +37,7 @@ where
             avg_loss: T::zero(),
             old_ref: T::zero(),
             last_val: T::zero(),
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             out: None,
         }
     }
@@ -52,17 +52,18 @@ where
         debug_assert!(val.is_finite(), "value must be finite");
         self.view.update(val);
         let Some(val) = self.view.last() else { return };
-        debug_assert!(val.is_finite(), "value must be finite");
+        debug_assert!(val.is_finite(), "value from `View` must be finite");
 
         if self.q_vals.is_empty() {
             self.old_ref = val;
             self.last_val = val;
         }
-        let window_len = T::from(self.window_len).expect("can convert");
-        if self.q_vals.len() >= self.window_len {
+        let window_len = T::from(self.window_len.get()).expect("can convert");
+        if self.q_vals.len() >= self.window_len.get() {
             // remove old
             let old_val = *self.q_vals.front().unwrap();
             let change = old_val - self.old_ref;
+            debug_assert!(change.is_finite(), "`change` must be finite");
             self.old_ref = old_val;
             self.q_vals.pop_front();
             if change > T::zero() {
@@ -74,14 +75,17 @@ where
         self.q_vals.push_back(val);
 
         let change = val - self.last_val;
+        debug_assert!(change.is_finite(), "`change` must be finite");
         self.last_val = val;
         if change > T::zero() {
             self.avg_gain = self.avg_gain + change / window_len;
         } else {
             self.avg_loss = self.avg_loss + change.abs() / window_len;
         }
+        debug_assert!(self.avg_gain.is_finite(), "`avg_gain` must be finite");
+        debug_assert!(self.avg_loss.is_finite(), "`avg_loss` must be finite");
 
-        if self.q_vals.len() < self.window_len {
+        if self.q_vals.len() < self.window_len.get() {
             return;
         }
 
@@ -90,6 +94,7 @@ where
             self.out = Some(hundred);
         } else {
             let rs = self.avg_gain / self.avg_loss;
+            debug_assert!(rs.is_finite(), "`rs` must be finite");
             let rsi = hundred - hundred / (T::one() + rs);
             debug_assert!(rsi.is_finite(), "value must be finite");
             self.out = Some(rsi);
@@ -111,7 +116,7 @@ mod tests {
 
     #[test]
     fn rsi_plot() {
-        let mut rsi = Rsi::new(Echo::new(), 16);
+        let mut rsi = Rsi::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rsi.update(*v);
@@ -125,7 +130,7 @@ mod tests {
 
     #[test]
     fn rsi_range() {
-        let mut rsi = Rsi::new(Echo::new(), 16);
+        let mut rsi = Rsi::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             rsi.update(*v);
             if let Some(last) = rsi.last() {

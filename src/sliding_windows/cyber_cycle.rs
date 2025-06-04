@@ -3,7 +3,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -14,7 +14,7 @@ pub struct CyberCycle<T, V> {
     view: V,
     /// The sliding window length
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     alpha: T,
     vals: VecDeque<T>,
     out: VecDeque<T>,
@@ -30,15 +30,15 @@ where
     /// Create a new Cyber Cycle Indicator with a chained View
     /// and a given window length
     #[inline]
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         CyberCycle {
             view,
             window_len,
             alpha: T::from(2.0).expect("can convert")
-                / (T::from(window_len).expect("can convert") + T::one()),
-            vals: VecDeque::with_capacity(window_len),
-            out: VecDeque::with_capacity(window_len),
-            smooth: vec![T::zero(); window_len],
+                / (T::from(window_len.get()).expect("can convert") + T::one()),
+            vals: VecDeque::with_capacity(window_len.get()),
+            out: VecDeque::with_capacity(window_len.get()),
+            smooth: vec![T::zero(); window_len.get()],
         }
     }
 }
@@ -54,13 +54,13 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.vals.len() >= self.window_len {
+        if self.vals.len() >= self.window_len.get() {
             self.vals.pop_front();
             self.out.pop_front();
         }
         self.vals.push_back(val);
 
-        if self.vals.len() < self.window_len {
+        if self.vals.len() < self.window_len.get() {
             self.out.push_back(T::zero());
             return;
         }
@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn cyber_cycle_plot() {
-        let mut cc = CyberCycle::new(Echo::new(), 16);
+        let mut cc = CyberCycle::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cc.update(*v);

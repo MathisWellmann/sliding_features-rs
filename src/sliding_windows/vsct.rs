@@ -1,5 +1,7 @@
 //! Variance Stabilizing Centering Transform Sliding Window
 
+use std::num::NonZeroUsize;
+
 use crate::{pure_functions::Echo, View};
 use num::Float;
 
@@ -21,7 +23,7 @@ where
     /// Create a new Variance Stabilizing Centering Transform with a chained View
     /// and a given sliding window length
     #[inline]
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Vsct {
             view,
             welford_online: WelfordOnline::new(Echo::new(), window_len),
@@ -31,7 +33,7 @@ where
 
     /// The sliding window length.
     #[inline(always)]
-    pub fn window_len(&self) -> usize {
+    pub fn window_len(&self) -> NonZeroUsize {
         self.welford_online.window_len()
     }
 }
@@ -71,7 +73,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = Vsct::new(Echo::new(), 16);
+        let mut vsct = Vsct::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

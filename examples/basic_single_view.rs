@@ -1,12 +1,14 @@
 /// Example showing how to use a single View
 extern crate time_series_generator;
 
+use std::num::NonZeroUsize;
+
 use rand::{rngs::SmallRng, SeedableRng};
 use sliding_features::{pure_functions::Echo, sliding_windows::Rsi, View};
 use time_series_generator::generate_standard_normal;
 
 fn main() {
-    let mut rsi = Rsi::new(Echo::new(), 14);
+    let mut rsi = Rsi::new(Echo::new(), NonZeroUsize::new(14).unwrap());
 
     // generate dummy values
     let mut rng = SmallRng::seed_from_u64(0);

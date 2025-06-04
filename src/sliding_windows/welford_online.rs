@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
@@ -13,7 +13,7 @@ pub struct WelfordOnline<T: Float, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     /// The mean of the observed samples
     #[getset(get_copy = "pub")]
@@ -28,12 +28,11 @@ where
     T: Float,
 {
     /// Create a WelfordOnline struct with a chained View
-    pub fn new(view: V, window_len: usize) -> Self {
-        assert!(window_len > 0, "window_len must be > 0");
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             mean: T::zero(),
             m2: T::zero(),
             count: 0,
@@ -80,7 +79,7 @@ where
 
         self.q_vals.push_back(val);
 
-        if self.q_vals.len() > self.window_len {
+        if self.q_vals.len() > self.window_len.get() {
             let old_val = self.q_vals.pop_front().unwrap();
             self.update_stats_remove(old_val);
         }
@@ -89,7 +88,7 @@ where
 
     #[inline]
     fn last(&self) -> Option<T> {
-        if self.count < self.window_len - 1 {
+        if self.count < self.window_len.get() - 1 {
             // To ensure we don't return anything when there are not enough samples.
             return None;
         }
@@ -114,7 +113,7 @@ mod tests {
 
     #[test]
     fn welford_online() {
-        let mut wo = WelfordOnline::new(Echo::new(), TEST_DATA.len());
+        let mut wo = WelfordOnline::new(Echo::new(), NonZeroUsize::new(TEST_DATA.len()).unwrap());
         for v in &TEST_DATA {
             wo.update(*v);
             if let Some(val) = wo.last() {
@@ -134,7 +133,7 @@ mod tests {
 
     #[test]
     fn welford_online_plot() {
-        let mut wo = WelfordOnline::new(Echo::new(), 16);
+        let mut wo = WelfordOnline::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             wo.update(*v);

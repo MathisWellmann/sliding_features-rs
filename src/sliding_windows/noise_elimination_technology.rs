@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
@@ -13,7 +13,7 @@ pub struct NoiseEliminationTechnology<T, V> {
     view: V,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     out: Option<T>,
     q_vals: VecDeque<T>,
 }
@@ -24,12 +24,12 @@ where
     T: Float,
 {
     /// Create a new NET with a chained View and window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         NoiseEliminationTechnology {
             view,
             window_len,
             out: None,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
         }
     }
 }
@@ -45,7 +45,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             self.q_vals.pop_front();
         }
         self.q_vals.push_back(val);
@@ -90,7 +90,10 @@ mod tests {
 
     #[test]
     fn net_my_rsi_plot() {
-        let mut net = NoiseEliminationTechnology::new(MyRSI::new(Echo::new(), 16), 16);
+        let mut net = NoiseEliminationTechnology::new(
+            MyRSI::new(Echo::new(), NonZeroUsize::new(16).unwrap()),
+            NonZeroUsize::new(16).unwrap(),
+        );
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             net.update(*v);

@@ -1,5 +1,7 @@
 //! Variance Stabilizing Transform uses the standard deviation to normalize values
 
+use std::num::NonZeroUsize;
+
 use crate::{pure_functions::Echo, View};
 use num::Float;
 
@@ -20,7 +22,7 @@ where
 {
     /// Create a new Variance Stabilizing Transform with a chained View
     /// and a given window length for computing standard deviation
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             last: T::zero(),
@@ -30,7 +32,7 @@ where
 
     /// The sliding window length.
     #[inline]
-    pub fn window_len(&self) -> usize {
+    pub fn window_len(&self) -> NonZeroUsize {
         self.welford_online.window_len()
     }
 }
@@ -69,7 +71,7 @@ mod tests {
 
     #[test]
     fn variance_stabilizing_transform_plot() {
-        let mut tf = Vst::new(Echo::new(), 16);
+        let mut tf = Vst::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             tf.update(*v);

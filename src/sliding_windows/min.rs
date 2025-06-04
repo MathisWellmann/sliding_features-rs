@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use getset::CopyGetters;
 use num::Float;
@@ -13,7 +13,7 @@ pub struct Min<T, V> {
     q_vals: VecDeque<T>,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
 }
 
 impl<T, V> Min<T, V>
@@ -22,12 +22,11 @@ where
     V: View<T>,
 {
     /// Create a new instance with a chained `View` and a sliding window length.
-    pub fn new(view: V, window_len: usize) -> Self {
-        assert!(window_len > 0, "Window length must be greater than zero");
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             opt_min: None,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             window_len,
         }
     }
@@ -44,7 +43,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let popped = self.q_vals.pop_front().expect("There is a value");
             if popped == self.opt_min.expect("Has a minimum value") {
                 // re-compute the min value.
@@ -79,7 +78,7 @@ mod test {
 
     #[test]
     fn min() {
-        const WINDOW_LEN: usize = 3;
+        const WINDOW_LEN: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let mut v = Min::new(Echo::new(), WINDOW_LEN);
         assert_eq!(v.last(), None);
         v.update(1.0);

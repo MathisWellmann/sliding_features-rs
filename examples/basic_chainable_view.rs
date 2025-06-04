@@ -1,6 +1,7 @@
 /// This Example provides a basic overview of chainable View definitions.
 /// Assume you want to first transform your values with a Variance Stabilizing Centering Transform
 //  and after that, smooth the values with an ALMA
+use std::num::NonZeroUsize;
 
 // import the needed structs, and the View trait
 use sliding_features::{
@@ -17,7 +18,7 @@ fn main() {
         .collect();
     println!("rands: {:?}", rands);
 
-    let window_len: usize = 20;
+    let window_len = NonZeroUsize::new(20).unwrap();
     let mut chain = Alma::new(
         // first, define the last function which gets applied in the chain
         Vsct::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT

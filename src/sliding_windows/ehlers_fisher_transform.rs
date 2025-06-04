@@ -4,7 +4,7 @@
 use crate::View;
 use getset::CopyGetters;
 use num::Float;
-use std::{cmp::Ordering, collections::VecDeque};
+use std::{cmp::Ordering, collections::VecDeque, num::NonZeroUsize};
 
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
@@ -14,7 +14,7 @@ pub struct EhlersFisherTransform<T, V, M> {
     moving_average: M,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     high: T,
     low: T,
@@ -29,15 +29,15 @@ where
 {
     /// Create a new indicator with a view, moving average and window length
     #[inline]
-    pub fn new(view: V, ma: M, window_len: usize) -> Self {
+    pub fn new(view: V, ma: M, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             moving_average: ma,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             high: T::zero(),
             low: T::zero(),
-            q_out: VecDeque::with_capacity(window_len),
+            q_out: VecDeque::with_capacity(window_len.get()),
         }
     }
 }
@@ -58,7 +58,7 @@ where
             self.high = val;
             self.low = val;
         }
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old_val = self.q_vals.pop_front().unwrap();
             // update high and low values if needed
             if old_val >= self.high {
@@ -129,7 +129,11 @@ mod tests {
 
     #[test]
     fn ehlers_fisher_transform_plot() {
-        let mut eft = EhlersFisherTransform::new(Echo::new(), Ema::new(Echo::new(), 16), 16);
+        let mut eft = EhlersFisherTransform::new(
+            Echo::new(),
+            Ema::new(Echo::new(), NonZeroUsize::new(16).unwrap()),
+            NonZeroUsize::new(16).unwrap(),
+        );
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             eft.update(*v);

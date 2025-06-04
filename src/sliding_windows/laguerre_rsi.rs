@@ -3,7 +3,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -20,7 +20,7 @@ pub struct LaguerreRSI<T, V> {
     l3s: VecDeque<T>,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
 }
 
 impl<T, V> LaguerreRSI<T, V>
@@ -30,16 +30,16 @@ where
 {
     /// Create a new LaguerreRSI with a chained View
     /// and a given sliding window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         LaguerreRSI {
             view,
             value: None,
             gamma: T::from(2.0).expect("can convert")
-                / (T::from(window_len).expect("can convert") + T::one()),
-            l0s: VecDeque::with_capacity(window_len),
-            l1s: VecDeque::with_capacity(window_len),
-            l2s: VecDeque::with_capacity(window_len),
-            l3s: VecDeque::with_capacity(window_len),
+                / (T::from(window_len.get()).expect("can convert") + T::one()),
+            l0s: VecDeque::with_capacity(window_len.get()),
+            l1s: VecDeque::with_capacity(window_len.get()),
+            l2s: VecDeque::with_capacity(window_len.get()),
+            l3s: VecDeque::with_capacity(window_len.get()),
             window_len,
         }
     }
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn laguerre_rsi() {
-        let mut lrsi = LaguerreRSI::new(Echo::new(), 16);
+        let mut lrsi = LaguerreRSI::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             lrsi.update(*v);
             if let Some(last) = lrsi.last() {
@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn laguerre_rsi_plot() {
-        let mut lrsi = LaguerreRSI::new(Echo::new(), 16);
+        let mut lrsi = LaguerreRSI::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             lrsi.update(*v);

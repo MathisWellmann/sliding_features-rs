@@ -2,7 +2,7 @@
 //! where a positive / negative values are interpreted as true / false
 
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -11,7 +11,7 @@ use crate::View;
 /// where a positive / negative values are interpreted as true / false
 pub struct BinaryEntropy<T, V> {
     view: V,
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     // number of positive values
     p: usize,
@@ -23,7 +23,7 @@ where
     T: Float,
 {
     /// Create a new Entropy Sliding Window
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             window_len,
@@ -45,7 +45,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old_val = self.q_vals.pop_back().unwrap();
             if old_val >= T::zero() {
                 self.p -= 1;
@@ -83,14 +83,14 @@ mod tests {
     #[test]
     fn binary_entropy() {
         let vals: Vec<f64> = vec![1.0; 10];
-        let mut e = BinaryEntropy::new(Echo::new(), 10);
+        let mut e = BinaryEntropy::new(Echo::new(), NonZeroUsize::new(10).unwrap());
         for v in &vals {
             e.update(*v);
             let last = e.last().unwrap();
             assert_eq!(last, 0.0);
         }
         let vals: Vec<f64> = vec![1.0; 10];
-        let mut e = BinaryEntropy::new(Echo::new(), 10);
+        let mut e = BinaryEntropy::new(Echo::new(), NonZeroUsize::new(10).unwrap());
         for v in &vals {
             e.update(*v);
             let last = e.last().unwrap();
@@ -98,7 +98,7 @@ mod tests {
         }
 
         let vals: Vec<f64> = vec![-1.0, 1.0, -1.0, 1.0];
-        let mut e = BinaryEntropy::new(Echo::new(), 4);
+        let mut e = BinaryEntropy::new(Echo::new(), NonZeroUsize::new(4).unwrap());
         for v in &vals {
             e.update(*v);
             let last = e.last().unwrap();

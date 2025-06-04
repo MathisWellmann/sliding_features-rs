@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
 use num::Float;
@@ -12,7 +14,7 @@ pub struct RoofingFilter<T, V> {
     super_smoother: SuperSmoother<T, Echo<T>>,
     /// The sliding window length.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     i: usize,
     alpha_1: T,
     // previous value
@@ -31,9 +33,13 @@ where
     T: Float,
 {
     /// Create a Roofing Filter with a chained view
-    pub fn new(view: V, window_len_low_pass: usize, super_smoother_len_high_pass: usize) -> Self {
+    pub fn new(
+        view: V,
+        window_len_low_pass: NonZeroUsize,
+        super_smoother_len_high_pass: NonZeroUsize,
+    ) -> Self {
         // NOTE: 4.4422 radians from  0.707 * 360 degrees
-        let wl = T::from(window_len_low_pass).expect("can convert");
+        let wl = T::from(window_len_low_pass.get()).expect("can convert");
         let f = T::from(4.4422).expect("Can convert");
         let alpha_1 = ((f / wl).cos() + (f / wl).sin() - T::one()) / (f / wl).cos();
 
@@ -72,7 +78,7 @@ where
         self.val_2 = self.val_1;
         self.val_1 = val;
 
-        if self.i > self.window_len {
+        if self.i > self.window_len.get() {
             // to avoid weird output, only update, once warmup stage is done
             self.super_smoother.update(hp);
         }
@@ -96,7 +102,11 @@ mod tests {
 
     #[test]
     fn roofing_filter_plot() {
-        let mut rf = RoofingFilter::new(Echo::new(), 48, 10);
+        let mut rf = RoofingFilter::new(
+            Echo::new(),
+            NonZeroUsize::new(48).unwrap(),
+            NonZeroUsize::new(10).unwrap(),
+        );
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             rf.update(*v);

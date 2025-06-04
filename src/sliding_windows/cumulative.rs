@@ -2,7 +2,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -12,7 +12,7 @@ pub struct Cumulative<T, V> {
     view: V,
     /// The length of the sliding window.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     out: Option<T>,
 }
@@ -23,11 +23,11 @@ where
     T: Float,
 {
     /// Create a new cumulative sliding window with a chained view and a window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             out: None,
         }
     }
@@ -48,7 +48,7 @@ where
             self.out = Some(val);
         }
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old = self.q_vals.pop_front().unwrap();
             let out = self.out.as_mut().expect("Is some at this point");
             *out = *out - old;
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn cumulative_plot() {
-        let mut cum = Cumulative::new(Echo::new(), TEST_DATA.len());
+        let mut cum = Cumulative::new(Echo::new(), NonZeroUsize::new(TEST_DATA.len()).unwrap());
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             cum.update(*v);

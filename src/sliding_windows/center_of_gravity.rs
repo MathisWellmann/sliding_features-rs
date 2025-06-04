@@ -3,7 +3,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -14,7 +14,7 @@ pub struct CenterOfGravity<T, V> {
     view: V,
     /// The length of the sliding window.
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     out: Option<T>,
 }
@@ -26,11 +26,11 @@ where
 {
     /// Create a Center of Gravity Indicator with a chained View
     /// and a given sliding window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self {
             view,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             out: None,
         }
     }
@@ -48,7 +48,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             self.q_vals.pop_front();
         }
         self.q_vals.push_back(val);
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn center_of_gravity_plot() {
-        let mut cgo = CenterOfGravity::new(Echo::new(), 16);
+        let mut cgo = CenterOfGravity::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             cgo.update(*v);

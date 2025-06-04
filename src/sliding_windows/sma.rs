@@ -1,7 +1,7 @@
 //! SMA - Simple Moving Average
 
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -9,7 +9,7 @@ use crate::View;
 /// SMA - Simple Moving Average
 pub struct Sma<T, V> {
     view: V,
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     sum: T,
 }
@@ -22,7 +22,7 @@ where
     /// Create a new simple moving average with a chained View
     /// and a given sliding window length
     #[inline]
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Sma {
             view,
             window_len,
@@ -43,7 +43,7 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() > self.window_len {
+        if self.q_vals.len() > self.window_len.get() {
             let old_val = self.q_vals.pop_front().unwrap();
             self.sum = self.sum - old_val;
         }
@@ -53,7 +53,7 @@ where
     }
 
     fn last(&self) -> Option<T> {
-        if self.q_vals.len() < self.window_len {
+        if self.q_vals.len() < self.window_len.get() {
             return None;
         }
         let sma = self.sum / T::from(self.q_vals.len()).expect("can convert");
@@ -73,7 +73,7 @@ mod tests {
     fn sma() {
         let mut rng = rng();
 
-        let mut sma = Sma::new(Echo::new(), 16);
+        let mut sma = Sma::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for _ in 0..1024 {
             let r = rng.random::<f64>();
             sma.update(r);
@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn sma_plot() {
-        let mut sma = Sma::new(Echo::new(), 16);
+        let mut sma = Sma::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             sma.update(*v);

@@ -1,5 +1,5 @@
 use crate::{pure_functions::Echo, View};
-use num::Float;
+use num::{Float, Zero};
 
 /// Keep track of the current peak to valley.
 #[derive(Debug, Clone)]
@@ -52,6 +52,7 @@ where
         if val < self.min_after_peak {
             self.min_after_peak = val;
         }
+        debug_assert!(self.peak != Zero::zero());
         let dd = (self.peak - self.min_after_peak) / self.peak;
         if dd > self.max_drawdown {
             self.max_drawdown = dd;

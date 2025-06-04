@@ -1,5 +1,7 @@
 //! EMA - Exponential Moving Average
 
+use std::num::NonZeroUsize;
+
 use crate::View;
 use num::Float;
 
@@ -21,15 +23,15 @@ where
 {
     /// Create a new EMA with a chained view and a given window length
     /// and a default alpha value of 2.0
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         Self::with_alpha(view, window_len, T::from(2.0).expect("can convert"))
     }
 
     /// Create a new EMA with a custom alpha as well
-    pub fn with_alpha(view: V, window_len: usize, alpha: T) -> Self {
+    pub fn with_alpha(view: V, window_len: NonZeroUsize, alpha: T) -> Self {
         Self {
             view,
-            window_len,
+            window_len: window_len.get(),
             alpha,
             last_ema: T::zero(),
             out: T::zero(),
@@ -80,7 +82,7 @@ mod tests {
 
     #[test]
     fn ema_plot() {
-        let mut ema = Ema::new(Echo::new(), 16);
+        let mut ema = Ema::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             ema.update(*v);

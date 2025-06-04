@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::{rng, Rng};
 use sliding_features::{
@@ -16,8 +18,8 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             let mut view = PolarizedFractalEfficiency::<f64, _, _>::new(
                 Echo::new(),
-                Ema::new(Echo::new(), 1024),
-                1024,
+                Ema::new(Echo::new(), NonZeroUsize::new(1024).unwrap()),
+                NonZeroUsize::new(1024).unwrap(),
             );
             for v in vals.iter() {
                 view.update(*v);
@@ -30,8 +32,8 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| {
             let mut view = PolarizedFractalEfficiency::<f32, _, _>::new(
                 Echo::new(),
-                Ema::new(Echo::new(), 1024),
-                1024,
+                Ema::new(Echo::new(), NonZeroUsize::new(1024).unwrap()),
+                NonZeroUsize::new(1024).unwrap(),
             );
             for v in vals.iter() {
                 view.update(*v);

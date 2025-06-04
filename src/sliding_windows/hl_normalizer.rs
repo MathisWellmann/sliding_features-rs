@@ -2,7 +2,7 @@
 
 use getset::CopyGetters;
 use num::Float;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -12,7 +12,7 @@ pub struct HLNormalizer<T, V> {
     view: V,
     /// The sliding window length
     #[getset(get_copy = "pub")]
-    window_len: usize,
+    window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     min: T,
     max: T,
@@ -27,11 +27,11 @@ where
 {
     /// Create a new HLNormalizer with a chained View
     /// and a given sliding window length
-    pub fn new(view: V, window_len: usize) -> Self {
+    pub fn new(view: V, window_len: NonZeroUsize) -> Self {
         HLNormalizer {
             view,
             window_len,
-            q_vals: VecDeque::with_capacity(window_len),
+            q_vals: VecDeque::with_capacity(window_len.get()),
             min: T::zero(),
             max: T::zero(),
             last: T::zero(),
@@ -76,7 +76,7 @@ where
             self.max = view_last;
             self.last = view_last;
         }
-        if self.q_vals.len() >= self.window_len {
+        if self.q_vals.len() >= self.window_len.get() {
             let old = *self.q_vals.front().unwrap();
             if old <= self.min || old >= self.max {
                 let (min, max) = extent_queue(&self.q_vals);
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn normalizer() {
-        let mut n = HLNormalizer::new(Echo::new(), 16);
+        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             n.update(*v);
             let last = n.last().unwrap();
