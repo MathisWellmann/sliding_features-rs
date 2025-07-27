@@ -1,16 +1,19 @@
 //! Shannon entropy sliding window over values,
 //! where a positive / negative values are interpreted as true / false
 
+use getset::CopyGetters;
 use num::Float;
 use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
-#[derive(Debug, Clone)]
 /// Shannon entropy sliding window over values,
 /// where a positive / negative values are interpreted as true / false
+#[derive(Debug, Clone, CopyGetters)]
 pub struct BinaryEntropy<T, V> {
     view: V,
+    /// The length of the sliding window.
+    #[getset(get_copy = "pub")]
     window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     // number of positive values
