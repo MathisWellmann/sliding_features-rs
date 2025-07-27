@@ -77,9 +77,8 @@ where
 
     #[inline(always)]
     fn last(&self) -> Option<T> {
-        self.out.map(|v| {
+        self.out.inspect(|v| {
             debug_assert!(v.is_finite(), "value must be finite");
-            v
         })
     }
 }

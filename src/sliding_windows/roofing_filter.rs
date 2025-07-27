@@ -87,9 +87,8 @@ where
 
     #[inline(always)]
     fn last(&self) -> Option<T> {
-        self.super_smoother.last().map(|v| {
+        self.super_smoother.last().inspect(|v| {
             debug_assert!(v.is_finite(), "value must be finite");
-            v
         })
     }
 }
