@@ -1,14 +1,18 @@
 use std::{collections::VecDeque, num::NonZeroUsize};
 
+use getset::CopyGetters;
 use num::Float;
 
 use crate::View;
 
 /// Lags a value such that it appears n ticks later.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 pub struct Lag<T, V> {
     view: V,
     buffer: VecDeque<T>,
+    /// The sliding window length.
+    #[getset(get_copy = "pub")]
+    window_len: NonZeroUsize,
     out: Option<T>,
 }
 
@@ -22,15 +26,9 @@ where
         Self {
             view,
             buffer: VecDeque::with_capacity(window_len.get()),
+            window_len,
             out: None,
         }
-    }
-
-    /// The sliding window length.
-    #[inline]
-    pub fn window_len(&self) -> NonZeroUsize {
-        NonZeroUsize::new(self.buffer.capacity())
-            .expect("Capacity is initialized from `NonZeroUsize`")
     }
 }
 
