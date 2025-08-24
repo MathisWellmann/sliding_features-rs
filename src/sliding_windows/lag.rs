@@ -5,6 +5,7 @@ use num::Float;
 use crate::View;
 
 /// Lags a value such that it appears n ticks later.
+#[derive(Debug, Clone)]
 pub struct Lag<T, V> {
     view: V,
     buffer: VecDeque<T>,
@@ -27,8 +28,9 @@ where
 
     /// The sliding window length.
     #[inline]
-    pub fn window_len(&self) -> usize {
-        self.buffer.capacity()
+    pub fn window_len(&self) -> NonZeroUsize {
+        NonZeroUsize::new(self.buffer.capacity())
+            .expect("Capacity is initialized from `NonZeroUsize`")
     }
 }
 
@@ -44,7 +46,7 @@ where
         debug_assert!(val.is_finite(), "value must be finite");
 
         self.buffer.push_back(val);
-        if self.buffer.len() >= self.window_len() {
+        if self.buffer.len() >= self.window_len().get() {
             self.out = self.buffer.pop_front();
         }
     }
