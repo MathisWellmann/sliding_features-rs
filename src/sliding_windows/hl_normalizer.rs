@@ -1,8 +1,12 @@
 //! A sliding High - Low Normalizer
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -112,7 +116,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{pure_functions::Echo, test_data::TEST_DATA};
+    use crate::{
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn normalizer() {

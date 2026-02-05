@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Greater Than or Equal
 /// Will allow values >= clipping_point through and clip other values to the clipping point
@@ -51,9 +52,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::pure_functions::Echo;
-
     use super::*;
+    use crate::pure_functions::Echo;
 
     #[test]
     fn gte() {

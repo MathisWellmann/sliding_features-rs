@@ -3,8 +3,15 @@ extern crate time_series_generator;
 
 use std::num::NonZeroUsize;
 
-use rand::{rngs::SmallRng, SeedableRng};
-use sliding_features::{pure_functions::Echo, sliding_windows::Rsi, View};
+use rand::{
+    SeedableRng,
+    rngs::SmallRng,
+};
+use sliding_features::{
+    View,
+    pure_functions::Echo,
+    sliding_windows::Rsi,
+};
 use time_series_generator::generate_standard_normal;
 
 fn main() {

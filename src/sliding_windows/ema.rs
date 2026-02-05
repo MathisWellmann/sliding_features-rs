@@ -2,8 +2,9 @@
 
 use std::num::NonZeroUsize;
 
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 #[derive(Clone, Debug)]
 /// EMA - Exponential Moving Average
@@ -76,9 +77,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn ema_plot() {

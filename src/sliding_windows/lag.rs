@@ -1,4 +1,7 @@
-use std::{collections::VecDeque, num::NonZeroUsize};
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
 
 use getset::CopyGetters;
 use num::Float;
@@ -56,9 +59,8 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::pure_functions::Echo;
-
     use super::*;
+    use crate::pure_functions::Echo;
 
     #[test]
     fn lag() {

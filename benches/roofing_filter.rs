@@ -1,8 +1,20 @@
 use std::num::NonZeroUsize;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::{rng, Rng};
-use sliding_features::{pure_functions::Echo, sliding_windows::RoofingFilter, View};
+use criterion::{
+    Criterion,
+    black_box,
+    criterion_group,
+    criterion_main,
+};
+use rand::{
+    Rng,
+    rng,
+};
+use sliding_features::{
+    View,
+    pure_functions::Echo,
+    sliding_windows::RoofingFilter,
+};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = rng();

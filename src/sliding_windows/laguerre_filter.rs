@@ -1,8 +1,9 @@
 //! John Ehlers Laguerre Filter
 //! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// John Ehlers Laguerre Filter
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
@@ -98,10 +99,17 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::{
+        Rng,
+        rng,
+    };
+
     use super::*;
-    use crate::test_data::TEST_DATA;
-    use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{rng, Rng};
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn laguerre_filter() {

@@ -1,10 +1,15 @@
 //! John Ehlers Correlation Trend Indicator
 //! from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 
-use crate::View;
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
+
+use crate::View;
 
 /// John Ehlers Correlation Trend Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
@@ -80,9 +85,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn correlation_trend_indicator() {

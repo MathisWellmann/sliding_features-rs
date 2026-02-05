@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Applies the Tanh function to the output of its View component
 #[derive(Debug, Clone)]

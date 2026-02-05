@@ -1,10 +1,13 @@
 use std::num::NonZeroUsize;
 
-use crate::{pure_functions::Echo, View};
 use getset::CopyGetters;
 use num::Float;
 
 use super::SuperSmoother;
+use crate::{
+    View,
+    pure_functions::Echo,
+};
 
 /// Roofing Filter by John Ehlers
 /// From paper: <http://www.stockspotter.com/files/PredictiveIndicators.pdf>
@@ -96,8 +99,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn roofing_filter_plot() {

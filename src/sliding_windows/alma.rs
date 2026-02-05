@@ -1,9 +1,13 @@
 //! ALMA - Arnaud Legoux Moving Average
 //! reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -103,10 +107,17 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::{
+        Rng,
+        rng,
+    };
+
     use super::*;
-    use crate::test_data::TEST_DATA;
-    use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{rng, Rng};
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn alma() {

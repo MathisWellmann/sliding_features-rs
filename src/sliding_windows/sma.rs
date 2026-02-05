@@ -1,7 +1,11 @@
 //! SMA - Simple Moving Average
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -64,10 +68,17 @@ where
 
 #[cfg(test)]
 mod tests {
+    use rand::{
+        Rng,
+        rng,
+    };
+
     use super::*;
-    use crate::test_data::TEST_DATA;
-    use crate::{plot::plot_values, pure_functions::Echo};
-    use rand::{rng, Rng};
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn sma() {

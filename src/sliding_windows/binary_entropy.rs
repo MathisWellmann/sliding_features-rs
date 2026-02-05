@@ -1,9 +1,13 @@
 //! Shannon entropy sliding window over values,
 //! where a positive / negative values are interpreted as true / false
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -79,9 +83,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::pure_functions::Echo;
-
     use super::*;
+    use crate::pure_functions::Echo;
 
     #[test]
     fn binary_entropy() {

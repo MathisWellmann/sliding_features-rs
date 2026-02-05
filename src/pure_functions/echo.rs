@@ -30,8 +30,10 @@ impl<T: num::Float> View<T> for Echo<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn echo_plot() {

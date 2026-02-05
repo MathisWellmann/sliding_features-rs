@@ -1,5 +1,9 @@
-use crate::{pure_functions::Echo, View};
 use num::Float;
+
+use crate::{
+    View,
+    pure_functions::Echo,
+};
 
 /// Computes the natural logarithm and keep track of the last value.
 /// Usually applied to price data.

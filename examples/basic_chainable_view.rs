@@ -5,9 +5,12 @@ use std::num::NonZeroUsize;
 
 // import the needed structs, and the View trait
 use sliding_features::{
-    pure_functions::Echo,
-    sliding_windows::{Alma, Vsct},
     View,
+    pure_functions::Echo,
+    sliding_windows::{
+        Alma,
+        Vsct,
+    },
 };
 
 fn main() {
