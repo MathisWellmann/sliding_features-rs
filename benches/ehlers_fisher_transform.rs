@@ -1,11 +1,24 @@
 use std::num::NonZeroUsize;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rand::{rng, rngs::SmallRng, Rng, SeedableRng};
+use criterion::{
+    Criterion,
+    black_box,
+    criterion_group,
+    criterion_main,
+};
+use rand::{
+    Rng,
+    SeedableRng,
+    rng,
+    rngs::SmallRng,
+};
 use sliding_features::{
-    pure_functions::Echo,
-    sliding_windows::{EhlersFisherTransform, Ema},
     View,
+    pure_functions::Echo,
+    sliding_windows::{
+        EhlersFisherTransform,
+        Ema,
+    },
 };
 use time_series_generator::generate_standard_normal;
 

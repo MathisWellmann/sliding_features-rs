@@ -1,10 +1,15 @@
 //! John Ehlers MyRSI
 //! from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 
-use crate::View;
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
+
+use crate::View;
 
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
@@ -94,9 +99,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn my_rsi() {

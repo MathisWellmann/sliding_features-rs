@@ -1,10 +1,15 @@
 //! A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 //! it is also possible to use a custom moving average instead of the default EMA in the original
 
-use crate::View;
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
+
+use crate::View;
 
 #[derive(Debug, Clone, CopyGetters)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
@@ -86,10 +91,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::sliding_windows::Ema;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        sliding_windows::Ema,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn polarized_fractal_efficiency() {

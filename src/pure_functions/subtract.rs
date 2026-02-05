@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Subtract View a from b
 #[derive(Debug, Clone)]

@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Multiply View a by b
 #[derive(Debug, Clone)]

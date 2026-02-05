@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Lower Than or Equal filter,
 /// which only allows values lower than the specified clipping point through
@@ -51,9 +52,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::pure_functions::Echo;
-
     use super::*;
+    use crate::pure_functions::Echo;
 
     #[test]
     fn lte() {

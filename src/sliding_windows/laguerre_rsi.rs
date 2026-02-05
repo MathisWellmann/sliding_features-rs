@@ -1,9 +1,13 @@
 //! John Ehlers LaguerreRSI
 //! from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -126,9 +130,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn laguerre_rsi() {

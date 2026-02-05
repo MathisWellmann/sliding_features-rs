@@ -1,10 +1,15 @@
 //! Welford online algorithm for computing mean and variance on-the-fly
 //! over a sliding window
 
-use crate::View;
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
+
+use crate::View;
 
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
@@ -105,11 +110,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
     use round::round;
+
+    use super::*;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn welford_online() {

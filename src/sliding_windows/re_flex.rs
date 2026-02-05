@@ -1,9 +1,13 @@
 //! John Ehlers ReFlex Indicator
 //! from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
 
+use std::{
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{collections::VecDeque, num::NonZeroUsize};
 
 use crate::View;
 
@@ -111,9 +115,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn re_flex_plot() {

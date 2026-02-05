@@ -1,5 +1,6 @@
-use crate::View;
 use num::Float;
+
+use crate::View;
 
 /// Divide View a by b
 #[derive(Debug, Clone)]

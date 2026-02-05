@@ -2,10 +2,13 @@
 
 use std::num::NonZeroUsize;
 
-use crate::{pure_functions::Echo, View};
 use num::Float;
 
 use super::WelfordOnline;
+use crate::{
+    View,
+    pure_functions::Echo,
+};
 
 /// Variance Stabilizing Transform uses the standard deviation to normalize values
 #[derive(Debug, Clone)]
@@ -66,8 +69,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn variance_stabilizing_transform_plot() {

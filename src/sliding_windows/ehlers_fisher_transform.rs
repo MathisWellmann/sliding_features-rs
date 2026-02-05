@@ -1,10 +1,16 @@
 //! John Ehlers Fisher Transform Indicator
 //! from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 
-use crate::View;
+use std::{
+    cmp::Ordering,
+    collections::VecDeque,
+    num::NonZeroUsize,
+};
+
 use getset::CopyGetters;
 use num::Float;
-use std::{cmp::Ordering, collections::VecDeque, num::NonZeroUsize};
+
+use crate::View;
 
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
@@ -122,10 +128,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plot::plot_values;
-    use crate::pure_functions::Echo;
-    use crate::sliding_windows::Ema;
-    use crate::test_data::TEST_DATA;
+    use crate::{
+        plot::plot_values,
+        pure_functions::Echo,
+        sliding_windows::Ema,
+        test_data::TEST_DATA,
+    };
 
     #[test]
     fn ehlers_fisher_transform_plot() {

@@ -1,5 +1,12 @@
-use crate::{pure_functions::Echo, View};
-use num::{Float, Zero};
+use num::{
+    Float,
+    Zero,
+};
+
+use crate::{
+    View,
+    pure_functions::Echo,
+};
 
 /// Keep track of the current peak to valley.
 #[derive(Debug, Clone)]
