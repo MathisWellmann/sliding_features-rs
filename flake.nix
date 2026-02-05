@@ -43,23 +43,31 @@
             homepage = "https://gitlab.com/kornelski/cargo-upgrades";
           };
         };
+        buildInputs = with pkgs; [
+          rust
+          openssl
+          protobuf
+          clang
+          pkg-config
+          fontconfig
+          cmake
+        ];
+        tools = with pkgs; [
+          # Use nightly formatter, but otherwise stable channel
+          (lib.hiPrio rust-bin.nightly."2026-02-01".rustfmt)
+          taplo
+          cargo-semver-checks
+          cargo_upgrades
+        ];
+        nix_tools = with pkgs; [
+          alejandra # Nix code formatter
+          deadnix # Nix dead code checker.
+          statix # Nix static code checker.
+        ];
       in
         with pkgs; {
           devShells.default = mkShell {
-            buildInputs = [
-              openssl
-              protobuf
-              clang
-              pkg-config
-              fontconfig
-              cmake
-              # Use nightly formatter, but otherwise stable channel
-              (lib.hiPrio rust-bin.nightly."2024-04-01".rustfmt)
-              rust
-              taplo
-              cargo-semver-checks
-              cargo_upgrades
-            ];
+            buildInputs = buildInputs ++ tools ++ nix_tools;
           };
         }
     );
