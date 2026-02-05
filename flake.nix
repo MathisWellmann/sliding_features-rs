@@ -19,16 +19,17 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
-        rust = (
-          pkgs.rust-bin.stable.latest.default.override {
+        rust = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
+          toolchain.default.override {
             extensions = [
               "rust-src"
               "rust-analyzer"
+              "miri"
               "clippy"
             ];
             targets = ["x86_64-unknown-linux-gnu"];
-          }
-        );
+          });
+
         cargo_upgrades = pkgs.rustPlatform.buildRustPackage {
           name = "cargo-upgrades";
           src = builtins.fetchGit {
@@ -53,8 +54,6 @@
           cmake
         ];
         tools = with pkgs; [
-          # Use nightly formatter, but otherwise stable channel
-          (lib.hiPrio rust-bin.nightly."2026-02-01".rustfmt)
           taplo
           cargo-semver-checks
           cargo_upgrades
