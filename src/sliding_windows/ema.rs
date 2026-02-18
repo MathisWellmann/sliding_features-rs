@@ -12,7 +12,7 @@ use crate::View;
 pub struct Ema<T, V> {
     view: V,
     /// The non-zero window length.
-    #[getset(get = "pub")]
+    #[getset(get_copy = "pub")]
     window_len: usize,
     alpha: T,
     last_ema: T,

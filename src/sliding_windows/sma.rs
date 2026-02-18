@@ -15,7 +15,7 @@ use crate::View;
 pub struct Sma<T, V> {
     view: V,
     /// The non-zero window length.
-    #[getset(get = "pub")]
+    #[getset(get_copy = "pub")]
     window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     sum: T,
