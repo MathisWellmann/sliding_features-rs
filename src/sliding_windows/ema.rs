@@ -2,14 +2,17 @@
 
 use std::num::NonZeroUsize;
 
+use getset::CopyGetters;
 use num::Float;
 
 use crate::View;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, CopyGetters)]
 /// EMA - Exponential Moving Average
 pub struct Ema<T, V> {
     view: V,
+    /// The non-zero window length.
+    #[getset(get = "pub")]
     window_len: usize,
     alpha: T,
     last_ema: T,
