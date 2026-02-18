@@ -5,14 +5,17 @@ use std::{
     num::NonZeroUsize,
 };
 
+use getset::CopyGetters;
 use num::Float;
 
 use crate::View;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, CopyGetters)]
 /// SMA - Simple Moving Average
 pub struct Sma<T, V> {
     view: V,
+    /// The non-zero window length.
+    #[getset(get = "pub")]
     window_len: NonZeroUsize,
     q_vals: VecDeque<T>,
     sum: T,
