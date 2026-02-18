@@ -1,8 +1,10 @@
-use std::num::NonZeroUsize;
+use std::{
+    hint::black_box,
+    num::NonZeroUsize,
+};
 
 use criterion::{
     Criterion,
-    black_box,
     criterion_group,
     criterion_main,
 };
