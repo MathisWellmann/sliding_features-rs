@@ -57,6 +57,7 @@
           taplo
           cargo-semver-checks
           cargo_upgrades
+          cargo-mutants
         ];
         nix_tools = with pkgs; [
           alejandra # Nix code formatter
