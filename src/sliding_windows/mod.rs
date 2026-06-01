@@ -26,8 +26,8 @@ mod sma;
 mod super_smoother;
 mod trend_flex;
 mod variance_stabilizing_transformation;
-mod vsct;
 mod welford_online;
+mod z_score_standardization;
 
 pub use alma::Alma;
 pub use binary_entropy::BinaryEntropy;
@@ -54,5 +54,5 @@ pub use sma::Sma;
 pub use super_smoother::SuperSmoother;
 pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::Vst;
-pub use vsct::Vsct;
 pub use welford_online::WelfordOnline;
+pub use z_score_standardization::ZScoreStandardization;
