@@ -12,13 +12,13 @@ use crate::{
 
 /// Variance Stabilizing Centering Transform Sliding Window
 #[derive(Debug, Clone)]
-pub struct Vsct<T: Float, V> {
+pub struct ZScoreStandardization<T: Float, V> {
     view: V,
     welford_online: WelfordOnline<T, Echo<T>>,
     last: T,
 }
 
-impl<T, V> Vsct<T, V>
+impl<T, V> ZScoreStandardization<T, V>
 where
     V: View<T>,
     T: Float,
@@ -27,7 +27,7 @@ where
     /// and a given sliding window length
     #[inline]
     pub fn new(view: V, window_len: NonZeroUsize) -> Self {
-        Vsct {
+        ZScoreStandardization {
             view,
             welford_online: WelfordOnline::new(Echo::new(), window_len),
             last: T::zero(),
@@ -41,7 +41,7 @@ where
     }
 }
 
-impl<T, V> View<T> for Vsct<T, V>
+impl<T, V> View<T> for ZScoreStandardization<T, V>
 where
     V: View<T>,
     T: Float,
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn vsct_plot() {
-        let mut vsct = Vsct::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+        let mut vsct = ZScoreStandardization::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::with_capacity(TEST_DATA.len());
         for v in &TEST_DATA {
             vsct.update(*v);

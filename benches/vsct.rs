@@ -15,7 +15,7 @@ use rand::{
 use sliding_features::{
     View,
     pure_functions::Echo,
-    sliding_windows::Vsct,
+    sliding_windows::ZScoreStandardization,
 };
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -26,7 +26,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("f64", |b| {
         let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut view = Vsct::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            let mut view =
+                ZScoreStandardization::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
             for v in vals.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());
@@ -36,7 +37,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("f32", |b| {
         let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
-            let mut view = Vsct::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            let mut view =
+                ZScoreStandardization::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
             for v in vals.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());

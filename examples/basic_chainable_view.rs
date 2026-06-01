@@ -9,7 +9,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         Alma,
-        Vsct,
+        ZScoreStandardization,
     },
 };
 
@@ -24,7 +24,7 @@ fn main() {
     let window_len = NonZeroUsize::new(20).unwrap();
     let mut chain = Alma::new(
         // first, define the last function which gets applied in the chain
-        Vsct::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT
+        ZScoreStandardization::new(Echo::new(), window_len), // Make the first transformation in the chain a VSCT
         window_len,
     );
     for v in &rands {
