@@ -1,4 +1,4 @@
-//! A sliding High - Low Normalizer
+//! A sliding Min - Max Normalizer
 
 use std::{
     collections::VecDeque,
@@ -10,13 +10,13 @@ use num::Float;
 
 use crate::View;
 
-/// A sliding High - Low Normalizer
+/// A sliding Min - Max Normalizer
 ///
 /// Normalizes values to the [-1, 1] range using the min and max of a sliding
 /// window of *past* values.  The current value is intentionally excluded from
 /// the normalization window to avoid lookahead / data-leakage bias.
 #[derive(Clone, Debug, CopyGetters)]
-pub struct HLNormalizer<T, V> {
+pub struct MinMaxNormalizer<T, V> {
     view: V,
     /// The sliding window length
     #[getset(get_copy = "pub")]
@@ -28,15 +28,15 @@ pub struct HLNormalizer<T, V> {
     init: bool,
 }
 
-impl<T, V> HLNormalizer<T, V>
+impl<T, V> MinMaxNormalizer<T, V>
 where
     V: View<T>,
     T: Float,
 {
-    /// Create a new HLNormalizer with a chained View
-    /// and a given sliding window length
+    /// Create a new instance with a chained View
+    /// and a given sliding window length.
     pub fn new(view: V, window_len: NonZeroUsize) -> Self {
-        HLNormalizer {
+        MinMaxNormalizer {
             view,
             window_len,
             q_vals: VecDeque::with_capacity(window_len.get()),
@@ -65,7 +65,7 @@ fn extent_queue<T: Float>(q: &VecDeque<T>) -> (T, T) {
     (min, max)
 }
 
-impl<T, V> View<T> for HLNormalizer<T, V>
+impl<T, V> View<T> for MinMaxNormalizer<T, V>
 where
     V: View<T>,
     T: Float,
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn normalizer() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             n.update(*v);
             let last = n.last().unwrap();
@@ -157,14 +157,14 @@ mod tests {
     }
 
     #[test]
-    fn hl_normalizer_plot() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+    fn min_max_normalizer_plot() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             n.update(*v);
             out.push(n.last().unwrap());
         }
-        let filename = "img/hl_normalizer.png";
+        let filename = "img/min_max_normalizer.png";
         plot_values(out, filename).unwrap();
     }
 
@@ -174,7 +174,7 @@ mod tests {
     /// When a spike arrives, the spike itself must not widen the min/max range
     /// used to normalize it — that would be lookahead bias.
     #[test]
-    fn hl_normalizer_no_lookahead_on_spike() {
+    fn min_max_normalizer_no_lookahead_on_spike() {
         // Feed: steady 10s, then a spike of 100, then back to 10.
         // Window = 3.
         //
@@ -183,7 +183,7 @@ mod tests {
         // (since min==max → division-by-zero → return 0).
         // If the implementation leaks 100 into its own normalization window
         // the range becomes [10, 100] and the output is 1.0 — a sign of leakage.
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
         for _ in 0..3 {
             n.update(10.0);
@@ -202,8 +202,8 @@ mod tests {
 
     /// After the spike leaves the window, the normalizer should recover.
     #[test]
-    fn hl_normalizer_recovers_after_spike_leaves_window() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
+    fn min_max_normalizer_recovers_after_spike_leaves_window() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
         // Warm up
         for _ in 0..3 {
@@ -241,9 +241,9 @@ mod tests {
     /// With a causal window (current value excluded), the new value is always
     /// one step ahead of the max, giving a consistent ratio.
     #[test]
-    fn hl_normalizer_rising_sequence() {
+    fn min_max_normalizer_rising_sequence() {
         let window = 4;
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(window).unwrap());
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(window).unwrap());
         let values: Vec<f64> = (1..=10).map(|i| i as f64 * 10.0).collect();
         // [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
@@ -268,13 +268,13 @@ mod tests {
     /// When the singular minimum leaves the window, the min must be recalculated.
     /// The *next* update after the min leaves must see the recomputed min.
     #[test]
-    fn hl_normalizer_min_recalculated_when_singular_min_leaves() {
+    fn min_max_normalizer_min_recalculated_when_singular_min_leaves() {
         // Window = 4.
         // Fill: [1, 100, 100, 100]  → min=1, max=100
         // Next: 100  → 1 should leave, leaving [100, 100, 100, 100]
         // (This step still normalizes against the old window → output 1.0)
         // Next: 100  → now normalized against [100,100,100,100] → min=max=100 → 0
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
 
         n.update(1.0);
         for _ in 0..4 {
@@ -292,8 +292,8 @@ mod tests {
 
     /// Symmetric test: when the singular maximum leaves, max must be recalculated.
     #[test]
-    fn hl_normalizer_max_recalculated_when_singular_max_leaves() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
+    fn min_max_normalizer_max_recalculated_when_singular_max_leaves() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
 
         n.update(100.0);
         for _ in 0..5 {
@@ -314,8 +314,8 @@ mod tests {
 
     /// When the window contains identical values, output is always 0.
     #[test]
-    fn hl_normalizer_identical_values_yield_zero() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(5).unwrap());
+    fn min_max_normalizer_identical_values_yield_zero() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(5).unwrap());
         for _ in 0..20 {
             n.update(42.0);
             assert!(
@@ -329,8 +329,8 @@ mod tests {
     /// Because we normalize against the *previous* window, we need to fill the
     /// window first, then test with values at the boundaries.
     #[test]
-    fn hl_normalizer_bounds() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
+    fn min_max_normalizer_bounds() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
         // Fill the window with range [0, 100]
         n.update(0.0);
@@ -355,9 +355,9 @@ mod tests {
 
     /// Ensure HLNormalizer works when chained after another View.
     #[test]
-    fn hl_normalizer_chained() {
+    fn min_max_normalizer_chained() {
         use crate::sliding_windows::Ema;
-        let mut n = HLNormalizer::new(
+        let mut n = MinMaxNormalizer::new(
             Ema::new(Echo::new(), NonZeroUsize::new(5).unwrap()),
             NonZeroUsize::new(8).unwrap(),
         );
@@ -374,8 +374,8 @@ mod tests {
 
     /// The normalizer should handle the case where window_len == 1.
     #[test]
-    fn hl_normalizer_window_len_one() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(1).unwrap());
+    fn min_max_normalizer_window_len_one() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(1).unwrap());
 
         n.update(5.0);
         assert_eq!(n.last().unwrap(), 0.0); // only one value → min==max
@@ -387,8 +387,8 @@ mod tests {
 
     /// Verify the normalizer produces finite outputs for all test data.
     #[test]
-    fn hl_normalizer_all_outputs_finite() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+    fn min_max_normalizer_all_outputs_finite() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             n.update(*v);
             let out = n.last().unwrap();
@@ -399,8 +399,8 @@ mod tests {
     /// Regression: the normalizer should not panic and should produce
     /// valid output when fed many values.
     #[test]
-    fn hl_normalizer_stress_test() {
-        let mut n = HLNormalizer::new(Echo::new(), NonZeroUsize::new(64).unwrap());
+    fn min_max_normalizer_stress_test() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(64).unwrap());
         for i in 0..1000 {
             let val = (i as f64).sin();
             n.update(val);
