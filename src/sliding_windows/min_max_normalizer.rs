@@ -15,6 +15,9 @@ use crate::View;
 /// Normalizes values to the [-1, 1] range using the min and max of a sliding
 /// window of *past* values.  The current value is intentionally excluded from
 /// the normalization window to avoid lookahead / data-leakage bias.
+///
+/// No output is emitted until the sliding window is completely filled.
+/// During warm-up `last()` returns `None`.
 #[derive(Clone, Debug, CopyGetters)]
 pub struct MinMaxNormalizer<T, V> {
     view: V,
@@ -82,38 +85,37 @@ where
             self.init = false;
             self.min = view_last;
             self.max = view_last;
-            self.out = Some(T::zero()); // single value → min==max → 0
             self.q_vals.push_back(view_last);
+            // Warm-up: first value goes into the queue but no output yet.
+            // We need window_len values before min/max are meaningful.
             return;
         }
 
-        // Normalize the incoming value against the *previous* window's min/max.
-        // This avoids lookahead bias — the current value does not widen its own
-        // normalization range.
-        if self.min == self.max {
-            self.out = Some(T::zero());
-        } else {
-            self.out = Some(
-                -T::one()
-                    + ((view_last - self.min) * T::from(2.0).expect("can convert"))
-                        / (self.max - self.min),
-            );
-        }
-        debug_assert!(self.out.unwrap().is_finite(), "output must be finite");
-
-        // Now update the sliding window and min/max to include the new value.
+        // Only emit output once the window is full.
+        // Up to this point `out` remains None.
         if self.q_vals.len() >= self.window_len.get() {
-            // Pop the oldest value first, then push the new one.
-            let old = self.q_vals.pop_front().expect("Has some value");
+            // Normalize the incoming value against the *previous* window's
+            // min/max. This avoids lookahead bias.
+            if self.min == self.max {
+                self.out = Some(T::zero());
+            } else {
+                self.out = Some(
+                    -T::one()
+                        + ((view_last - self.min) * T::from(2.0).expect("can convert"))
+                            / (self.max - self.min),
+                );
+            }
+            debug_assert!(self.out.unwrap().is_finite(), "output must be finite");
+
+            // Slide the window.
+            let old = self.q_vals.pop_front().expect("Its checked above that the length is >= the non-zero window length, therefore this must be `Some`");
             self.q_vals.push_back(view_last);
 
             if old <= self.min || old >= self.max {
-                // The removed value was at a boundary — full rescan needed.
                 let (min, max) = extent_queue(&self.q_vals);
                 self.min = min;
                 self.max = max;
             } else {
-                // Old value was interior — only the new value can shift bounds.
                 if view_last > self.max {
                     self.max = view_last;
                 }
@@ -122,6 +124,7 @@ where
                 }
             }
         } else {
+            // Still filling the window — no output yet.
             self.q_vals.push_back(view_last);
             if view_last > self.max {
                 self.max = view_last;
@@ -151,8 +154,9 @@ mod tests {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             n.update(*v);
-            let last = n.last().unwrap();
-            assert!(last.is_finite());
+            if let Some(last) = n.last() {
+                assert!(last.is_finite());
+            }
         }
     }
 
@@ -162,10 +166,32 @@ mod tests {
         let mut out: Vec<f64> = Vec::new();
         for v in &TEST_DATA {
             n.update(*v);
-            out.push(n.last().unwrap());
+            if let Some(val) = n.last() {
+                out.push(val);
+            }
         }
         let filename = "img/min_max_normalizer.png";
         plot_values(out, filename).unwrap();
+    }
+
+    // ── Warm-up tests ──
+
+    /// Outputs must be suppressed until the sliding window is fully filled.
+    #[test]
+    fn min_max_normalizer_warmup() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(5).unwrap());
+        // First 5 updates: window not yet full → None.
+        // (The 1st goes through init, 2nd–5th have <N in queue.)
+        for i in 0..5 {
+            n.update(i as f64);
+            assert!(n.last().is_none(), "warmup step {i}: expected None");
+        }
+        // 6th update has a full window → first output.
+        n.update(5.0);
+        assert!(
+            n.last().is_some(),
+            "first output after warmup should be Some"
+        );
     }
 
     // ── Data-leakage / lookahead-bias tests ──
@@ -175,24 +201,21 @@ mod tests {
     /// used to normalize it — that would be lookahead bias.
     #[test]
     fn min_max_normalizer_no_lookahead_on_spike() {
-        // Feed: steady 10s, then a spike of 100, then back to 10.
         // Window = 3.
-        //
-        // Before the spike the history is [10, 10, 10]  →  min=10, max=10.
-        // Normalizing 100 against a range of zero *should* yield 0
-        // (since min==max → division-by-zero → return 0).
-        // If the implementation leaks 100 into its own normalization window
-        // the range becomes [10, 100] and the output is 1.0 — a sign of leakage.
+        // After warmup (3 values), the history is [10, 10, 10].
+        // The 4th value (spike of 100) is normalized against [10,10,10]
+        // (min=10, max=10 → output 0).
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
+        // Warm up: 3 values fill the window, output is None for all.
         for _ in 0..3 {
             n.update(10.0);
-            let _ = n.last();
+            assert!(n.last().is_none(), "warmup should suppress output");
         }
 
+        // 4th value: first real normalization.
         n.update(100.0);
         let got = n.last().unwrap();
-
         // Leakage would give ≈ 1.0.  Correct causal output is 0.0.
         assert!(
             got.abs() < 1e-12,
@@ -205,19 +228,17 @@ mod tests {
     fn min_max_normalizer_recovers_after_spike_leaves_window() {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
-        // Warm up
+        // Warm up (3 updates, all output None).
         for _ in 0..3 {
             n.update(10.0);
         }
 
-        // Spike
+        // Spike (4th update — first real output, normalized against [10,10,10] → 0).
         n.update(100.0);
         let _ = n.last();
 
-        // Push spike through the window: three more 10s are needed because
-        // the output is normalized against the *previous* window, so after
-        // the spike leaves the queue the *next* update is the first one
-        // normalized against a clean window.
+        // Push spike through the window: three more 10s are needed
+        // (100 moves to index 2→1→0→popped).
         n.update(10.0);
         let _ = n.last();
         n.update(10.0);
@@ -225,8 +246,7 @@ mod tests {
         n.update(10.0);
         let _ = n.last();
 
-        // Now the window should be [10, 10, 10] again,
-        // so normalization of the next 10 should be 0.
+        // Now the window is [10, 10, 10], min=max=10, output=0.
         n.update(10.0);
         let got = n.last().unwrap();
         assert!(
@@ -236,10 +256,6 @@ mod tests {
     }
 
     /// A steadily rising sequence should produce consistent normalization.
-    /// For a strictly increasing sequence with window=N, each new value
-    /// should be the new max and the oldest value is the min.
-    /// With a causal window (current value excluded), the new value is always
-    /// one step ahead of the max, giving a consistent ratio.
     #[test]
     fn min_max_normalizer_rising_sequence() {
         let window = 4;
@@ -253,9 +269,9 @@ mod tests {
 
         // After all updates, the last value (100) was normalized against
         // the previous window [60, 70, 80, 90] (min=60, max=90).
-        // normalized(100) = -1 + 2*(100-60)/(90-60) = -1 + 2*40/30 = 1.666...
+        // normalized(100) = -1 + 2*(100-60)/(90-60) = -1 + 2*40/30 = 5/3
         let got = n.last().unwrap();
-        let expected = 5.0 / 3.0; // ≈ 1.666...
+        let expected = 5.0 / 3.0;
         let diff = (got - expected).abs();
         assert!(
             diff < 1e-12,
@@ -266,27 +282,28 @@ mod tests {
     // ── Stale min/max bug tests ──
 
     /// When the singular minimum leaves the window, the min must be recalculated.
-    /// The *next* update after the min leaves must see the recomputed min.
     #[test]
     fn min_max_normalizer_min_recalculated_when_singular_min_leaves() {
-        // Window = 4.
-        // Fill: [1, 100, 100, 100]  → min=1, max=100
-        // Next: 100  → 1 should leave, leaving [100, 100, 100, 100]
-        // (This step still normalizes against the old window → output 1.0)
-        // Next: 100  → now normalized against [100,100,100,100] → min=max=100 → 0
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
 
+        // Fill the window to warm up.
         n.update(1.0);
-        for _ in 0..4 {
-            n.update(100.0);
-        }
-        // 5th update (4th 100) pops the 1; normalization was against [1,100,100,100].
-        // The stale min cleared but output reflects the old window. One more:
+        n.update(100.0);
+        n.update(100.0);
+        n.update(100.0);
+        // Queue: [1, 100, 100, 100], min=1, max=100.
+
+        // Next 100: pops 1. This is normalized against [1,100,100,100] → 1.0.
+        n.update(100.0);
+        let _ = n.last();
+        // Queue now: [100, 100, 100, 100].
+
+        // Next 100: normalized against [100,100,100,100] → min=max=100 → 0.
         n.update(100.0);
         let got = n.last().unwrap();
         assert!(
             got.abs() < 1e-12,
-            "stale min bug: after singular min left + one more update, expected 0.0, got {got}"
+            "after singular min left + one more update, expected 0.0, got {got}"
         );
     }
 
@@ -295,18 +312,24 @@ mod tests {
     fn min_max_normalizer_max_recalculated_when_singular_max_leaves() {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(4).unwrap());
 
+        // Fill to warm up.
         n.update(100.0);
-        for _ in 0..5 {
-            n.update(1.0);
-        }
+        n.update(1.0);
+        n.update(1.0);
+        n.update(1.0);
+        // Queue: [100, 1, 1, 1], min=1, max=100.
 
-        // After 6 total updates:
-        // - 5th update (4th 1.0) popped 100 from queue
-        // - 6th update (5th 1.0) gets normalized against [1,1,1,1] → 0
+        // Next 1: pops 100. Normalized against [100,1,1,1] → -1.0.
+        n.update(1.0);
+        let _ = n.last();
+        // Queue now: [1, 1, 1, 1].
+
+        // Next 1: normalized against [1,1,1,1] → min=max=1 → 0.
+        n.update(1.0);
         let got = n.last().unwrap();
         assert!(
             got.abs() < 1e-12,
-            "stale max bug: after singular max left + one more update, expected 0.0, got {got}"
+            "after singular max left + one more update, expected 0.0, got {got}"
         );
     }
 
@@ -316,6 +339,12 @@ mod tests {
     #[test]
     fn min_max_normalizer_identical_values_yield_zero() {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(5).unwrap());
+        // Warm up: first 5 values produce None.
+        for _ in 0..5 {
+            n.update(42.0);
+            assert!(n.last().is_none(), "warmup should suppress output");
+        }
+        // From the 6th onward, every output should be 0.
         for _ in 0..20 {
             n.update(42.0);
             assert!(
@@ -326,18 +355,17 @@ mod tests {
     }
 
     /// Values at exactly the min normalize to -1.0; at exactly the max to +1.0.
-    /// Because we normalize against the *previous* window, we need to fill the
-    /// window first, then test with values at the boundaries.
     #[test]
     fn min_max_normalizer_bounds() {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
 
-        // Fill the window with range [0, 100]
+        // Warm up the window.
         n.update(0.0);
         n.update(100.0);
         n.update(100.0);
+        // Queue: [0, 100, 100], min=0, max=100.
+        // After 3rd update we now have a full window, first output coming next.
 
-        // Now queue is [0, 100, 100], min=0, max=100.
         // Update with a value at the min.
         n.update(0.0);
         let got_min = n.last().unwrap();
@@ -346,14 +374,14 @@ mod tests {
             "expected -1.0, got {got_min}"
         );
 
-        // After that update, queue is [100, 100, 0], min=0, max=100.
+        // Queue is now [100, 100, 0], min=0, max=100.
         // Update with a value at the max.
         n.update(100.0);
         let got_max = n.last().unwrap();
         assert!((got_max - 1.0).abs() < 1e-12, "expected 1.0, got {got_max}");
     }
 
-    /// Ensure HLNormalizer works when chained after another View.
+    /// Ensure MinMaxNormalizer works when chained after another View.
     #[test]
     fn min_max_normalizer_chained() {
         use crate::sliding_windows::Ema;
@@ -377,11 +405,13 @@ mod tests {
     fn min_max_normalizer_window_len_one() {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(1).unwrap());
 
+        // First update goes through init, no output yet.
         n.update(5.0);
-        assert_eq!(n.last().unwrap(), 0.0); // only one value → min==max
+        assert!(n.last().is_none(), "first update: init, no output");
 
+        // Second update: queue has 1 value, window full → output.
         n.update(10.0);
-        // Window is [10], min=max=10 → 0.0
+        // Normalize 10 against [5] → min=max=5 → 0.0
         assert_eq!(n.last().unwrap(), 0.0);
     }
 
@@ -391,8 +421,9 @@ mod tests {
         let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(16).unwrap());
         for v in &TEST_DATA {
             n.update(*v);
-            let out = n.last().unwrap();
-            assert!(out.is_finite(), "output should be finite, got {out}");
+            if let Some(out) = n.last() {
+                assert!(out.is_finite(), "output should be finite, got {out}");
+            }
         }
     }
 
@@ -404,8 +435,9 @@ mod tests {
         for i in 0..1000 {
             let val = (i as f64).sin();
             n.update(val);
-            let out = n.last().unwrap();
-            assert!(out.is_finite(), "output should be finite, got {out}");
+            if let Some(out) = n.last() {
+                assert!(out.is_finite(), "output should be finite, got {out}");
+            }
         }
     }
 }
