@@ -25,8 +25,10 @@ num = "0.4"
 watermill = "0.1.2"
 
 [dev-dependencies]
+ballpark = "1"
 time_series_generator = "0.4.1"
 rand = "0.9"
+romu = "0.8"
 round = "0.1"
 plotters = "0.3"
 criterion = "0.8"

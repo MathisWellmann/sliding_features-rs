@@ -1,8 +1,10 @@
-//! Robust MAD-based (mean absolute deviation) scaler over a sliding window.
+//! Robust MAD-based (median absolute deviation) scaler over a sliding window.
 //!
 //! Computes `(x - median) / (1.4826 * MAD)` where `median` and `MAD`
 //! (median absolute deviation) are derived from the *previous* sliding
-//! window.  The constant 1.4826 makes the estimator consistent with the
+//! window.
+//! `MAD = median((x - median(X)).abs())`
+//! The constant 1.4826 makes the estimator consistent with the
 //! standard deviation for normally distributed data.
 //!
 //! Unlike `ZScoreStandardization`, the MAD scaler is resistant to outliers
@@ -104,8 +106,8 @@ where
         // Collect absolute deviations, sort them.
         let mut abs_devs: Vec<T> = Vec::with_capacity(n);
         for i in 0..n {
-            let diff = self.sorted[i] - median;
-            abs_devs.push(if diff < T::zero() { -diff } else { diff });
+            let diff = (self.sorted[i] - median).abs();
+            abs_devs.push(diff);
         }
         abs_devs.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -181,6 +183,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use ballpark::assert_approx_eq;
+
     use super::*;
     use crate::{
         plot::plot_values,
@@ -259,5 +263,50 @@ mod tests {
             (got - expected).abs() < 1e-6,
             "outlier scaling: got {got}, expected ~{expected}"
         );
+    }
+
+    fn median(vals: &mut [f64]) -> f64 {
+        vals.sort_by(f64::total_cmp);
+        let n = vals.len();
+        if n.is_multiple_of(2) {
+            let a = vals[n / 2 - 1];
+            let b = vals[n / 2];
+            (a + b) / 2.0
+        } else {
+            vals[n / 2]
+        }
+    }
+
+    fn mad_scaled(vals: &mut [f64], buf: &mut [f64], current: f64) -> f64 {
+        assert_eq!(vals.len(), buf.len());
+        let m = median(vals);
+        buf.iter_mut().for_each(|v| *v = (*v - m).abs());
+        let mad = median(buf);
+        (current - m) / mad
+    }
+
+    #[test]
+    fn mad_scaler() {
+        const WINDOW_LEN: usize = 5;
+
+        let r = romu::Rng::from_seed_with_64bit(0);
+        let vals = Vec::from_iter((0..100).map(|_| r.f64()));
+        let mut buf = vec![0.0; WINDOW_LEN];
+
+        let mut ms = MadScaler::new(Echo::new(), NonZeroUsize::new(WINDOW_LEN).unwrap());
+
+        // warmup
+        for v in vals.iter().take(WINDOW_LEN) {
+            ms.update(*v);
+            assert!(ms.last().is_none())
+        }
+
+        for (i, v) in vals.iter().enumerate().skip(WINDOW_LEN + 1) {
+            ms.update(*v);
+            let start = i - WINDOW_LEN - 1;
+            let end = i - 1;
+            let expected = mad_scaled(&mut vals[start..end].to_vec(), &mut buf, *v);
+            assert_approx_eq!(ms.last().expect("is warm"), expected);
+        }
     }
 }
