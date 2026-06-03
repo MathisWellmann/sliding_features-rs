@@ -1,3 +1,0 @@
-{"type":"config","name":"MadScaler implementation performance","metricName":"cargo_bench_wall","metricUnit":"s","bestDirection":"lower"}
-{"run":1,"commit":"0457386","metric":0.9,"metrics":{"bench_test_s":0.9},"status":"keep","description":"Baseline MadScaler bench test compile/run smoke","timestamp":1780515690117,"segment":0,"confidence":null,"asi":{"hypothesis":"baseline for evaluating MadScaler implementation changes using cargo bench --bench mad_scaler -- --test"}}
-{"type":"config","name":"MadScaler Criterion benchmark optimization","metricName":"f64_realistic_ms","metricUnit":"ms","bestDirection":"lower"}
