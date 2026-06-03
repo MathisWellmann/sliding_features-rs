@@ -22,6 +22,7 @@ exclude = ["img/"]
 [dependencies]
 getset = "0.1"
 num = "0.4"
+watermill = "0.1.2"
 
 [dev-dependencies]
 time_series_generator = "0.4.1"
