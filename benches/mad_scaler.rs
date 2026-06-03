@@ -5,6 +5,7 @@ use std::{
 
 use criterion::{
     Criterion,
+    Throughput,
     criterion_group,
     criterion_main,
 };
@@ -20,7 +21,7 @@ use sliding_features::{
 };
 
 const N: usize = 100_000;
-const WINDOW_LEN: usize = 1024;
+const WINDOW_LENS: &[usize] = &[1024, 8192];
 
 fn standard_normal(rng: &mut SmallRng) -> f64 {
     // Box-Muller transform. Clamp u1 away from zero so ln(u1) is finite.
@@ -70,30 +71,43 @@ fn realistic_market_prices_f32() -> Vec<f32> {
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("mad_scaler_100k");
+    group.throughput(Throughput::Elements(N as u64));
 
-    group.bench_function("realistic_market_prices_f64", |b| {
-        let vals = realistic_market_prices_f64();
-        b.iter(|| {
-            let mut view =
-                MadScaler::<f64, _>::new(Echo::new(), NonZeroUsize::new(WINDOW_LEN).unwrap());
-            for v in vals.iter() {
-                view.update(*v);
-                let _ = black_box(view.last());
-            }
-        })
-    });
+    for &window_len in WINDOW_LENS {
+        group.bench_function(
+            format!("realistic_market_prices_f64/window_len_{window_len}"),
+            |b| {
+                let vals = realistic_market_prices_f64();
+                b.iter(|| {
+                    let mut view = MadScaler::<f64, _>::new(
+                        Echo::new(),
+                        NonZeroUsize::new(window_len).unwrap(),
+                    );
+                    for v in vals.iter() {
+                        view.update(*v);
+                        let _ = black_box(view.last());
+                    }
+                })
+            },
+        );
 
-    group.bench_function("realistic_market_prices_f32", |b| {
-        let vals = realistic_market_prices_f32();
-        b.iter(|| {
-            let mut view =
-                MadScaler::<f32, _>::new(Echo::new(), NonZeroUsize::new(WINDOW_LEN).unwrap());
-            for v in vals.iter() {
-                view.update(*v);
-                let _ = black_box(view.last());
-            }
-        })
-    });
+        group.bench_function(
+            format!("realistic_market_prices_f32/window_len_{window_len}"),
+            |b| {
+                let vals = realistic_market_prices_f32();
+                b.iter(|| {
+                    let mut view = MadScaler::<f32, _>::new(
+                        Echo::new(),
+                        NonZeroUsize::new(window_len).unwrap(),
+                    );
+                    for v in vals.iter() {
+                        view.update(*v);
+                        let _ = black_box(view.last());
+                    }
+                })
+            },
+        );
+    }
 }
 
 criterion_group!(benches, criterion_benchmark);
