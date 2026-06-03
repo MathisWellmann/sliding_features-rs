@@ -1,4 +1,4 @@
-//! Robust MAD-based (mean absolute difference) scaler over a sliding window.
+//! Robust MAD-based (mean absolute deviation) scaler over a sliding window.
 //!
 //! Computes `(x - median) / (1.4826 * MAD)` where `median` and `MAD`
 //! (median absolute deviation) are derived from the *previous* sliding
