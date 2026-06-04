@@ -48,6 +48,8 @@ pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     out: Option<T>,
     /// Running count of values pushed into the sorted window (capped at window_len).
     count: usize,
+    /// Buffer for `(x - m).abs()` computations to avoid allocation in the hot-path.
+    buf: Vec<T>,
 }
 
 impl<F, V> std::fmt::Debug for MadScaler<F, V>
@@ -68,10 +70,10 @@ where
 /// MAD consistency constant: ~1.4826 makes MAD ≈ σ for normally distributed data.
 const MAD_SCALE: f64 = 1.4826;
 
-impl<T, V> MadScaler<T, V>
+impl<F, V> MadScaler<F, V>
 where
-    V: View<T>,
-    T: Float + FromPrimitive + AddAssign + SubAssign,
+    V: View<F>,
+    F: Float + FromPrimitive + AddAssign + SubAssign,
 {
     /// Create a new `MadScaler` with a chained `View` and a given sliding
     /// window length.
@@ -81,10 +83,11 @@ where
             view,
             window_len,
             sorted: SortedWindow::new(window_len.get()),
-            cached_median: T::zero(),
-            cached_mad: T::zero(),
+            cached_median: F::zero(),
+            cached_mad: F::zero(),
             out: None,
             count: 0,
+            buf: vec![F::zero(); window_len.get()],
         }
     }
 
@@ -98,16 +101,16 @@ where
     fn recompute_cache(&mut self) {
         let n = self.sorted.len();
         if n == 0 {
-            self.cached_median = T::zero();
-            self.cached_mad = T::zero();
+            self.cached_median = F::zero();
+            self.cached_mad = F::zero();
             return;
         }
 
         // --- median ---
-        let median = if n % 2 == 0 {
+        let median = if n.is_power_of_two() {
             let a = self.sorted[n / 2 - 1];
             let b = self.sorted[n / 2];
-            (a + b) / (T::one() + T::one())
+            (a + b) / (F::one() + F::one())
         } else {
             self.sorted[n / 2]
         };
@@ -115,17 +118,17 @@ where
 
         // --- median absolute deviation ---
         // Collect absolute deviations, sort them.
-        let mut abs_devs: Vec<T> = Vec::with_capacity(n);
-        for i in 0..n {
+        assert_eq!(n, self.buf.len());
+        for (i, b) in self.buf.iter_mut().enumerate() {
             let diff = (self.sorted[i] - median).abs();
-            abs_devs.push(diff);
+            *b = diff;
         }
-        abs_devs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        self.buf.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let mad = if n % 2 == 0 {
-            (abs_devs[n / 2 - 1] + abs_devs[n / 2]) / (T::one() + T::one())
+        let mad = if n.is_power_of_two() {
+            (self.buf[n / 2 - 1] + self.buf[n / 2]) / (F::one() + F::one())
         } else {
-            abs_devs[n / 2]
+            self.buf[n / 2]
         };
         self.cached_mad = mad;
     }
@@ -151,15 +154,13 @@ where
             // Normalize `val` against those.
             self.recompute_cache();
 
-            self.out = {
-                let scale_const = T::from(MAD_SCALE).expect("convert");
-                if self.cached_mad <= T::zero() {
-                    // No dispersion → all values identical.
-                    Some(T::zero())
-                } else {
-                    let diff = val - self.cached_median;
-                    Some(diff / (scale_const * self.cached_mad))
-                }
+            let scale_const = T::from(MAD_SCALE).expect("convert");
+            self.out = if self.cached_mad <= T::zero() {
+                // No dispersion → all values identical.
+                Some(T::zero())
+            } else {
+                let diff = val - self.cached_median;
+                Some(diff / (scale_const * self.cached_mad))
             };
         } else {
             self.out = None;
