@@ -4,6 +4,7 @@ use std::{
 };
 
 use criterion::{
+    BenchmarkId,
     Criterion,
     Throughput,
     criterion_group,
@@ -21,7 +22,7 @@ use sliding_features::{
 };
 
 const N: usize = 100_000;
-const WINDOW_LENS: &[usize] = &[1024, 8192];
+const WINDOW_LENS: &[usize] = &[128, 256, 512, 1024, 2048, 4092, 8192];
 
 fn standard_normal(rng: &mut SmallRng) -> f64 {
     // Box-Muller transform. Clamp u1 away from zero so ln(u1) is finite.
@@ -75,7 +76,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     for &window_len in WINDOW_LENS {
         group.bench_function(
-            format!("realistic_market_prices_f64/window_len_{window_len}"),
+            BenchmarkId::new("realistic_market_prices_f64", window_len),
             |b| {
                 let vals = realistic_market_prices_f64();
                 b.iter(|| {
@@ -92,7 +93,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         );
 
         group.bench_function(
-            format!("realistic_market_prices_f32/window_len_{window_len}"),
+            BenchmarkId::new("realistic_market_prices_f32", window_len),
             |b| {
                 let vals = realistic_market_prices_f32();
                 b.iter(|| {
