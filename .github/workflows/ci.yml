@@ -19,7 +19,7 @@ jobs:
       - name: nix-flake-check
         run: nix flake check
       - name: yamlfmt
-        run: niix develop --command yamlfmt -lint .
+        run: nix develop --command yamlfmt -lint .
       - name: nix-deadnix
         run: nix develop --command deadnix
       - name: nix-statix

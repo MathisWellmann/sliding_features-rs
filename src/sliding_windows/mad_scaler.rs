@@ -133,7 +133,7 @@ where
 #[inline(always)]
 fn median_from_sorted<F: Float>(vals: &[F]) -> F {
     let n = vals.len();
-    if n.is_power_of_two() {
+    if n % 2 == 0 {
         let a = vals[n / 2 - 1];
         let b = vals[n / 2];
         (a + b) / (F::one() + F::one())
