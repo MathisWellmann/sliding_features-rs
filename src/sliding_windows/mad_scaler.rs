@@ -125,12 +125,20 @@ where
         }
         self.buf.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let mad = if n.is_power_of_two() {
-            (self.buf[n / 2 - 1] + self.buf[n / 2]) / (F::one() + F::one())
-        } else {
-            self.buf[n / 2]
-        };
+        let mad = median_from_sorted(&self.buf);
         self.cached_mad = mad;
+    }
+}
+
+#[inline(always)]
+fn median_from_sorted<F: Float>(vals: &[F]) -> F {
+    let n = vals.len();
+    if n.is_power_of_two() {
+        let a = vals[n / 2 - 1];
+        let b = vals[n / 2];
+        (a + b) / (F::one() + F::one())
+    } else {
+        vals[n / n]
     }
 }
 
@@ -277,9 +285,15 @@ mod tests {
 
     fn mad_scaled(vals: &mut [f64], buf: &mut [f64], current: f64) -> f64 {
         assert_eq!(vals.len(), buf.len());
+        assert_ne!(*vals.last().unwrap(), current);
+
         let m = median(vals);
-        buf.iter_mut().for_each(|v| *v = (*v - m).abs());
+        dbg!(&m);
+        buf.iter_mut()
+            .zip(vals)
+            .for_each(|(b, v)| *b = (*v - m).abs());
         let mad = median(buf);
+        dbg!(&mad);
         (current - m) / mad
     }
 
@@ -288,7 +302,7 @@ mod tests {
         const WINDOW_LEN: usize = 5;
 
         let r = romu::Rng::from_seed_with_64bit(0);
-        let vals = Vec::from_iter((0..100).map(|_| r.f64()));
+        let vals = Vec::from_iter((0..25).map(|_| r.f64()));
         dbg!(&vals);
         let mut buf = vec![0.0; WINDOW_LEN];
 
@@ -301,12 +315,14 @@ mod tests {
         }
 
         for (i, v) in vals.iter().enumerate().skip(WINDOW_LEN + 1) {
+            ms.update(*v);
             dbg!(&v);
             dbg!(&ms);
-            ms.update(*v);
             let start = i - WINDOW_LEN - 1;
             let end = i - 1;
-            let expected = mad_scaled(&mut vals[start..end].to_vec(), &mut buf, *v);
+            let mut window = vals[start..end].to_vec();
+            assert_eq!(window.len(), WINDOW_LEN);
+            let expected = mad_scaled(&mut window, &mut buf, *v);
             assert_approx_eq!(ms.last().expect("is warm"), expected);
         }
     }
