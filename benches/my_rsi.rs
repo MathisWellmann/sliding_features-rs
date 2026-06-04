@@ -9,7 +9,7 @@ use criterion::{
     criterion_main,
 };
 use rand::{
-    Rng,
+    RngExt,
     rng,
 };
 use sliding_features::{

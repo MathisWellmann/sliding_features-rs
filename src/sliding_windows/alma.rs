@@ -108,7 +108,7 @@ where
 #[cfg(test)]
 mod tests {
     use rand::{
-        Rng,
+        RngExt,
         rng,
     };
 

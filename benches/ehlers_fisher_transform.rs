@@ -9,7 +9,7 @@ use criterion::{
     criterion_main,
 };
 use rand::{
-    Rng,
+    RngExt,
     SeedableRng,
     rng,
     rngs::SmallRng,
