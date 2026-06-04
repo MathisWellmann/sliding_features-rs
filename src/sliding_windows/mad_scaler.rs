@@ -44,12 +44,25 @@ pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     cached_median: T,
     /// Cached MAD (recomputed when the sliding median changes).
     cached_mad: T,
-    /// Whether the caches are stale and need recomputation.
-    cache_stale: bool,
     /// Most recent output of the scaler.
     out: Option<T>,
     /// Running count of values pushed into the sorted window (capped at window_len).
     count: usize,
+}
+
+impl<F, V> std::fmt::Debug for MadScaler<F, V>
+where
+    F: Float + FromPrimitive + AddAssign + SubAssign + std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MadScaler")
+            .field("window_len", &self.window_len)
+            .field("cached_median", &self.cached_median)
+            .field("cached_mad", &self.cached_mad)
+            .field("out", &self.out)
+            .field("count", &self.count)
+            .finish()
+    }
 }
 
 /// MAD consistency constant: ~1.4826 makes MAD ≈ σ for normally distributed data.
@@ -70,7 +83,6 @@ where
             sorted: SortedWindow::new(window_len.get()),
             cached_median: T::zero(),
             cached_mad: T::zero(),
-            cache_stale: true,
             out: None,
             count: 0,
         }
@@ -88,7 +100,6 @@ where
         if n == 0 {
             self.cached_median = T::zero();
             self.cached_mad = T::zero();
-            self.cache_stale = false;
             return;
         }
 
@@ -117,8 +128,6 @@ where
             abs_devs[n / 2]
         };
         self.cached_mad = mad;
-
-        self.cache_stale = false;
     }
 }
 
@@ -140,9 +149,7 @@ where
         if self.count >= self.window_len.get() {
             // The window (`sorted`) holds the *previous* window of values.
             // Normalize `val` against those.
-            if self.cache_stale {
-                self.recompute_cache();
-            }
+            self.recompute_cache();
 
             self.out = {
                 let scale_const = T::from(MAD_SCALE).expect("convert");
@@ -160,17 +167,7 @@ where
 
         // Slide window: push current value into the sorted window.
         // This makes it part of the *next* normalization's reference.
-        let prev_len = self.sorted.len();
         self.sorted.push_back(val);
-        // Only mark stale if the median may have changed.
-        // SortedWindow insertion/removal may change the median, so always invalidate.
-        if self.sorted.len() != prev_len {
-            // A value was evicted (full window) → cached median/MAD always stale.
-            self.cache_stale = true;
-        } else {
-            // A value was pushed without eviction (warm-up) → cache is stale too.
-            self.cache_stale = true;
-        }
 
         self.count = (self.count + 1).min(self.window_len.get());
     }
@@ -291,6 +288,7 @@ mod tests {
 
         let r = romu::Rng::from_seed_with_64bit(0);
         let vals = Vec::from_iter((0..100).map(|_| r.f64()));
+        dbg!(&vals);
         let mut buf = vec![0.0; WINDOW_LEN];
 
         let mut ms = MadScaler::new(Echo::new(), NonZeroUsize::new(WINDOW_LEN).unwrap());
@@ -302,6 +300,8 @@ mod tests {
         }
 
         for (i, v) in vals.iter().enumerate().skip(WINDOW_LEN + 1) {
+            dbg!(&v);
+            dbg!(&ms);
             ms.update(*v);
             let start = i - WINDOW_LEN - 1;
             let end = i - 1;
