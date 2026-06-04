@@ -138,7 +138,7 @@ fn median_from_sorted<F: Float>(vals: &[F]) -> F {
         let b = vals[n / 2];
         (a + b) / (F::one() + F::one())
     } else {
-        vals[n / n]
+        vals[n / 2]
     }
 }
 
@@ -294,7 +294,7 @@ mod tests {
             .for_each(|(b, v)| *b = (*v - m).abs());
         let mad = median(buf);
         dbg!(&mad);
-        (current - m) / mad
+        (current - m) / (MAD_SCALE * mad)
     }
 
     #[test]
@@ -314,12 +314,12 @@ mod tests {
             assert!(ms.last().is_none())
         }
 
-        for (i, v) in vals.iter().enumerate().skip(WINDOW_LEN + 1) {
+        for (i, v) in vals.iter().enumerate().skip(WINDOW_LEN) {
             ms.update(*v);
             dbg!(&v);
             dbg!(&ms);
-            let start = i - WINDOW_LEN - 1;
-            let end = i - 1;
+            let start = i - WINDOW_LEN;
+            let end = i;
             let mut window = vals[start..end].to_vec();
             assert_eq!(window.len(), WINDOW_LEN);
             let expected = mad_scaled(&mut window, &mut buf, *v);
