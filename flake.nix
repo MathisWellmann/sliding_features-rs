@@ -54,6 +54,7 @@
           cmake
         ];
         tools = with pkgs; [
+          yamlfmt
           taplo
           cargo-semver-checks
           cargo_upgrades
