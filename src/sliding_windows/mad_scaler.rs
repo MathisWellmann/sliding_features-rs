@@ -48,8 +48,8 @@ pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     out: Option<T>,
     /// Running count of values pushed into the sorted window (capped at window_len).
     count: usize,
-    /// Buffer for `(x - m).abs()` computations to avoid allocation in the hot-path.
-    buf: Vec<T>,
+    /// Pre-allocated buffer for merging absolute deviations in the hot-path.
+    mad_buf: Vec<T>,
 }
 
 impl<F, V> std::fmt::Debug for MadScaler<F, V>
@@ -87,7 +87,7 @@ where
             cached_mad: F::zero(),
             out: None,
             count: 0,
-            buf: vec![F::zero(); window_len.get()],
+            mad_buf: vec![F::zero(); window_len.get()],
         }
     }
 
@@ -97,17 +97,20 @@ where
         self.window_len
     }
 
-    /// Recompute the cached median and MAD from the sorted window.
+    /// Recompute median and MAD from the sorted window.
+    ///
+    /// Because `self.sorted` is already sorted, the absolute deviations
+    /// `|s[i] - median|` form two monotonic sequences radiating outward
+    /// from the median: one increasing to the left, one to the right.
+    /// We merge these two "tails" in **O(w)** instead of paying the
+    /// **O(w log w)** cost of a full sort.
     fn recompute_cache(&mut self) {
         let n = self.sorted.len();
-        if n == 0 {
-            self.cached_median = F::zero();
-            self.cached_mad = F::zero();
-            return;
-        }
+        debug_assert!(n > 0, "recompute_cache called on empty window");
+        debug_assert_eq!(n, self.mad_buf.len());
 
-        // --- median ---
-        let median = if n.is_power_of_two() {
+        // --- median (from already-sorted window) ---
+        let median = if n % 2 == 0 {
             let a = self.sorted[n / 2 - 1];
             let b = self.sorted[n / 2];
             (a + b) / (F::one() + F::one())
@@ -116,17 +119,56 @@ where
         };
         self.cached_median = median;
 
-        // --- median absolute deviation ---
-        // Collect absolute deviations, sort them.
-        assert_eq!(n, self.buf.len());
-        for (i, b) in self.buf.iter_mut().enumerate() {
-            let diff = (self.sorted[i] - median).abs();
-            *b = diff;
-        }
-        self.buf.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        // --- median absolute deviation via O(w) merge ---
+        // Walk the sorted window outward from the median, merging the
+        // monotonically-increasing left and right absolute deviations.
+        let mad_buf = &mut self.mad_buf;
+        let mid = n / 2;
+        let mut out_idx = 0usize;
 
-        let mad = median_from_sorted(&self.buf);
-        self.cached_mad = mad;
+        // For odd n, the median element itself has deviation 0 — emit it first.
+        if n % 2 == 1 {
+            mad_buf[0] = F::zero();
+            out_idx = 1;
+        }
+
+        // left walks down from mid-1 to 0, right walks up from mid (even) or mid+1 (odd).
+        let mut left: isize = mid.checked_sub(1).map_or(-1, |v| v as isize);
+        let mut right: usize = if n % 2 == 0 { mid } else { mid + 1 };
+
+        loop {
+            let l_valid = left >= 0;
+            let r_valid = right < n;
+            match (l_valid, r_valid) {
+                (true, true) => {
+                    let l_abs = (self.sorted[left as usize] - median).abs();
+                    let r_abs = (self.sorted[right] - median).abs();
+                    if l_abs <= r_abs {
+                        mad_buf[out_idx] = l_abs;
+                        out_idx += 1;
+                        left -= 1;
+                    } else {
+                        mad_buf[out_idx] = r_abs;
+                        out_idx += 1;
+                        right += 1;
+                    }
+                }
+                (true, false) => {
+                    mad_buf[out_idx] = (self.sorted[left as usize] - median).abs();
+                    out_idx += 1;
+                    left -= 1;
+                }
+                (false, true) => {
+                    mad_buf[out_idx] = (self.sorted[right] - median).abs();
+                    out_idx += 1;
+                    right += 1;
+                }
+                (false, false) => break,
+            }
+        }
+        debug_assert_eq!(out_idx, n, "merge must fill entire buffer");
+
+        self.cached_mad = median_from_sorted(mad_buf);
     }
 }
 

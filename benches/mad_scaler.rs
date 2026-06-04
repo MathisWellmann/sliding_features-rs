@@ -22,7 +22,7 @@ use sliding_features::{
 };
 
 const N: usize = 100_000;
-const WINDOW_LENS: &[usize] = &[128, 256, 512, 1024, 2048, 4092, 8192];
+const WINDOW_LENS: &[usize] = &[128, 256, 512, 1024, 2048, 4096, 8192];
 
 fn standard_normal(rng: &mut SmallRng) -> f64 {
     // Box-Muller transform. Clamp u1 away from zero so ln(u1) is finite.
