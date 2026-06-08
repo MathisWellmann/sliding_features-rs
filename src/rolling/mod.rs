@@ -1,9 +1,11 @@
 //! This module contains `View` implementations that are updated on a rolling basis, but don't maintain a sliding window with history.
 
 mod drawdown;
+mod first;
 mod ln_return;
 mod welford_rolling;
 
 pub use drawdown::Drawdown;
+pub use first::First;
 pub use ln_return::LnReturn;
 pub use welford_rolling::WelfordRolling;
