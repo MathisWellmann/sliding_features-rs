@@ -11,6 +11,7 @@
 //! and works well for skewed distributions.
 
 use std::{
+    collections::VecDeque,
     num::NonZeroUsize,
     ops::{
         AddAssign,
@@ -22,7 +23,6 @@ use num::{
     Float,
     FromPrimitive,
 };
-use watermill::sorted_window::SortedWindow;
 
 use crate::View;
 
@@ -38,8 +38,10 @@ pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     view: V,
     /// Sliding window length (for warm-up tracking).
     window_len: NonZeroUsize,
-    /// Sliding window storing the sorted values.
-    sorted: SortedWindow<T>,
+    /// Sorted values in the window (contiguous `Vec` — faster than `VecDeque<NotNan>`).
+    sorted: Vec<T>,
+    /// FIFO insertion order for O(1) eviction decisions.
+    order: VecDeque<T>,
     /// Cached median of the window (recomputed when the sliding median changes).
     cached_median: T,
     /// Cached MAD (recomputed when the sliding median changes).
@@ -79,16 +81,41 @@ where
     /// window length.
     #[inline]
     pub fn new(view: V, window_len: NonZeroUsize) -> Self {
+        let w = window_len.get();
         Self {
             view,
             window_len,
-            sorted: SortedWindow::new(window_len.get()),
+            sorted: Vec::with_capacity(w),
+            order: VecDeque::with_capacity(w),
             cached_median: F::zero(),
             cached_mad: F::zero(),
             out: None,
             count: 0,
-            mad_buf: vec![F::zero(); window_len.get()],
+            mad_buf: vec![F::zero(); w],
         }
+    }
+
+    /// Slide the window: evict the oldest value (if full), insert `val` in sorted position.
+    #[inline]
+    fn slide_window(&mut self, val: F) {
+        if self.sorted.len() >= self.window_len.get() {
+            let oldest = self.order.pop_front().unwrap();
+            // partition_point requires monotonic predicate; sorted[len..] >= oldest after this.
+            let pos = self
+                .sorted
+                .partition_point(|p| p.partial_cmp(&oldest).expect("NaN") == std::cmp::Ordering::Less);
+            debug_assert_eq!(
+                self.sorted[pos].partial_cmp(&oldest),
+                Some(std::cmp::Ordering::Equal),
+                "oldest value missing from sorted window"
+            );
+            self.sorted.remove(pos);
+        }
+        self.order.push_back(val);
+        let pos = self
+            .sorted
+            .partition_point(|p| p.partial_cmp(&val).expect("NaN") == std::cmp::Ordering::Less);
+        self.sorted.insert(pos, val);
     }
 
     /// The sliding window length.
@@ -107,7 +134,8 @@ where
     fn recompute_cache(&mut self) {
         let n = self.sorted.len();
         debug_assert!(n > 0, "recompute_cache called on empty window");
-        debug_assert_eq!(n, self.mad_buf.len());
+        // mad_buf may be larger than current window during warm-up ramp; use n.
+        debug_assert!(n <= self.mad_buf.len());
 
         // --- median (from already-sorted window) ---
         let median = if n % 2 == 0 {
@@ -218,7 +246,7 @@ where
 
         // Slide window: push current value into the sorted window.
         // This makes it part of the *next* normalization's reference.
-        self.sorted.push_back(val);
+        self.slide_window(val);
 
         self.count = (self.count + 1).min(self.window_len.get());
     }
