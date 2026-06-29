@@ -1,8 +1,6 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "sliding_features"
-version = "9.2.0"
+version = "10.0.0"
 authors = ["MathisWellmann <wellmannmathis@gmail.com>"]
 edition = "2024"
 license-file = "LICENSE"
@@ -22,7 +20,6 @@ exclude = ["img/"]
 [dependencies]
 getset = "0.1"
 num = "0.4"
-watermill = "0.1.2"
 
 [dev-dependencies]
 ballpark = "1"
