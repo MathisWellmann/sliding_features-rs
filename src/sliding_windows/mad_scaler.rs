@@ -147,9 +147,14 @@ where
         };
         self.cached_median = median;
 
-        // --- median absolute deviation via O(w) merge ---
+        // --- median absolute deviation via O(w) branchless merge ---
         // Walk the sorted window outward from the median, merging the
         // monotonically-increasing left and right absolute deviations.
+        //
+        // ponytail: branchless — both sides computed unconditionally,
+        // exhausted side returns infinity sentinel so the other always wins.
+        // The hot-path `.get()` always returns Some (predictable branch).
+        // Selection and pointer advance compile to cmov.
         let mad_buf = &mut self.mad_buf;
         let mid = n / 2;
         let mut out_idx = 0usize;
@@ -164,37 +169,20 @@ where
         let mut left: isize = mid.checked_sub(1).map_or(-1, |v| v as isize);
         let mut right: usize = if n % 2 == 0 { mid } else { mid + 1 };
 
-        loop {
-            let l_valid = left >= 0;
-            let r_valid = right < n;
-            match (l_valid, r_valid) {
-                (true, true) => {
-                    let l_abs = (self.sorted[left as usize] - median).abs();
-                    let r_abs = (self.sorted[right] - median).abs();
-                    if l_abs <= r_abs {
-                        mad_buf[out_idx] = l_abs;
-                        out_idx += 1;
-                        left -= 1;
-                    } else {
-                        mad_buf[out_idx] = r_abs;
-                        out_idx += 1;
-                        right += 1;
-                    }
-                }
-                (true, false) => {
-                    mad_buf[out_idx] = (self.sorted[left as usize] - median).abs();
-                    out_idx += 1;
-                    left -= 1;
-                }
-                (false, true) => {
-                    mad_buf[out_idx] = (self.sorted[right] - median).abs();
-                    out_idx += 1;
-                    right += 1;
-                }
-                (false, false) => break,
-            }
+        while out_idx < n {
+            let l_abs = self
+                .sorted
+                .get(left as usize)
+                .map_or(F::infinity(), |v| (*v - median).abs());
+            let r_abs = self
+                .sorted
+                .get(right)
+                .map_or(F::infinity(), |v| (*v - median).abs());
+            let pick_left = l_abs <= r_abs;
+            mad_buf[out_idx] = if pick_left { l_abs } else { r_abs };
+            if pick_left { left -= 1 } else { right += 1 }
+            out_idx += 1;
         }
-        debug_assert_eq!(out_idx, n, "merge must fill entire buffer");
 
         self.cached_mad = median_from_sorted(mad_buf);
     }
