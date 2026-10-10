@@ -8,6 +8,7 @@
 pub mod pure_functions;
 pub mod rolling;
 pub mod sliding_windows;
+pub mod spec;
 
 #[cfg(test)]
 mod plot;
