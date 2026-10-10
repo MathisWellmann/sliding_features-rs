@@ -52,6 +52,26 @@ for v in &test_values {
 Each View will first call it's chained View to get it's last value, which will then be used to update the state of the View.
 Some Views have additional parameters such as ALMA. 
 
+### Features as text: the `spec` module
+A chain can also be written as a spec string, parsed and built at runtime,
+so features can be stored, compared and generated (e.g. by a search or an
+LLM agent) as data, without compiling code:
+
+```rust
+use sliding_features::{View, spec::{Expr, Limits}};
+
+let spec: Expr = "zscore(ema(x, 10) - ema(x, 50), 200)".parse().unwrap();
+let mut view = spec.build(&Limits::default()).unwrap();
+view.update(100.0);
+```
+
+`x` is the input, `+ - * /` combine views fed the same input, and every
+function takes an expression and then numeric parameters, e.g. `pfe(x, 20, 5)`.
+`Function::reference()` renders the table of all functions. `Limits` bounds
+the window lengths and tree size, and a built view only outputs finite values
+(a division by zero is "not ready" instead of infinite). The `Display` form of
+an `Expr` is canonical, so equal strings mean equal features.
+
 ### Examples
 See examples folder for some code ideas
 ```shell 
@@ -92,6 +112,8 @@ A View defines the function which processes value updates. They currently includ
     * Multiply
     * Divide
 * Math functions
+    * Abs
+    * Ln
     * Tanh
     * GTE - Greater Than or Equal clipping function
     * LTE - Lower Than or Equal clipping function
