@@ -5,6 +5,7 @@
 //! The sliding_features crate provides modular, chainable sliding windows
 //! for various signal processing function and technical indicators
 
+pub mod pipeline;
 pub mod pure_functions;
 pub mod rolling;
 pub mod sliding_windows;
