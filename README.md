@@ -52,11 +52,13 @@ for v in &test_values {
 Each View will first call it's chained View to get it's last value, which will then be used to update the state of the View.
 Some Views have additional parameters such as ALMA. 
 
-### Features as text: the `pipeline` module
-Features can also be written as text, compiled and run at runtime, so they
-can be stored, compared and generated (e.g. by a search or an LLM agent) as
-data, without compiling code. A pipeline computes many features over several
-input series in one flat program:
+### Features at runtime: the `pipeline` module
+Chained views are the zero-cost choice when the features are known at compile
+time. When they are only known at runtime, write them as text and compile
+them with the `pipeline` module, the crate's one way to assemble features at
+runtime. Features can then be stored, compared and generated (e.g. by a
+search or an LLM agent) as data, without compiling code. A pipeline computes
+many features over several input series in one flat program:
 
 ```rust
 use sliding_features::pipeline::{Domain, Input, Limits, Pipeline};
@@ -88,9 +90,6 @@ assert_eq!(pipeline.output(0), None, "warming up");
 - The `Display` form is canonical, so equal strings mean equal features.
 - `pipeline::Builder` assembles the same pipelines from code, and
   `pipeline::Feature` turns a one-input, one-output pipeline into a `View`.
-
-The older `spec` module is deprecated: every spec compiles as a pipeline to
-the same values.
 
 ### Examples
 See examples folder for some code ideas

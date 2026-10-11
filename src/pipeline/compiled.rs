@@ -226,7 +226,7 @@ fn output_nodes(bindings: &[Binding]) -> Vec<NodeId> {
 }
 
 /// A pipeline with one input and one output, used as a [`View`], e.g. to
-/// chain it with other views or to replace the spec module's `DynView`.
+/// chain it with other views.
 #[derive(Debug, Clone)]
 pub struct Feature(Pipeline);
 

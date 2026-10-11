@@ -1,7 +1,5 @@
-//! A pipeline against the same features as a hand-written generic chain
-//! and as the spec module's boxed view trees.
-
-#![allow(deprecated, reason = "compares against the spec module it replaces")]
+//! A pipeline against the same feature as a hand-written generic chain, and
+//! a feature set as one pipeline against one pipeline per feature.
 
 use std::{
     hint::black_box,
@@ -28,11 +26,6 @@ use sliding_features::{
         Sma,
         ZScoreStandardization,
     },
-    spec::{
-        DynView,
-        Expr,
-        Limits,
-    },
 };
 
 const N: usize = 100_000;
@@ -44,13 +37,6 @@ fn random_walk() -> Vec<f64> {
         price += rng.f64() - 0.5;
         price
     }))
-}
-
-fn spec(source: &str) -> DynView {
-    Expr::parse(source)
-        .expect("parses")
-        .build(&Limits::default())
-        .expect("builds")
 }
 
 fn feature(source: &str) -> Feature {
@@ -66,7 +52,8 @@ fn drive(view: &mut impl View<f64>, vals: &[f64]) {
     }
 }
 
-/// One feature: the overhead of dispatch per node.
+/// One feature: the cost of interpreting the program against code the
+/// compiler monomorphized.
 fn one_feature(c: &mut Criterion) {
     let vals = random_walk();
     let source = "zscore(ema(x, 10) - sma(x, 50), 200)";
@@ -84,31 +71,25 @@ fn one_feature(c: &mut Criterion) {
             drive(&mut view, &vals);
         })
     });
-    group.bench_function("spec_dyn_view", |b| {
-        b.iter(|| drive(&mut spec(source), &vals))
-    });
     group.bench_function("pipeline", |b| {
         b.iter(|| drive(&mut feature(source), &vals))
     });
     group.finish();
 }
 
-/// Mostly stateless nodes: where a boxed tree pays most per node.
+/// Mostly stateless nodes: the per-operation overhead of the interpreter.
 fn stateless_heavy(c: &mut Criterion) {
     let vals = random_walk();
     let source = "tanh(abs(-(-(-(-(x * 2 + 1)))) - ema(x, 5)) * 0.01)";
     let mut group = c.benchmark_group("pipeline_stateless_heavy_100k");
-    group.bench_function("spec_dyn_view", |b| {
-        b.iter(|| drive(&mut spec(source), &vals))
-    });
     group.bench_function("pipeline", |b| {
         b.iter(|| drive(&mut feature(source), &vals))
     });
     group.finish();
 }
 
-/// A feature set with shared subexpressions: one pipeline computes each
-/// of them once, separate trees compute them per feature.
+/// A feature set with shared subexpressions: one pipeline computes each of
+/// them once, one pipeline per feature computes them per feature.
 fn feature_set(c: &mut Criterion) {
     let vals = random_walk();
     let sources = [
@@ -122,18 +103,18 @@ fn feature_set(c: &mut Criterion) {
         "tanh(zscore(ln_return(x), 100))",
     ];
     let mut group = c.benchmark_group("pipeline_feature_set_100k");
-    group.bench_function("spec_dyn_views", |b| {
+    group.bench_function("pipeline_per_feature", |b| {
         b.iter(|| {
-            let mut views = Vec::from_iter(sources.iter().map(|s| spec(s)));
+            let mut features = Vec::from_iter(sources.iter().map(|s| feature(s)));
             for v in &vals {
-                for view in &mut views {
-                    view.update(*v);
-                    let _ = black_box(view.last());
+                for feature in &mut features {
+                    feature.update(*v);
+                    let _ = black_box(feature.last());
                 }
             }
         })
     });
-    group.bench_function("pipeline", |b| {
+    group.bench_function("one_pipeline", |b| {
         let source = sources.join("\n");
         b.iter(|| {
             let mut pipeline: Pipeline = source.parse().expect("compiles");
