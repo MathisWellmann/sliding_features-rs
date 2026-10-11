@@ -9,8 +9,11 @@
 //! recursion and no dynamic dispatch.
 //!
 //! Each function declares what it needs of its argument ([`Requirement`])
-//! and the [`Domain`] of its output, so a pipeline can be checked before it
-//! sees any data.
+//! and the [`Domain`] of its output. From the domains of the inputs the
+//! compiler derives every node's domain and warm-up before any data is
+//! seen: it rejects calls that are never ready and constant outputs, and
+//! warns about calls that are not always ready, each with a message that
+//! says how to fix it.
 //!
 //! ```
 //! use sliding_features::pipeline::{BinaryOp, Builder, Domain, Function, Input, Limits};
@@ -30,8 +33,10 @@
 //! assert!(pipeline.output(0).is_some());
 //! ```
 
+mod analysis;
 mod builder;
 mod compiled;
+mod display;
 mod domain;
 mod error;
 mod function;

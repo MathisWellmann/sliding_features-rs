@@ -7,6 +7,8 @@ use super::{
     Domain,
     Function,
     Pipeline,
+    Severity,
+    analysis::Analysis,
     function::Params,
     graph::{
         Graph,
@@ -257,12 +259,28 @@ impl Builder {
         self.push_binding(name, node, false)
     }
 
-    /// The pipeline with fresh state.
+    /// Check the pipeline and return it with fresh state.
+    ///
+    /// The check derives the [`Domain`] of every node from the inputs'.
+    /// It rejects calls that are never ready (e.g. `ln` of a negative
+    /// argument), divisions by zero and constant outputs, and warns about
+    /// calls that are not always ready, duplicate outputs and unused
+    /// helpers, see [`Pipeline::warnings`]. The error lists every problem.
     pub fn build(self) -> Result<Pipeline, CompileError> {
         if !self.bindings.iter().any(Binding::is_output) {
             return Err(CompileError::single("a pipeline needs at least one output"));
         }
-        Ok(Pipeline::new(self.graph, self.inputs, self.bindings))
+        let analysis = Analysis::run(&self.graph, &self.inputs, &self.bindings);
+        let diagnostics = analysis.diagnostics();
+        if diagnostics.iter().any(|d| d.severity() == Severity::Error) {
+            return Err(CompileError::new(diagnostics.to_vec()));
+        }
+        Ok(Pipeline::new(
+            self.graph,
+            self.inputs,
+            self.bindings,
+            &analysis,
+        ))
     }
 
     fn push_binding(

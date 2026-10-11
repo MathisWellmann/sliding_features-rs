@@ -2,7 +2,11 @@
 
 use super::{
     CompileError,
+    Diagnostic,
+    Domain,
     Input,
+    Severity,
+    analysis::Analysis,
     builder::Binding,
     graph::{
         Graph,
@@ -27,15 +31,32 @@ pub struct Pipeline {
     graph: Graph,
     inputs: Vec<Input>,
     bindings: Vec<Binding>,
+    /// The domain and warm-up of each output.
+    output_domains: Vec<Domain>,
+    output_warm_ups: Vec<usize>,
+    warnings: Vec<Diagnostic>,
     program: Program,
 }
 
 impl Pipeline {
-    pub(super) fn new(graph: Graph, inputs: Vec<Input>, bindings: Vec<Binding>) -> Self {
+    pub(super) fn new(
+        graph: Graph,
+        inputs: Vec<Input>,
+        bindings: Vec<Binding>,
+        analysis: &Analysis,
+    ) -> Self {
         assert!(!inputs.is_empty(), "a pipeline has an input");
         let outputs = output_nodes(&bindings);
         let program = Program::lower(&graph, &outputs);
+        let warnings = analysis.diagnostics().to_vec();
+        assert!(
+            warnings.iter().all(|d| d.severity() == Severity::Warning),
+            "a pipeline with errors is rejected"
+        );
         Self {
+            output_domains: Vec::from_iter(outputs.iter().map(|o| analysis.domain(*o))),
+            output_warm_ups: Vec::from_iter(outputs.iter().map(|o| analysis.warm_up(*o))),
+            warnings,
             graph,
             inputs,
             bindings,
@@ -83,6 +104,30 @@ impl Pipeline {
     /// The index of the output called `name`.
     pub fn output_index(&self, name: &str) -> Option<usize> {
         self.output_names().position(|n| n == name)
+    }
+
+    /// The values the `i`-th output can take, derived from the inputs'
+    /// domains before any data is seen.
+    pub fn output_domain(&self, i: usize) -> Domain {
+        self.output_domains[i]
+    }
+
+    /// An estimate of the updates the `i`-th output needs before it is
+    /// ready: its window lengths summed along its longest chain. Use it to
+    /// size the history replayed before the output is read.
+    pub fn output_warm_up(&self, i: usize) -> usize {
+        self.output_warm_ups[i]
+    }
+
+    /// The largest warm-up of any output, see [`Pipeline::output_warm_up`].
+    pub fn warm_up(&self) -> usize {
+        self.output_warm_ups.iter().copied().max().unwrap_or(0)
+    }
+
+    /// What the compiler found suspicious but allowed, e.g. a logarithm
+    /// of an argument that can be negative.
+    pub fn warnings(&self) -> &[Diagnostic] {
+        &self.warnings
     }
 
     /// The inputs, in the order values are fed.
