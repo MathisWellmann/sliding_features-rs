@@ -433,3 +433,41 @@ fn output_domains_and_warm_ups() {
     assert_eq!(p.output_warm_up(2), 100);
     assert_eq!(p.warm_up(), 100);
 }
+
+/// Specs of the deprecated spec module compile to pipelines that compute
+/// exactly the same values, so moving to pipelines changes no feature.
+#[test]
+fn spec_expressions_compute_the_same_as_pipelines() {
+    let mut specs = vec![
+        "zscore(ema(x, 5) - sma(x, 10), 20)".to_string(),
+        "std(ln_return(x), 5) / std(ln_return(x), 20)".to_string(),
+        "-tanh(x - ema(x, 3)) * 2 + 1".to_string(),
+        "gte(lte(roc(x, 2), 0.5), -0.5)".to_string(),
+        "1 / (x - lag(x, 1))".to_string(),
+    ];
+    let spec_functions = Function::ALL
+        .iter()
+        .filter(|f| crate::spec::Function::from_name(f.name()).is_some());
+    for function in spec_functions {
+        let params = min_params(*function);
+        let tail = String::from_iter(params.iter().map(|p| format!(", {p}")));
+        for arg in ["x", "roc(x, 1)", "x - lag(x, 1)"] {
+            specs.push(format!("{}({arg}{tail})", function.name()));
+        }
+    }
+    assert!(specs.len() > 100, "every spec function is covered");
+    for source in &specs {
+        let mut old = crate::spec::Expr::parse(source)
+            .and_then(|e| e.build(&crate::spec::Limits::default()))
+            .unwrap_or_else(|e| panic!("{source}: {e}"));
+        let pipeline: Pipeline = source.parse().unwrap_or_else(|e| panic!("{source}: {e}"));
+        let mut new = Feature::try_from(pipeline).unwrap();
+        for input in adversarial_inputs() {
+            for v in input {
+                old.update(v);
+                new.update(v);
+                assert_eq!(old.last(), new.last(), "{source}");
+            }
+        }
+    }
+}
