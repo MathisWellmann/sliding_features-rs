@@ -27,6 +27,13 @@ impl Diagnostic {
         }
     }
 
+    pub(super) fn warning(message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Warning,
+            message: message.into(),
+        }
+    }
+
     /// How bad the problem is.
     pub fn severity(&self) -> Severity {
         self.severity

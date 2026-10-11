@@ -610,6 +610,25 @@ impl Function {
         Some(self.range(admitted, Params::new(self, params)))
     }
 
+    /// An estimate of the admitted updates of its argument a call needs
+    /// before it is ready: the sum of its windows (a log return needs one
+    /// more value). Pipelines sum it along their longest chain.
+    ///
+    /// # Panics
+    ///
+    /// If `params` do not pass [`Function::check_params`].
+    pub fn warm_up(self, params: &[f64]) -> usize {
+        let params = Params::new(self, params);
+        let windows: usize = self
+            .params()
+            .iter()
+            .enumerate()
+            .filter(|(_, kind)| **kind == Param::Window)
+            .map(|(i, _)| params.window(i).get())
+            .sum();
+        windows + usize::from(self == Function::LnReturn)
+    }
+
     /// A markdown table of every function: signature, what the argument
     /// must be, and description. Meant for documentation and for prompting
     /// an agent that writes pipelines.

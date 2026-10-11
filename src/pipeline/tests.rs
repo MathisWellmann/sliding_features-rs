@@ -228,12 +228,14 @@ fn adversarial_inputs() -> Vec<Vec<f64>> {
     ]
 }
 
-/// The arguments every function is tried on: the input, a series of both
-/// signs, and an exact zero.
+/// The arguments every function is tried on: the input, and series of
+/// both signs that are exactly zero on constant input. (`x - x` would be
+/// rejected as constant.)
 fn arguments(b: &mut Builder, x: NodeId) -> Vec<NodeId> {
     let roc = b.call(Function::Roc, x, &[1.0]).unwrap();
-    let zero = b.binary(BinaryOp::Sub, x, x).unwrap();
-    vec![x, roc, zero]
+    let lag = b.call(Function::Lag, x, &[1.0]).unwrap();
+    let diff = b.binary(BinaryOp::Sub, x, lag).unwrap();
+    vec![x, roc, diff]
 }
 
 /// Every function, at its minimum parameters, on every adversarial input
@@ -310,4 +312,124 @@ fn outputs_stay_in_their_declared_domain() {
         }
     }
     assert!(failures.is_empty(), "{failures:#?}");
+}
+
+/// After its estimated warm-up on a positive random walk, every function
+/// is ready, at its minimum parameters and at larger ones.
+#[test]
+fn the_warm_up_estimate_suffices() {
+    let mut failures = Vec::new();
+    for function in Function::ALL {
+        let larger = Vec::from_iter(function.params().iter().map(|p| match p {
+            Param::Window => 10.0,
+            Param::Real | Param::Fraction => 0.5,
+        }));
+        for params in [min_params(*function), larger] {
+            let (mut b, x) = single_input();
+            let inner = b.call(Function::Ema, x, &[3.0]).unwrap();
+            let call = b.call(*function, inner, &params).unwrap();
+            b.output("out", call).unwrap();
+            let mut p = b.build().unwrap();
+            let walk = random_walk(4, p.warm_up());
+            for v in &walk {
+                p.update(&[*v]);
+            }
+            if p.output(0).is_none() {
+                failures.push(format!(
+                    "{}{params:?}: not ready after {}",
+                    function.name(),
+                    p.warm_up()
+                ));
+            }
+        }
+    }
+    assert!(failures.is_empty(), "{failures:#?}");
+}
+
+fn build_errors(b: Builder) -> Vec<String> {
+    let err = b.build().unwrap_err();
+    Vec::from_iter(err.diagnostics().iter().map(ToString::to_string))
+}
+
+#[test]
+fn never_ready_calls_and_constant_outputs_are_errors() {
+    let (mut b, x) = single_input();
+    let abs = b.call(Function::Abs, x, &[]).unwrap();
+    let neg = b.neg(abs).unwrap();
+    let ln = b.call(Function::Ln, neg, &[]).unwrap();
+    b.output("ln", ln).unwrap();
+    let zero = b.binary(BinaryOp::Sub, x, x).unwrap();
+    let div = b.binary(BinaryOp::Div, x, zero).unwrap();
+    b.output("div", div).unwrap();
+    b.output("zero", zero).unwrap();
+    let sma = b.call(Function::Sma, zero, &[5.0]).unwrap();
+    b.output("flat", sma).unwrap();
+    assert_eq!(
+        build_errors(b),
+        [
+            "error: `ln(-abs(x))` is never ready: `ln` needs positive values, but `-abs(x)` lies in (-inf, 0]",
+            "error: `(x / zero)` divides by zero, so it is never ready",
+            "error: output `zero` is constant: it is always 0",
+            "error: output `flat` is constant: it is always 0",
+        ]
+    );
+}
+
+#[test]
+fn suspicious_pipelines_compile_with_warnings() {
+    let (mut b, x) = single_input();
+    let ln = b.call(Function::Ln, x, &[]).unwrap();
+    b.output("ln", ln).unwrap();
+    let abs = b.call(Function::Abs, x, &[]).unwrap();
+    let entropy = b.call(Function::BinaryEntropy, abs, &[10.0]).unwrap();
+    b.output("entropy", entropy).unwrap();
+    b.output("again", ln).unwrap();
+    let unused = b.call(Function::Ema, x, &[3.0]).unwrap();
+    b.bind("unused", unused).unwrap();
+    let p = b.build().unwrap();
+    let warnings = Vec::from_iter(p.warnings().iter().map(ToString::to_string));
+    assert_eq!(
+        warnings,
+        [
+            "warning: `ln(x)` is not ready while `x` is not positive (it lies in (-inf, inf)); \
+             declare the domain of input `x` if it is always positive",
+            "warning: `binary_entropy(abs(x), 10)` is constant: `abs(x)` never changes sign (it lies in [0, inf))",
+            "warning: output `again` computes the same as output `ln`",
+            "warning: `unused` is not used by any output",
+        ]
+    );
+}
+
+#[test]
+fn declared_input_domains_silence_warnings() {
+    let inputs = vec![Input::new("price", Domain::positive())];
+    let mut b = Builder::new(inputs, Limits::default()).unwrap();
+    let price = b.lookup("price").unwrap();
+    let ln = b.call(Function::Ln, price, &[]).unwrap();
+    let r = b.call(Function::LnReturn, price, &[]).unwrap();
+    b.output("ln", ln).unwrap();
+    b.output("r", r).unwrap();
+    let p = b.build().unwrap();
+    assert!(p.warnings().is_empty(), "{:?}", p.warnings());
+}
+
+#[test]
+fn output_domains_and_warm_ups() {
+    let (mut b, x) = single_input();
+    let rsi = b.call(Function::Rsi, x, &[14.0]).unwrap();
+    let smooth = b.call(Function::Ema, rsi, &[5.0]).unwrap();
+    let tanh = b.call(Function::Tanh, x, &[]).unwrap();
+    let lag = b.call(Function::Lag, x, &[100.0]).unwrap();
+    let sum = b.binary(BinaryOp::Add, smooth, lag).unwrap();
+    b.output("smooth", smooth).unwrap();
+    b.output("tanh", tanh).unwrap();
+    b.output("sum", sum).unwrap();
+    let p = b.build().unwrap();
+    assert_eq!(p.output_domain(0), Domain::closed(0.0, 100.0));
+    assert_eq!(p.output_domain(1), Domain::closed(-1.0, 1.0));
+    assert_eq!(p.output_domain(2), Domain::REAL);
+    assert_eq!(p.output_warm_up(0), 19);
+    assert_eq!(p.output_warm_up(1), 0);
+    assert_eq!(p.output_warm_up(2), 100);
+    assert_eq!(p.warm_up(), 100);
 }
