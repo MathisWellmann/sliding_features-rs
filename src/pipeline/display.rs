@@ -35,14 +35,14 @@ where
     /// one.
     pub(super) fn expr(&self, id: NodeId) -> String {
         let mut out = String::new();
-        self.write(&mut out, id);
+        self.write(&mut out, id, Context::Whole);
         out
     }
 
     /// The name of `id` if it has one, else its expression.
     pub(super) fn name_or_expr(&self, id: NodeId) -> String {
         let mut out = String::new();
-        self.write_child(&mut out, id);
+        self.write_child(&mut out, id, Context::Whole);
         out
     }
 
@@ -54,18 +54,18 @@ where
         }
     }
 
-    fn write_child(&self, out: &mut String, id: NodeId) {
+    fn write_child(&self, out: &mut String, id: NodeId, context: Context) {
         // An input keeps its own name even if a binding aliases it.
         if matches!(self.graph.get(id), Node::Input(_)) {
-            return self.write(out, id);
+            return self.write(out, id, context);
         }
         match (self.name_of)(id) {
             Some(name) => out.push_str(name),
-            None => self.write(out, id),
+            None => self.write(out, id, context),
         }
     }
 
-    fn write(&self, out: &mut String, id: NodeId) {
+    fn write(&self, out: &mut String, id: NodeId, context: Context) {
         match self.graph.get(id) {
             Node::Input(i) => out.push_str(self.inputs[*i].name()),
             Node::Const(c) => {
@@ -73,19 +73,26 @@ where
             }
             Node::Neg(a) => {
                 out.push('-');
-                self.write_child(out, *a);
+                self.write_child(out, *a, Context::Operand);
             }
             Node::Binary(op, a, b) => {
-                out.push('(');
-                self.write_child(out, *a);
+                // Every nested operation is parenthesized, so reading the
+                // text needs no precedence rules.
+                let parens = context == Context::Operand;
+                if parens {
+                    out.push('(');
+                }
+                self.write_child(out, *a, Context::Operand);
                 let _ = write!(out, " {} ", op.symbol());
-                self.write_child(out, *b);
-                out.push(')');
+                self.write_child(out, *b, Context::Operand);
+                if parens {
+                    out.push(')');
+                }
             }
             Node::Call(function, a, params) => {
                 out.push_str(function.name());
                 out.push('(');
-                self.write_child(out, *a);
+                self.write_child(out, *a, Context::Whole);
                 for p in params {
                     let _ = write!(out, ", {p}");
                 }
@@ -93,4 +100,13 @@ where
             }
         }
     }
+}
+
+/// Where an expression is written.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Context {
+    /// On its own: a statement or a call argument.
+    Whole,
+    /// As the operand of an operator.
+    Operand,
 }
