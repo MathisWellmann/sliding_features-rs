@@ -50,11 +50,12 @@ where
         let Some(val) = self.view.last() else { return };
         debug_assert!(val.is_finite(), "value must be finite");
 
-        if self.q_vals.len() > self.window_len.get() {
-            let old_val = self.q_vals.pop_front().unwrap();
+        if self.q_vals.len() >= self.window_len.get() {
+            let old_val = self.q_vals.pop_front().expect("the window is full");
             self.sum = self.sum - old_val;
         }
         self.q_vals.push_back(val);
+        debug_assert!(self.q_vals.len() <= self.window_len.get());
 
         self.sum = self.sum + val;
     }
@@ -96,6 +97,19 @@ mod tests {
                 assert!(last <= 1.0);
             }
         }
+    }
+
+    /// Exactly `window_len` values are averaged; one more used to stay in
+    /// the window once it was full.
+    #[test]
+    fn sma_averages_the_window() {
+        let mut sma = Sma::new(Echo::new(), NonZeroUsize::new(2).unwrap());
+        let mut out = Vec::new();
+        for v in [1.0, 3.0, 5.0, 7.0] {
+            sma.update(v);
+            out.push(sma.last());
+        }
+        assert_eq!(out, [None, Some(2.0), Some(4.0), Some(6.0)]);
     }
 
     #[test]
