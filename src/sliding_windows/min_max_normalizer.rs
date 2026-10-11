@@ -14,7 +14,8 @@ use crate::View;
 ///
 /// Normalizes values to the [-1, 1] range using the min and max of a sliding
 /// window of *past* values.  The current value is intentionally excluded from
-/// the normalization window to avoid lookahead / data-leakage bias.
+/// the normalization window to avoid lookahead / data-leakage bias, so it can
+/// lie beyond the window's extremes: such a value is clamped to -1 or 1.
 ///
 /// No output is emitted until the sliding window is completely filled.
 /// During warm-up `last()` returns `None`.
@@ -99,13 +100,15 @@ where
             if self.min == self.max {
                 self.out = Some(T::zero());
             } else {
-                self.out = Some(
-                    -T::one()
-                        + ((view_last - self.min) * T::from(2.0).expect("can convert"))
-                            / (self.max - self.min),
-                );
+                let scaled = -T::one()
+                    + ((view_last - self.min) * T::from(2.0).expect("can convert"))
+                        / (self.max - self.min);
+                // A new extreme lies outside the past window's range.
+                self.out = Some(scaled.max(-T::one()).min(T::one()));
             }
-            debug_assert!(self.out.unwrap().is_finite(), "output must be finite");
+            let out = self.out.expect("set above");
+            debug_assert!(out.is_finite(), "output must be finite");
+            debug_assert!(out.abs() <= T::one(), "output must lie in [-1, 1]");
 
             // Slide the window.
             let old = self.q_vals.pop_front().expect("Its checked above that the length is >= the non-zero window length, therefore this must be `Some`");
@@ -269,9 +272,10 @@ mod tests {
 
         // After all updates, the last value (100) was normalized against
         // the previous window [60, 70, 80, 90] (min=60, max=90).
-        // normalized(100) = -1 + 2*(100-60)/(90-60) = -1 + 2*40/30 = 5/3
+        // normalized(100) = -1 + 2*(100-60)/(90-60) = 5/3, a new high
+        // beyond the range, clamped to 1.
         let got = n.last().unwrap();
-        let expected = 5.0 / 3.0;
+        let expected = 1.0;
         let diff = (got - expected).abs();
         assert!(
             diff < 1e-12,
@@ -438,6 +442,25 @@ mod tests {
             if let Some(out) = n.last() {
                 assert!(out.is_finite(), "output should be finite, got {out}");
             }
+        }
+    }
+
+    /// New extremes beyond the past window are clamped, so the output
+    /// stays in the documented [-1, 1] range; it used to exceed it.
+    #[test]
+    fn min_max_normalizer_clamps_new_extremes() {
+        let mut n = MinMaxNormalizer::new(Echo::new(), NonZeroUsize::new(3).unwrap());
+        for v in [0.0, 10.0, 5.0] {
+            n.update(v);
+        }
+        n.update(50.0);
+        assert_eq!(n.last(), Some(1.0));
+        n.update(-50.0);
+        assert_eq!(n.last(), Some(-1.0));
+        for v in &TEST_DATA {
+            n.update(*v);
+            let out = n.last().unwrap();
+            assert!((-1.0..=1.0).contains(&out), "{out}");
         }
     }
 }

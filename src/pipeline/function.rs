@@ -397,9 +397,9 @@ functions! {
     }
     MinMax {
         name: "min_max", params: [Window], min_window: 2, requires: Any,
-        range: |_, _| Domain::REAL,
+        range: |_, _| Domain::closed(-1.0, 1.0),
         build: |p| MinMaxNormalizer::new(Echo::new(), p.window(0)).into(),
-        doc: "Position in the [min, max] range of the previous window, scaled to [-1, 1] (beyond it on new extremes).",
+        doc: "Position in the [min, max] range of the previous window, scaled to [-1, 1]; new extremes give -1 or 1.",
     }
     Mad {
         name: "mad", params: [Window], min_window: 2, requires: Any,
