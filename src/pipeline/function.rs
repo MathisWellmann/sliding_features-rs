@@ -1,13 +1,56 @@
 //! The operators and functions of a pipeline: one table holds each
-//! function's name, parameters, argument requirement, output range and
-//! description, so they cannot drift apart.
+//! function's name, parameters, argument requirement, output range, runtime
+//! form and description, so they cannot drift apart.
 
 use std::{
     fmt::Write as _,
     num::NonZeroUsize,
 };
 
-use super::Domain;
+use super::{
+    Domain,
+    state::{
+        Kind,
+        Pure,
+    },
+};
+use crate::{
+    pure_functions::Echo,
+    rolling::{
+        Drawdown,
+        LnReturn,
+    },
+    sliding_windows::{
+        Alma,
+        BinaryEntropy,
+        CenterOfGravity,
+        CorrelationTrendIndicator,
+        Cumulative,
+        CyberCycle,
+        EhlersFisherTransform,
+        Ema,
+        Lag,
+        LaguerreFilter,
+        LaguerreRSI,
+        MadScaler,
+        Max,
+        Min,
+        MinMaxNormalizer,
+        MyRSI,
+        NoiseEliminationTechnology,
+        PolarizedFractalEfficiency,
+        ReFlex,
+        Roc,
+        RoofingFilter,
+        Rsi,
+        Sma,
+        SuperSmoother,
+        TrendFlex,
+        Vst,
+        WelfordOnline,
+        ZScoreStandardization,
+    },
+};
 
 /// An arithmetic operator between two expressions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -30,6 +73,18 @@ impl BinaryOp {
             BinaryOp::Sub => '-',
             BinaryOp::Mul => '*',
             BinaryOp::Div => '/',
+        }
+    }
+
+    /// `a op b`. NaN (not ready) operands give NaN, and so does a division
+    /// by zero once the caller filters the infinity.
+    #[inline]
+    pub(super) fn eval(self, a: f64, b: f64) -> f64 {
+        match self {
+            BinaryOp::Add => a + b,
+            BinaryOp::Sub => a - b,
+            BinaryOp::Mul => a * b,
+            BinaryOp::Div => a / b,
         }
     }
 
@@ -154,6 +209,9 @@ pub(super) fn window_len(value: f64) -> Option<NonZeroUsize> {
 /// The output domain of a function given its (admitted) argument domain.
 type RangeFn = fn(Domain, Params<'_>) -> Domain;
 
+/// What a call becomes at runtime given its checked parameters.
+type BuildFn = fn(Params<'_>) -> Kind;
+
 /// Declares [`Function`] and its metadata from one table.
 macro_rules! functions {
     ($($variant:ident {
@@ -162,6 +220,7 @@ macro_rules! functions {
         min_window: $min:literal,
         requires: $requires:ident,
         range: $range:expr,
+        build: $build:expr,
         doc: $doc:literal $(,)?
     })*) => {
         /// A function of a pipeline. Every call takes an expression as its
@@ -205,6 +264,12 @@ macro_rules! functions {
                 let range: RangeFn = match self { $(Function::$variant => $range,)* };
                 range(arg, params)
             }
+
+            /// What a call with checked `params` becomes at runtime.
+            pub(super) fn instantiate(self, params: Params<'_>) -> Kind {
+                let build: BuildFn = match self { $(Function::$variant => $build,)* };
+                build(params)
+            }
         }
     };
 }
@@ -213,208 +278,256 @@ functions! {
     Abs {
         name: "abs", params: [], min_window: 1, requires: Any,
         range: |a, _| a.abs(),
+        build: |_| Kind::Pure(Pure::Abs),
         doc: "Absolute value.",
     }
     Sign {
         name: "sign", params: [], min_window: 1, requires: Any,
         range: |a, _| a.sign(),
+        build: |_| Kind::Pure(Pure::Sign),
         doc: "Sign: -1, 0 or 1.",
     }
     Sqrt {
         name: "sqrt", params: [], min_window: 1, requires: NonNegative,
         range: |a, _| a.map_increasing(f64::sqrt),
+        build: |_| Kind::Pure(Pure::Sqrt),
         doc: "Square root.",
     }
     Square {
         name: "square", params: [], min_window: 1, requires: Any,
         range: |a, _| a.abs().map_increasing(|v| v * v),
+        build: |_| Kind::Pure(Pure::Square),
         doc: "The argument times itself.",
     }
     Exp {
         name: "exp", params: [], min_window: 1, requires: Any,
         range: |a, _| a.map_increasing(f64::exp),
+        build: |_| Kind::Pure(Pure::Exp),
         doc: "Exponential function; not ready where it overflows.",
     }
     Ln {
         name: "ln", params: [], min_window: 1, requires: Positive,
         range: |a, _| a.map_increasing(f64::ln),
+        build: |_| Kind::Pure(Pure::Ln),
         doc: "Natural logarithm.",
     }
     Tanh {
         name: "tanh", params: [], min_window: 1, requires: Any,
         range: |a, _| a.map_increasing(f64::tanh),
+        build: |_| Kind::Pure(Pure::Tanh),
         doc: "Hyperbolic tangent, squashes into (-1, 1).",
     }
     Sigmoid {
         name: "sigmoid", params: [], min_window: 1, requires: Any,
         range: |a, _| a.map_increasing(sigmoid),
+        build: |_| Kind::Pure(Pure::Sigmoid),
         doc: "Logistic function 1 / (1 + exp(-a)), squashes into (0, 1).",
     }
     Asinh {
         name: "asinh", params: [], min_window: 1, requires: Any,
         range: |a, _| a.map_increasing(f64::asinh),
+        build: |_| Kind::Pure(Pure::Asinh),
         doc: "Inverse hyperbolic sine: like a signed logarithm, compresses large magnitudes.",
     }
     Gte {
         name: "gte", params: [Real], min_window: 1, requires: Any,
         range: |a, p| a.max_with(p.real(0)),
+        build: |p| Kind::Pure(Pure::Gte(p.real(0))),
         doc: "Clips values below the real to it: max(a, real).",
     }
     Lte {
         name: "lte", params: [Real], min_window: 1, requires: Any,
         range: |a, p| a.min_with(p.real(0)),
+        build: |p| Kind::Pure(Pure::Lte(p.real(0))),
         doc: "Clips values above the real to it: min(a, real).",
     }
     LnReturn {
         name: "ln_return", params: [], min_window: 1, requires: Positive,
         range: |_, _| Domain::REAL,
+        build: |_| LnReturn::new(Echo::new()).into(),
         doc: "Log return between consecutive updates.",
     }
     Drawdown {
         name: "drawdown", params: [], min_window: 1, requires: Positive,
         range: |_, _| Domain::closed(0.0, 1.0),
+        build: |_| Drawdown::new(Echo::new()).into(),
         doc: "Largest relative peak-to-valley decline so far, in [0, 1].",
     }
     Sma {
         name: "sma", params: [Window], min_window: 1, requires: Any,
         range: |a, _| a,
+        build: |p| Sma::new(Echo::new(), p.window(0)).into(),
         doc: "Simple moving average.",
     }
     Ema {
         name: "ema", params: [Window], min_window: 1, requires: Any,
         range: |a, _| a,
+        build: |p| Ema::new(Echo::new(), p.window(0)).into(),
         doc: "Exponential moving average, alpha = 2 / (window + 1).",
     }
     Alma {
         name: "alma", params: [Window], min_window: 2, requires: Any,
         range: |a, _| a,
+        build: |p| Alma::new(Echo::new(), p.window(0)).into(),
         doc: "Arnaud Legoux moving average (sigma 6, offset 0.85).",
     }
     Roc {
         name: "roc", params: [Window], min_window: 1, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| Roc::new(Echo::new(), p.window(0)).into(),
         doc: "Rate of change in percent against the value `window` updates ago.",
     }
     Lag {
         name: "lag", params: [Window], min_window: 1, requires: Any,
         range: |a, _| a,
+        build: |p| Lag::new(Echo::new(), p.window(0)).into(),
         doc: "The value `window` updates ago.",
     }
     Min {
         name: "min", params: [Window], min_window: 1, requires: Any,
         range: |a, _| a,
+        build: |p| Min::new(Echo::new(), p.window(0)).into(),
         doc: "Minimum over the window.",
     }
     Max {
         name: "max", params: [Window], min_window: 1, requires: Any,
         range: |a, _| a,
+        build: |p| Max::new(Echo::new(), p.window(0)).into(),
         doc: "Maximum over the window.",
     }
     MinMax {
         name: "min_max", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| MinMaxNormalizer::new(Echo::new(), p.window(0)).into(),
         doc: "Position in the [min, max] range of the previous window, scaled to [-1, 1] (beyond it on new extremes).",
     }
     Mad {
         name: "mad", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| MadScaler::new(Echo::new(), p.window(0)).into(),
         doc: "Robust z-score: (a - median) / (1.4826 MAD) of the previous window.",
     }
     ZScore {
         name: "zscore", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| ZScoreStandardization::new(Echo::new(), p.window(0)).into(),
         doc: "Z-score against the mean and standard deviation of the previous window.",
     }
     Std {
         name: "std", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::non_negative(),
+        build: |p| WelfordOnline::new(Echo::new(), p.window(0)).into(),
         doc: "Standard deviation over the window (Welford).",
     }
     Cumulative {
         name: "cumulative", params: [Window], min_window: 1, requires: Any,
         range: |a, p| a.mul(Domain::closed(1.0, window_f64(p.window(0)))),
+        build: |p| Cumulative::new(Echo::new(), p.window(0)).into(),
         doc: "Sum over the window.",
     }
     Rsi {
         name: "rsi", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| Rsi::new(Echo::new(), p.window(0)).into(),
         doc: "Relative strength index, in [0, 100].",
     }
     MyRsi {
         name: "my_rsi", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| MyRSI::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' MyRSI, in [-1, 1].",
     }
     LaguerreRsi {
         name: "laguerre_rsi", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| LaguerreRSI::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' Laguerre RSI, in [0, 1].",
     }
     LaguerreFilter {
         name: "laguerre_filter", params: [Fraction], min_window: 1, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| LaguerreFilter::new(Echo::new(), p.real(0)).into(),
         doc: "John Ehlers' Laguerre filter with damping gamma (the fraction).",
     }
     SuperSmoother {
         name: "super_smoother", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| SuperSmoother::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' two-pole super smoother low-pass filter.",
     }
     RoofingFilter {
         name: "roofing_filter", params: [Window, Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| RoofingFilter::new(Echo::new(), p.window(0), p.window(1)).into(),
         doc: "John Ehlers' roofing filter (low-pass window, high-pass window): a band-pass.",
     }
     ReFlex {
         name: "re_flex", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| ReFlex::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' ReFlex zero-lag cycle indicator.",
     }
     TrendFlex {
         name: "trend_flex", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| TrendFlex::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' TrendFlex zero-lag trend indicator.",
     }
     CyberCycle {
         name: "cyber_cycle", params: [Window], min_window: 3, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| CyberCycle::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' cyber cycle.",
     }
     CenterOfGravity {
         name: "center_of_gravity", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| CenterOfGravity::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' center of gravity oscillator.",
     }
     Cti {
         name: "cti", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| CorrelationTrendIndicator::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' correlation trend indicator: correlation with a straight line, in [-1, 1].",
     }
     Pfe {
         name: "pfe", params: [Window, Window], min_window: 3, requires: Any,
-        range: |_, _| Domain::closed(-1.0, 1.0),
-        doc: "Polarized fractal efficiency (window, EMA smoothing window), in [-1, 1].",
+        // Not [-1, 1] as documented: the path length sums one segment too
+        // few, so the efficiency exceeds 1.
+        range: |_, _| Domain::REAL,
+        build: |p| PolarizedFractalEfficiency::new(Echo::new(), ema(p.window(1)), p.window(0)).into(),
+        doc: "Polarized fractal efficiency (window, EMA smoothing window): near 1 in a straight up-trend, near -1 down.",
     }
     Fisher {
         name: "fisher", params: [Window, Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| EhlersFisherTransform::new(Echo::new(), ema(p.window(1)), p.window(0)).into(),
         doc: "John Ehlers' Fisher transform (window, EMA smoothing window).",
     }
     BinaryEntropy {
         name: "binary_entropy", params: [Window], min_window: 2, requires: BothSigns,
         range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| BinaryEntropy::new(Echo::new(), p.window(0)).into(),
         doc: "Shannon entropy of the signs over the window, in [0, 1].",
     }
     Vst {
         name: "vst", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
+        build: |p| Vst::new(Echo::new(), p.window(0)).into(),
         doc: "Variance stabilizing transform: change scaled by the rolling standard deviation.",
     }
     Net {
         name: "net", params: [Window], min_window: 2, requires: Any,
         range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| NoiseEliminationTechnology::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' noise elimination technology (Kendall correlation), in [-1, 1].",
     }
+}
+
+/// The EMA that smooths `pfe` and `fisher`.
+fn ema(window: NonZeroUsize) -> Ema<f64, Echo<f64>> {
+    Ema::new(Echo::new(), window)
 }
 
 /// The logistic function.
