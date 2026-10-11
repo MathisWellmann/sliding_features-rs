@@ -493,11 +493,9 @@ functions! {
     }
     Pfe {
         name: "pfe", params: [Window, Window], min_window: 3, requires: Any,
-        // Not [-1, 1] as documented: the path length sums one segment too
-        // few, so the efficiency exceeds 1.
-        range: |_, _| Domain::REAL,
+        range: |_, _| Domain::closed(-1.0, 1.0),
         build: |p| PolarizedFractalEfficiency::new(Echo::new(), ema(p.window(1)), p.window(0)).into(),
-        doc: "Polarized fractal efficiency (window, EMA smoothing window): near 1 in a straight up-trend, near -1 down.",
+        doc: "Polarized fractal efficiency (window, EMA smoothing window), in [-1, 1]: near 1 in a straight up-trend, near -1 down.",
     }
     Fisher {
         name: "fisher", params: [Window, Window], min_window: 2, requires: Any,
