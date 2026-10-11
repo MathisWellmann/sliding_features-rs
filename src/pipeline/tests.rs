@@ -437,6 +437,7 @@ fn output_domains_and_warm_ups() {
 /// Specs of the deprecated spec module compile to pipelines that compute
 /// exactly the same values, so moving to pipelines changes no feature.
 #[test]
+#[allow(deprecated, reason = "compares against the module it replaces")]
 fn spec_expressions_compute_the_same_as_pipelines() {
     let mut specs = vec![
         "zscore(ema(x, 5) - sma(x, 10), 20)".to_string(),

@@ -1,5 +1,11 @@
 //! Features as text: a small expression language over this crate's views.
 //!
+//! **Deprecated**: use the [`pipeline`](crate::pipeline) module. Every spec
+//! is a valid pipeline and computes the same values, and a pipeline also
+//! has several inputs and outputs, shares equal subexpressions, checks
+//! domains before it runs and is about a third faster.
+//! [`pipeline::Feature`](crate::pipeline::Feature) replaces [`DynView`].
+//!
 //! A spec describes a chain of views fed one input series `x`. It is parsed
 //! into an [`Expr`], checked against resource [`Limits`] and built into a
 //! [`DynView`] at runtime, so features can be written, stored, compared and
@@ -30,6 +36,9 @@
 //! view.update(104.0);
 //! assert_eq!(view.last(), Some(2.0));
 //! ```
+
+// The module uses its own deprecated items until it is removed.
+#![allow(deprecated, reason = "the deprecated module uses its own items")]
 
 mod build;
 mod error;

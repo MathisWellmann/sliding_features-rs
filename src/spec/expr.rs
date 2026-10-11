@@ -10,6 +10,9 @@ use super::{
 };
 
 /// An arithmetic operator between two expressions.
+#[deprecated(
+    note = "use the `pipeline` module: its text form compiles every spec to the same values"
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinaryOp {
     /// `a + b`
@@ -37,6 +40,9 @@ impl BinaryOp {
 ///
 /// Its [`fmt::Display`] form is canonical: parsing it yields the same tree,
 /// so two specs that print the same compute the same feature.
+#[deprecated(
+    note = "use the `pipeline` module: its text form compiles every spec to the same values"
+)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     /// The input series, `x`.

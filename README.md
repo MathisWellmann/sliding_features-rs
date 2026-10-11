@@ -52,25 +52,45 @@ for v in &test_values {
 Each View will first call it's chained View to get it's last value, which will then be used to update the state of the View.
 Some Views have additional parameters such as ALMA. 
 
-### Features as text: the `spec` module
-A chain can also be written as a spec string, parsed and built at runtime,
-so features can be stored, compared and generated (e.g. by a search or an
-LLM agent) as data, without compiling code:
+### Features as text: the `pipeline` module
+Features can also be written as text, compiled and run at runtime, so they
+can be stored, compared and generated (e.g. by a search or an LLM agent) as
+data, without compiling code. A pipeline computes many features over several
+input series in one flat program:
 
 ```rust
-use sliding_features::{View, spec::{Expr, Limits}};
+use sliding_features::pipeline::{Domain, Input, Limits, Pipeline};
 
-let spec: Expr = "zscore(ema(x, 10) - ema(x, 50), 200)".parse().unwrap();
-let mut view = spec.build(&Limits::default()).unwrap();
-view.update(100.0);
+let source = "
+    let r = ln_return(price)
+    vol_ratio = std(r, 20) / std(r, 100)
+    trend = zscore(ema(price, 10) - ema(price, 50), 200)
+";
+let inputs = vec![Input::new("price", Domain::positive())];
+let mut pipeline = Pipeline::compile(source, inputs, Limits::default()).unwrap();
+pipeline.update(&[100.0]);
+assert_eq!(pipeline.output(0), None, "warming up");
 ```
 
-`x` is the input, `+ - * /` combine views fed the same input, and every
-function takes an expression and then numeric parameters, e.g. `pfe(x, 20, 5)`.
-`Function::reference()` renders the table of all functions. `Limits` bounds
-the window lengths and tree size, and a built view only outputs finite values
-(a division by zero is "not ready" instead of infinite). The `Display` form of
-an `Expr` is canonical, so equal strings mean equal features.
+- `name = expr` defines an output, `let name = expr` a helper, and every
+  function takes an expression and then numeric parameters, e.g. `pfe(x, 20, 5)`.
+  `pipeline::reference()` renders the language guide and the table of all
+  functions, ready for a prompt.
+- Equal subexpressions are computed once, and an update runs a flat list of
+  operations with no allocation, recursion or dynamic dispatch.
+- Before any data is seen, the compiler derives every node's value range from
+  the inputs' domains: it rejects calls that can never be ready (`ln` of a
+  negative value) and constant outputs, and warns about calls that are not
+  always ready, with line, column and a hint how to fix it.
+- Outputs are only ever finite: a division by zero is "not ready" instead of
+  infinite. `Limits` bounds windows, node count and nesting, so text from an
+  untrusted author cannot make a pipeline arbitrarily slow or large.
+- The `Display` form is canonical, so equal strings mean equal features.
+- `pipeline::Builder` assembles the same pipelines from code, and
+  `pipeline::Feature` turns a one-input, one-output pipeline into a `View`.
+
+The older `spec` module is deprecated: every spec compiles as a pipeline to
+the same values.
 
 ### Examples
 See examples folder for some code ideas

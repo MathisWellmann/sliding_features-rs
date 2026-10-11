@@ -59,10 +59,14 @@ use crate::{
 };
 
 /// A view assembled at runtime.
+#[deprecated(note = "use `pipeline::Feature`, a single-output pipeline that is a `View`")]
 pub type DynView = Box<dyn View<f64> + Send>;
 
 /// Resource bounds of a spec, so a spec from an untrusted author (e.g. an
 /// LLM) cannot make a feature arbitrarily slow or large.
+#[deprecated(
+    note = "use the `pipeline` module: its text form compiles every spec to the same values"
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Limits {
     /// The largest window parameter.
