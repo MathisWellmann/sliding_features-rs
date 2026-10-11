@@ -1,17 +1,30 @@
-//! A compiled pipeline and its use as a single view.
+//! A compiled pipeline, its canonical text form and its use as a single
+//! view.
+
+use std::{
+    fmt,
+    str::FromStr,
+};
 
 use super::{
+    Builder,
     CompileError,
     Diagnostic,
     Domain,
     Input,
+    Limits,
     Severity,
     analysis::Analysis,
-    builder::Binding,
+    builder::{
+        Binding,
+        BindingKind,
+    },
+    display::Printer,
     graph::{
         Graph,
         NodeId,
     },
+    parse::parse,
     program::Program,
 };
 use crate::View;
@@ -26,6 +39,18 @@ use crate::View;
 ///
 /// Clone a warmed-up pipeline to branch it; [`Pipeline::reset`] starts it
 /// over.
+///
+/// The [`fmt::Display`] form is canonical: compiling it yields the same
+/// pipeline, so two pipelines that print the same compute the same.
+///
+/// ```
+/// use sliding_features::pipeline::Pipeline;
+///
+/// let mut p: Pipeline = "zscore(ema(x, 10) - ema(x, 50), 200)".parse().unwrap();
+/// assert_eq!(p.to_string(), "zscore(ema(x, 10) - ema(x, 50), 200)");
+/// p.update(&[100.0]);
+/// assert_eq!(p.output(0), None, "warming up");
+/// ```
 #[derive(Debug, Clone)]
 pub struct Pipeline {
     graph: Graph,
@@ -62,6 +87,16 @@ impl Pipeline {
             bindings,
             program,
         }
+    }
+
+    /// Compile the text form of a pipeline over `inputs`, see
+    /// [`reference()`](super::reference()) for the language.
+    ///
+    /// The error lists every problem with its line and column, worded to
+    /// be fixed by the author, e.g. an LLM asked to retry.
+    pub fn compile(source: &str, inputs: Vec<Input>, limits: Limits) -> Result<Self, CompileError> {
+        let builder = Builder::new(inputs, limits)?;
+        parse(source, builder)?.build()
     }
 
     /// Feed one value per input, in the order of [`Pipeline::inputs`]. A
@@ -148,6 +183,41 @@ impl Pipeline {
 
     fn output_bindings(&self) -> impl Iterator<Item = &Binding> {
         self.bindings.iter().filter(|b| b.is_output())
+    }
+}
+
+impl FromStr for Pipeline {
+    type Err = CompileError;
+
+    /// Compile a pipeline over one input `x` that takes any finite value,
+    /// within the default [`Limits`].
+    fn from_str(source: &str) -> Result<Self, Self::Err> {
+        Self::compile(source, vec![Input::real("x")], Limits::default())
+    }
+}
+
+impl fmt::Display for Pipeline {
+    /// One statement per line, in the order written. A node named by an
+    /// earlier statement is referred to by that name.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (k, binding) in self.bindings.iter().enumerate() {
+            let name_of = |id: NodeId| {
+                self.bindings[..k]
+                    .iter()
+                    .find(|b| b.is_named() && b.node() == id)
+                    .map(Binding::name)
+            };
+            let expr = Printer::new(&self.graph, &self.inputs, name_of).expr(binding.node());
+            if k > 0 {
+                f.write_str("\n")?;
+            }
+            match binding.kind() {
+                BindingKind::Helper => write!(f, "let {} = {expr}", binding.name())?,
+                BindingKind::Output => write!(f, "{} = {expr}", binding.name())?,
+                BindingKind::Anonymous => f.write_str(&expr)?,
+            }
+        }
+        Ok(())
     }
 }
 

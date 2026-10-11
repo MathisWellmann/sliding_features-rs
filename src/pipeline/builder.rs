@@ -6,9 +6,11 @@ use super::{
     CompileError,
     Domain,
     Function,
+    Location,
     Pipeline,
     Severity,
     analysis::Analysis,
+    display::Printer,
     function::Params,
     graph::{
         Graph,
@@ -88,13 +90,24 @@ impl Input {
     }
 }
 
-/// A named node: an output of the pipeline, or a helper that only names a
-/// node for the text form (`let name = ...`).
+/// What a binding names.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum BindingKind {
+    /// A node later statements refer to by name (`let name = ...`).
+    Helper,
+    /// An output (`name = ...`).
+    Output,
+    /// An output written as a bare expression, named by its text.
+    Anonymous,
+}
+
+/// A named node, see [`BindingKind`].
 #[derive(Debug, Clone, PartialEq)]
 pub(super) struct Binding {
     name: String,
     node: NodeId,
-    is_output: bool,
+    kind: BindingKind,
+    location: Option<Location>,
 }
 
 impl Binding {
@@ -106,8 +119,22 @@ impl Binding {
         self.node
     }
 
+    pub(super) fn kind(&self) -> BindingKind {
+        self.kind
+    }
+
     pub(super) fn is_output(&self) -> bool {
-        self.is_output
+        self.kind != BindingKind::Helper
+    }
+
+    /// Whether expressions can refer to the node by the binding's name.
+    pub(super) fn is_named(&self) -> bool {
+        self.kind != BindingKind::Anonymous
+    }
+
+    /// Where the binding is in the text form.
+    pub(super) fn location(&self) -> Option<Location> {
+        self.location
     }
 }
 
@@ -144,6 +171,10 @@ pub struct Builder {
     input_nodes: Vec<NodeId>,
     bindings: Vec<Binding>,
     limits: Limits,
+    /// Where in the text form each node first appears.
+    locations: Vec<Option<Location>>,
+    /// Where the text form is, for new nodes, bindings and errors.
+    location: Option<Location>,
 }
 
 impl Builder {
@@ -159,6 +190,8 @@ impl Builder {
             input_nodes: Vec::new(),
             bindings: Vec::new(),
             limits,
+            locations: Vec::new(),
+            location: None,
         };
         for (i, input) in inputs.into_iter().enumerate() {
             builder.check_name(input.name())?;
@@ -177,16 +210,36 @@ impl Builder {
         }
         self.bindings
             .iter()
-            .find(|binding| binding.name == name)
+            .find(|binding| binding.is_named() && binding.name == name)
             .map(|binding| binding.node)
+    }
+
+    /// Every name expressions can refer to: inputs, then bindings.
+    pub(super) fn names(&self) -> impl Iterator<Item = &str> {
+        let inputs = self.inputs.iter().map(Input::name);
+        let bindings = self
+            .bindings
+            .iter()
+            .filter(|b| b.is_named())
+            .map(Binding::name);
+        inputs.chain(bindings)
+    }
+
+    /// The limits the builder enforces.
+    pub(super) fn limits(&self) -> Limits {
+        self.limits
+    }
+
+    /// Attribute new nodes, bindings and errors to `location` in the text
+    /// form.
+    pub(super) fn set_location(&mut self, location: Location) {
+        self.location = Some(location);
     }
 
     /// The constant `value`.
     pub fn constant(&mut self, value: f64) -> Result<NodeId, CompileError> {
         if !value.is_finite() {
-            return Err(CompileError::single(format!(
-                "the constant {value} is not finite"
-            )));
+            return Err(self.error(format!("the constant {value} is not finite")));
         }
         // Adding zero turns -0 into 0, so both are one node.
         self.add(Node::Const(value + 0.0))
@@ -211,10 +264,7 @@ impl Builder {
             let (a, b) = (*a, *b);
             let value = op.eval(a, b);
             if !value.is_finite() {
-                return Err(CompileError::single(format!(
-                    "`{a} {} {b}` is not finite",
-                    op.symbol()
-                )));
+                return Err(self.error(format!("`{a} {} {b}` is not finite", op.symbol())));
             }
             return self.constant(value);
         }
@@ -231,13 +281,13 @@ impl Builder {
     ) -> Result<NodeId, CompileError> {
         function
             .check_params(params, self.limits.max_window)
-            .map_err(CompileError::single)?;
+            .map_err(|message| self.error(message))?;
         if let Node::Const(c) = *self.graph.get(arg)
             && let Kind::Pure(pure) = function.instantiate(Params::new(function, params))
         {
             let value = pure.eval(c);
             if !value.is_finite() {
-                return Err(CompileError::single(format!(
+                return Err(self.error(format!(
                     "`{}` of the constant {c} is not finite",
                     function.name()
                 )));
@@ -250,13 +300,43 @@ impl Builder {
     /// Make `node` an output called `name`. Outputs are read in the order
     /// they are added.
     pub fn output(&mut self, name: &str, node: NodeId) -> Result<(), CompileError> {
-        self.push_binding(name, node, true)
+        self.check_name(name)?;
+        self.push_binding(name.to_string(), node, BindingKind::Output);
+        Ok(())
     }
 
     /// Name `node` without making it an output, so the text form refers to
     /// it by `name` (`let name = ...`).
     pub fn bind(&mut self, name: &str, node: NodeId) -> Result<(), CompileError> {
-        self.push_binding(name, node, false)
+        self.check_name(name)?;
+        self.push_binding(name.to_string(), node, BindingKind::Helper);
+        Ok(())
+    }
+
+    /// Make `node` an output named by its expression, as written by a bare
+    /// expression in the text form.
+    pub(super) fn anonymous_output(&mut self, node: NodeId) -> Result<(), CompileError> {
+        let name = self.expr_text(node);
+        let taken = self
+            .bindings
+            .iter()
+            .any(|b| b.is_output() && b.name() == name);
+        if taken {
+            return Err(self.error(format!("the output `{name}` is already defined")));
+        }
+        self.push_binding(name, node, BindingKind::Anonymous);
+        Ok(())
+    }
+
+    /// The text of `node`, referring to named nodes by name.
+    fn expr_text(&self, node: NodeId) -> String {
+        let name_of = |id: NodeId| {
+            self.bindings
+                .iter()
+                .find(|b| b.is_named() && b.node() == id)
+                .map(Binding::name)
+        };
+        Printer::new(&self.graph, &self.inputs, name_of).expr(node)
     }
 
     /// Check the pipeline and return it with fresh state.
@@ -270,7 +350,7 @@ impl Builder {
         if !self.bindings.iter().any(Binding::is_output) {
             return Err(CompileError::single("a pipeline needs at least one output"));
         }
-        let analysis = Analysis::run(&self.graph, &self.inputs, &self.bindings);
+        let analysis = Analysis::run(&self.graph, &self.inputs, &self.bindings, &self.locations);
         let diagnostics = analysis.diagnostics();
         if diagnostics.iter().any(|d| d.severity() == Severity::Error) {
             return Err(CompileError::new(diagnostics.to_vec()));
@@ -283,20 +363,19 @@ impl Builder {
         ))
     }
 
-    fn push_binding(
-        &mut self,
-        name: &str,
-        node: NodeId,
-        is_output: bool,
-    ) -> Result<(), CompileError> {
+    fn push_binding(&mut self, name: String, node: NodeId, kind: BindingKind) {
         assert!(node.index() < self.graph.len(), "a node of this builder");
-        self.check_name(name)?;
         self.bindings.push(Binding {
-            name: name.to_string(),
+            name,
             node,
-            is_output,
+            kind,
+            location: self.location,
         });
-        Ok(())
+    }
+
+    /// An error at the current location.
+    fn error(&self, message: impl Into<String>) -> CompileError {
+        CompileError::single(message).or_at(self.location)
     }
 
     /// Names are identifiers, so the text form can refer to them, and
@@ -317,7 +396,7 @@ impl Builder {
         } else {
             return Ok(());
         };
-        Err(CompileError::single(format!("the name `{name}` {problem}")))
+        Err(self.error(format!("the name `{name}` {problem}")))
     }
 
     /// Intern `node` within the limits.
@@ -328,7 +407,7 @@ impl Builder {
             .max()
             .unwrap_or(0);
         if depth > self.limits.max_depth {
-            return Err(CompileError::single(format!(
+            return Err(self.error(format!(
                 "the expression is nested {depth} deep, the limit is {}",
                 self.limits.max_depth
             )));
@@ -337,13 +416,14 @@ impl Builder {
             .graph
             .intern(node, self.limits.max_nodes)
             .ok_or_else(|| {
-                CompileError::single(format!(
+                self.error(format!(
                     "the pipeline needs more than {} distinct nodes",
                     self.limits.max_nodes
                 ))
             })?;
         if id.index() == self.depths.len() {
             self.depths.push(depth);
+            self.locations.push(self.location);
         }
         assert_eq!(self.depths.len(), self.graph.len(), "a depth per node");
         Ok(id)

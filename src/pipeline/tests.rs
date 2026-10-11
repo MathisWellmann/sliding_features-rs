@@ -368,7 +368,7 @@ fn never_ready_calls_and_constant_outputs_are_errors() {
         build_errors(b),
         [
             "error: `ln(-abs(x))` is never ready: `ln` needs positive values, but `-abs(x)` lies in (-inf, 0]",
-            "error: `(x / zero)` divides by zero, so it is never ready",
+            "error: `x / zero` divides by zero, so it is never ready",
             "error: output `zero` is constant: it is always 0",
             "error: output `flat` is constant: it is always 0",
         ]

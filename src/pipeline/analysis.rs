@@ -6,6 +6,7 @@ use super::{
     Diagnostic,
     Domain,
     Input,
+    Location,
     Requirement,
     builder::Binding,
     display::Printer,
@@ -26,9 +27,21 @@ pub(super) struct Analysis {
 
 impl Analysis {
     /// Derive domains and warm-ups in one pass over the nodes (children
-    /// come first), then check the bindings.
-    pub(super) fn run(graph: &Graph, inputs: &[Input], bindings: &[Binding]) -> Self {
-        let name_of = |id: NodeId| bindings.iter().find(|b| b.node() == id).map(Binding::name);
+    /// come first), then check the bindings. Diagnostics point at the
+    /// node's location in the text form, if any.
+    pub(super) fn run(
+        graph: &Graph,
+        inputs: &[Input],
+        bindings: &[Binding],
+        locations: &[Option<Location>],
+    ) -> Self {
+        assert_eq!(locations.len(), graph.len(), "a location per node");
+        let name_of = |id: NodeId| {
+            bindings
+                .iter()
+                .find(|b| b.is_named() && b.node() == id)
+                .map(Binding::name)
+        };
         let printer = Printer::new(graph, inputs, name_of);
         let mut analysis = Self {
             domains: Vec::with_capacity(graph.len()),
@@ -39,7 +52,8 @@ impl Analysis {
             let (domain, warm_up, diagnostic) = analysis.node(&printer, id, node, inputs);
             analysis.domains.push(domain);
             analysis.warm_ups.push(warm_up);
-            analysis.diagnostics.extend(diagnostic);
+            let at = locations[id.index()];
+            analysis.diagnostics.extend(diagnostic.map(|d| d.or_at(at)));
         }
         assert_eq!(analysis.domains.len(), graph.len(), "a domain per node");
         let findings = analysis.check_bindings(graph, bindings);
@@ -141,27 +155,31 @@ impl Analysis {
         let mut found = Vec::new();
         for (i, binding) in bindings.iter().enumerate() {
             let name = binding.name();
+            let at = binding.location();
             if !binding.is_output() {
                 if !reachable[binding.node().index()] {
-                    found.push(Diagnostic::warning(format!(
-                        "`{name}` is not used by any output"
-                    )));
+                    found.push(
+                        Diagnostic::warning(format!("`{name}` is not used by any output"))
+                            .or_at(at),
+                    );
                 }
                 continue;
             }
             if let Some(c) = self.domain(binding.node()).as_point() {
-                found.push(Diagnostic::error(format!(
-                    "output `{name}` is constant: it is always {c}"
-                )));
+                found.push(
+                    Diagnostic::error(format!("output `{name}` is constant: it is always {c}"))
+                        .or_at(at),
+                );
             }
             let earlier = bindings[..i]
                 .iter()
                 .find(|b| b.is_output() && b.node() == binding.node());
             if let Some(earlier) = earlier {
-                found.push(Diagnostic::warning(format!(
+                let message = format!(
                     "output `{name}` computes the same as output `{}`",
                     earlier.name()
-                )));
+                );
+                found.push(Diagnostic::warning(message).or_at(at));
             }
         }
         found
