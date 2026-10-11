@@ -3,6 +3,9 @@
 use std::fmt::Write as _;
 
 /// The kind of a parameter that follows the (expression) first argument.
+#[deprecated(
+    note = "use the `pipeline` module: its text form compiles every spec to the same values"
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Param {
     /// A window length, counted in updates of the argument: a positive
@@ -29,6 +32,7 @@ macro_rules! functions {
         ///
         /// Every function takes an expression as its first argument and then
         /// its [`Function::params`].
+        #[deprecated(note = "use `pipeline::Function`")]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
         pub enum Function {
             $(#[doc = $doc] $variant,)*

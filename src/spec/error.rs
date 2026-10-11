@@ -3,6 +3,9 @@
 use std::fmt;
 
 /// Why a spec was rejected.
+#[deprecated(
+    note = "use the `pipeline` module: its text form compiles every spec to the same values"
+)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SpecError {
     /// The byte offset in the spec text, for syntax errors.

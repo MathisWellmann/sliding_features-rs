@@ -1,6 +1,8 @@
 //! A pipeline against the same features as a hand-written generic chain
 //! and as the spec module's boxed view trees.
 
+#![allow(deprecated, reason = "compares against the spec module it replaces")]
+
 use std::{
     hint::black_box,
     num::NonZeroUsize,
