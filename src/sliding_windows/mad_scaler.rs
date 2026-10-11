@@ -38,6 +38,7 @@ use crate::View;
 /// An update costs `O(log w)` comparisons plus moving at most `w / 2`
 /// values of the sorted window (none for monotone input such as
 /// timestamps).
+#[derive(Clone)]
 pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     view: V,
     /// Sliding window length (for warm-up tracking).
@@ -509,5 +510,23 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// A clone of a warmed-up scaler continues exactly like the original.
+    #[test]
+    fn mad_scaler_clone_continues_identically() {
+        let mut original = MadScaler::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+        let (_, vals) = reference_streams(0, 200).remove(0);
+        let (head, tail) = vals.split_at(100);
+        for v in head {
+            original.update(*v);
+        }
+        let mut clone = original.clone();
+        for v in tail {
+            original.update(*v);
+            clone.update(*v);
+            assert_eq!(original.last(), clone.last());
+        }
+        assert!(clone.last().is_some());
     }
 }
