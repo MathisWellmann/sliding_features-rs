@@ -21,6 +21,7 @@ use sliding_features::{
         T3,
         Tema,
         Wma,
+        Zlema,
     },
 };
 
@@ -151,5 +152,30 @@ fn t3(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, wma, rma, dema, tema, t3);
+fn zlema(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("zlema_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Zlema::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Zlema::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, wma, rma, dema, tema, t3, zlema);
 criterion_main!(benches);

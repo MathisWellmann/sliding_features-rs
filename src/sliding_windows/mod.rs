@@ -38,6 +38,7 @@ mod variance_stabilizing_transformation;
 mod welford_online;
 mod wma;
 mod z_score_standardization;
+mod zlema;
 
 pub use alma::Alma;
 pub use band_pass::BandPass;
@@ -78,3 +79,4 @@ pub use variance_stabilizing_transformation::Vst;
 pub use welford_online::WelfordOnline;
 pub use wma::Wma;
 pub use z_score_standardization::ZScoreStandardization;
+pub use zlema::Zlema;
