@@ -205,7 +205,10 @@ impl BinaryOp {
 /// The kind of a parameter that follows the expression argument of a call.
 /// Parameters are number literals, so they can be checked before the
 /// pipeline runs.
+///
+/// Non-exhaustive so that new parameter kinds are not a breaking change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
 pub enum Param {
     /// A window length, counted in updates of the argument: an integer of
     /// at least [`Function::min_window`].
@@ -424,7 +427,11 @@ macro_rules! functions {
     })*) => {
         /// A function of a pipeline. Every call takes an expression as its
         /// first argument, then its [`Function::params`] as number literals.
+        ///
+        /// Non-exhaustive so that adding functions is not a breaking change;
+        /// iterate [`Function::ALL`] instead of matching every variant.
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        #[non_exhaustive]
         pub enum Function {
             $(#[doc = $doc] $variant,)*
         }
