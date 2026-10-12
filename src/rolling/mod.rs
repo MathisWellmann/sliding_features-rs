@@ -3,9 +3,11 @@
 mod drawdown;
 mod first;
 mod ln_return;
+mod one_euro_filter;
 mod welford_rolling;
 
 pub use drawdown::Drawdown;
 pub use first::First;
 pub use ln_return::LnReturn;
+pub use one_euro_filter::OneEuroFilter;
 pub use welford_rolling::WelfordRolling;

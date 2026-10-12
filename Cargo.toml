@@ -169,3 +169,7 @@ harness = false
 [[bench]]
 name = "complexity"
 harness = false
+
+[[bench]]
+name = "estimators"
+harness = false
