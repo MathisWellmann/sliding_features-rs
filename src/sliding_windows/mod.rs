@@ -7,6 +7,7 @@ mod adaptive_super_smoother;
 mod alma;
 mod apo;
 mod auto_tune_filter;
+mod autocorrelation;
 mod autocorrelation_periodogram;
 mod band_pass;
 mod binary_entropy;
@@ -119,6 +120,7 @@ pub use adaptive_super_smoother::AdaptiveSuperSmoother;
 pub use alma::Alma;
 pub use apo::Apo;
 pub use auto_tune_filter::AutoTuneFilter;
+pub use autocorrelation::Autocorrelation;
 pub use autocorrelation_periodogram::{
     AutocorrelationAveraging,
     AutocorrelationPeriodogram,

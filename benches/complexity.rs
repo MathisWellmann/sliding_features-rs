@@ -17,6 +17,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     sliding_windows::{
+        Autocorrelation,
         HurstExponent,
         PermutationEntropy,
         SampleEntropy,
@@ -133,12 +134,27 @@ fn variance_ratio(c: &mut Criterion) {
     });
 }
 
+fn autocorrelation(c: &mut Criterion) {
+    let window = NonZeroUsize::new(1024).unwrap();
+    let lag = NonZeroUsize::new(1).unwrap();
+    let mut group = c.benchmark_group("autocorrelation_100k");
+    group.bench_function("f64", |b| {
+        let vals = random_vals::<f64>();
+        b.iter(|| run(Autocorrelation::new(Echo::new(), window, lag), &vals))
+    });
+    group.bench_function("f32", |b| {
+        let vals = random_vals::<f32>();
+        b.iter(|| run(Autocorrelation::new(Echo::new(), window, lag), &vals))
+    });
+}
+
 criterion_group!(
     benches,
     shannon_entropy,
     permutation_entropy,
     sample_entropy,
     hurst_exponent,
-    variance_ratio
+    variance_ratio,
+    autocorrelation
 );
 criterion_main!(benches);
