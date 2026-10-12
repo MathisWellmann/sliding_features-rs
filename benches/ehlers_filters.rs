@@ -21,6 +21,7 @@ use sliding_features::{
         ButterworthPoles,
         Decycler,
         DecyclerOscillator,
+        EhlersFilter,
         GaussianFilter,
         GaussianPoles,
         HighPass,
@@ -174,6 +175,14 @@ fn butterworth(c: &mut Criterion) {
     );
 }
 
+fn ehlers_filter(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "ehlers_filter_100k",
+        EhlersFilter::new(Echo::new(), nz(15))
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -183,6 +192,7 @@ criterion_group!(
     decycler,
     decycler_oscillator,
     gaussian_filter,
-    butterworth
+    butterworth,
+    ehlers_filter
 );
 criterion_main!(benches);
