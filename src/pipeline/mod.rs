@@ -93,6 +93,10 @@ statements can use by name. A bare `expr` is an output named by its text.
 - An expression is a number, an input or helper name, `a + b`, `a - b`, `a * b`, `a / b` \
 (usual precedence), `-a`, `(a)`, or a call `function(a, param, ...)`: the first argument \
 is an expression, the parameters after it are number literals.
+- Parameter kinds in the table: `window` is a whole number of updates, `integer` a whole number \
+in the range the description gives (e.g. a number of poles), `fraction` a number strictly \
+between 0 and 1, `positive` a number above 0, `real` any number. Some descriptions add limits, \
+e.g. a bandwidth below window / 4.
 - Operators combine the values of the same update. Equal subexpressions are computed once.
 - An output is not ready (no value) until its windows fill, or while an argument is outside \
 what a function accepts (a division by zero, a logarithm of a non-positive value). Ready \

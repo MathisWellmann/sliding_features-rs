@@ -22,13 +22,26 @@ use crate::{
     },
     sliding_windows::{
         Alma,
+        BandPass,
         BinaryEntropy,
+        Butterworth,
+        ButterworthPoles,
         CenterOfGravity,
+        ContinuationIndex,
         CorrelationTrendIndicator,
         Cumulative,
         CyberCycle,
+        Decycler,
+        DecyclerOscillator,
+        Dsma,
+        EhlersFilter,
         EhlersFisherTransform,
         Ema,
+        EmpiricalModeDecomposition,
+        GaussianFilter,
+        GaussianPoles,
+        HighPass,
+        HighPassPoles,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
@@ -46,6 +59,8 @@ use crate::{
         Sma,
         SuperSmoother,
         TrendFlex,
+        UltimateBands,
+        UltimateSmoother,
         Vst,
         WelfordOnline,
         ZScoreStandardization,
@@ -118,6 +133,17 @@ pub enum Param {
     Real,
     /// A real number strictly between 0 and 1, e.g. a damping factor.
     Fraction,
+    /// A finite real number above 0, e.g. a scale.
+    Positive,
+    /// A small integer choice in `[min, max]`, e.g. the number of poles of
+    /// a filter. Unlike a window it does not count updates, so it adds
+    /// nothing to [`Function::warm_up`].
+    Integer {
+        /// The smallest admitted value.
+        min: u8,
+        /// The largest admitted value.
+        max: u8,
+    },
 }
 
 impl Param {
@@ -127,6 +153,35 @@ impl Param {
             Param::Window => "window",
             Param::Real => "real",
             Param::Fraction => "fraction",
+            Param::Positive => "positive",
+            Param::Integer { .. } => "integer",
+        }
+    }
+
+    /// Whether `value` is a valid parameter of this kind for a function
+    /// whose windows lie in `[min_window, max_window]`.
+    fn admits(self, value: f64, min_window: usize, max_window: usize) -> bool {
+        match self {
+            Param::Window => {
+                window_len(value).is_some_and(|w| w.get() >= min_window && w.get() <= max_window)
+            }
+            Param::Real => value.is_finite(),
+            Param::Fraction => value > 0.0 && value < 1.0,
+            Param::Positive => value.is_finite() && value > 0.0,
+            Param::Integer { min, max } => {
+                value.fract() == 0.0 && value >= f64::from(min) && value <= f64::from(max)
+            }
+        }
+    }
+
+    /// What [`Param::admits`] admits, for error messages.
+    fn expected(self, min_window: usize, max_window: usize) -> String {
+        match self {
+            Param::Window => format!("an integer in [{min_window}, {max_window}]"),
+            Param::Real => "a finite number".to_string(),
+            Param::Fraction => "a number strictly between 0 and 1".to_string(),
+            Param::Positive => "a finite number above 0".to_string(),
+            Param::Integer { min, max } => format!("an integer in [{min}, {max}]"),
         }
     }
 }
@@ -166,27 +221,59 @@ impl Requirement {
     }
 }
 
-/// The checked parameters of a call.
+/// The checked parameters of a call. The accessors assert that the table
+/// reads each parameter as the kind it declares, so a wiring mistake fails
+/// on the first call instead of misreading a value.
 #[derive(Debug, Clone, Copy)]
-pub(super) struct Params<'a>(&'a [f64]);
+pub(super) struct Params<'a> {
+    kinds: &'static [Param],
+    values: &'a [f64],
+}
 
 impl<'a> Params<'a> {
-    /// Wrap parameters that passed [`Function::check_params`].
-    pub(super) fn new(function: Function, params: &'a [f64]) -> Self {
-        assert_eq!(params.len(), function.params().len(), "checked parameters");
-        Self(params)
+    /// Wrap parameters that passed the per-kind checks of
+    /// [`Function::check_params`].
+    pub(super) fn new(function: Function, values: &'a [f64]) -> Self {
+        let kinds = function.params();
+        assert_eq!(values.len(), kinds.len(), "checked parameters");
+        Self { kinds, values }
     }
 
     /// The `i`-th parameter as a window length.
     pub(super) fn window(self, i: usize) -> NonZeroUsize {
-        window_len(self.0[i]).expect("checked window")
+        assert_eq!(self.kinds[i], Param::Window, "parameter {i} is a window");
+        window_len(self.values[i]).expect("checked window")
     }
 
-    /// The `i`-th parameter as a real number.
+    /// The `i`-th parameter, a [`Param::Real`], [`Param::Fraction`] or
+    /// [`Param::Positive`], as a real number.
     pub(super) fn real(self, i: usize) -> f64 {
-        let value = self.0[i];
+        let kind = self.kinds[i];
+        assert!(
+            matches!(kind, Param::Real | Param::Fraction | Param::Positive),
+            "parameter {i} is real, not {kind:?}"
+        );
+        let value = self.values[i];
         assert!(value.is_finite(), "checked parameter");
         value
+    }
+
+    /// The `i`-th parameter, a [`Param::Integer`], as an integer.
+    pub(super) fn integer(self, i: usize) -> usize {
+        let Param::Integer { min, max } = self.kinds[i] else {
+            panic!("parameter {i} is {:?}, not an integer", self.kinds[i]);
+        };
+        let value = self.values[i];
+        assert!(value.fract() == 0.0, "checked integer");
+        assert!(value >= f64::from(min), "checked integer");
+        assert!(value <= f64::from(max), "checked integer");
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "a checked integer lies in [0, 255]"
+        )]
+        let integer = value as u8;
+        usize::from(integer)
     }
 }
 
@@ -212,15 +299,46 @@ type RangeFn = fn(Domain, Params<'_>) -> Domain;
 /// What a call becomes at runtime given its checked parameters.
 type BuildFn = fn(Params<'_>) -> Kind;
 
-/// Declares [`Function`] and its metadata from one table.
+/// A constraint on parameters that passed their per-kind checks; the error
+/// says what is wrong, without the signature.
+type CheckFn = fn(Params<'_>) -> Result<(), String>;
+
+/// The warm-up of a call given its checked parameters.
+type WarmUpFn = fn(Params<'_>) -> usize;
+
+/// Declares [`Function`] and its metadata from one table. Each entry has:
+///
+/// - `name`: what the text form calls it, snake_case and unique.
+/// - `params`: the [`Param`] kinds after the expression argument, e.g.
+///   `[Window, Fraction, Integer { min: 1, max: 2 }]`.
+/// - `min_window`: the smallest value of every window parameter.
+/// - `requires`: the [`Requirement`] on the argument.
+/// - `range`: `|arg: Domain, p: Params<'_>| -> Domain`, the output domain for
+///   an admitted argument in `arg`. It must be sound: the property tests
+///   feed adversarial input and check every output against it.
+/// - `build`: `|p: Params<'_>| -> Kind`, the runtime form. Its constructor
+///   must not panic for any parameters that pass [`Function::check_params`].
+/// - `check` (optional): `|p: Params<'_>| -> Result<(), String>`, the
+///   constraints the per-kind checks cannot express: between parameters
+///   (e.g. a bandwidth below a quarter of the period) or caps that keep a
+///   constructor's asserts unreachable. The error is prefixed with the
+///   signature.
+/// - `warm_up` (optional): `|p: Params<'_>| -> usize`, the updates a call
+///   needs before it is ready, when that exceeds the default (the sum of
+///   the windows), e.g. for fixed warm-ups or chained stages.
+/// - `doc`: one line naming every parameter in order and the output range.
 macro_rules! functions {
+    (@optional) => { None };
+    (@optional $f:expr) => { Some($f) };
     ($($variant:ident {
         name: $name:literal,
-        params: [$($param:ident),*],
+        params: [$($param:ident $({ $($field:ident: $value:literal),* })?),*],
         min_window: $min:literal,
         requires: $requires:ident,
         range: $range:expr,
         build: $build:expr,
+        $(check: $check:expr,)?
+        $(warm_up: $warm_up:expr,)?
         doc: $doc:literal $(,)?
     })*) => {
         /// A function of a pipeline. Every call takes an expression as its
@@ -241,7 +359,19 @@ macro_rules! functions {
 
             /// The parameters after the expression argument.
             pub fn params(self) -> &'static [Param] {
-                match self { $(Function::$variant => &[$(Param::$param),*],)* }
+                match self {
+                    $(Function::$variant => &[$(Param::$param $({ $($field: $value),* })?),*],)*
+                }
+            }
+
+            /// The table's constraint between checked parameters, if any.
+            fn check_fn(self) -> Option<CheckFn> {
+                match self { $(Function::$variant => functions!(@optional $($check)?),)* }
+            }
+
+            /// The table's warm-up, if it overrides the default.
+            fn warm_up_fn(self) -> Option<WarmUpFn> {
+                match self { $(Function::$variant => functions!(@optional $($warm_up)?),)* }
             }
 
             /// The smallest window length the function accepts: shorter
@@ -521,6 +651,178 @@ functions! {
         build: |p| NoiseEliminationTechnology::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' noise elimination technology (Kendall correlation), in [-1, 1].",
     }
+    // John Ehlers' filters. Pole counts are `Integer` parameters mapped to
+    // the views' enums; other settings use the views' documented defaults.
+    HighPass {
+        name: "high_pass", params: [Window, Integer { min: 1, max: 2 }], min_window: 5, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| HighPass::new(Echo::new(), p.window(0), high_pass_poles(p.integer(1))).into(),
+        doc: "John Ehlers' high-pass filter (cutoff period window, poles 1 or 2): removes the trend, oscillates around 0.",
+    }
+    BandPass {
+        name: "band_pass", params: [Window, Fraction], min_window: 3, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| BandPass::new(Echo::new(), p.window(0), p.real(1)).into(),
+        check: |p| check_band_pass(p.window(0), p.real(1)),
+        doc: "John Ehlers' two-pole band-pass filter (center period window at most 100000, relative bandwidth fraction from 0.01 to below window / 4): keeps cycles near the period, oscillates around 0.",
+    }
+    UltimateSmoother {
+        name: "ultimate_smoother", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| UltimateSmoother::new(Echo::new(), p.window(0)).into(),
+        doc: "John Ehlers' UltimateSmoother (critical period window): a low-pass with almost no lag that can overshoot the input.",
+    }
+    UltimateBands {
+        name: "ultimate_bands", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| UltimateBands::new(Echo::new(), p.window(0), 1.0).into(),
+        doc: "Center line of John Ehlers' Ultimate Bands (period window): the values of `ultimate_smoother`; the bands are not exposed.",
+    }
+    Decycler {
+        name: "decycler", params: [Window, Integer { min: 1, max: 2 }], min_window: 5, requires: Any,
+        // With one pole it is an EMA-like average of `(x + x[1]) / 2`.
+        range: |a, p| if p.integer(1) == 1 { a } else { Domain::REAL },
+        build: |p| Decycler::new(Echo::new(), p.window(0), high_pass_poles(p.integer(1))).into(),
+        doc: "John Ehlers' decycler (cutoff period window, poles 1 or 2): the input minus its high-pass, a low-lag trend line; within the input range for 1 pole.",
+    }
+    DecyclerOscillator {
+        name: "decycler_oscillator", params: [Window], min_window: 6, requires: Positive,
+        range: |_, _| Domain::REAL,
+        build: |p| DecyclerOscillator::new(Echo::new(), p.window(0), 1.0).into(),
+        doc: "John Ehlers' decycler oscillator (high-pass period window, K = 1): the cycles between window / 2 and window in percent of the input, oscillates around 0.",
+    }
+    GaussianFilter {
+        name: "gaussian_filter", params: [Window, Integer { min: 1, max: 4 }], min_window: 2, requires: Any,
+        // A cascade of EMAs.
+        range: |a, _| a,
+        build: |p| GaussianFilter::new(Echo::new(), p.window(0), gaussian_poles(p.integer(1))).into(),
+        doc: "John Ehlers' Gaussian low-pass filter (critical period window, poles 1 to 4): cascaded EMAs, within the input range.",
+    }
+    Butterworth {
+        name: "butterworth", params: [Window, Integer { min: 2, max: 3 }], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Butterworth::new(Echo::new(), p.window(0), butterworth_poles(p.integer(1))).into(),
+        check: |p| check_iir_period(p.window(0)),
+        doc: "John Ehlers' Butterworth low-pass filter (critical period window at most 100000, poles 2 or 3): can overshoot the input.",
+    }
+    EhlersFilter {
+        name: "ehlers_filter", params: [Window], min_window: 2, requires: Any,
+        range: |a, _| a,
+        build: |p| EhlersFilter::new(Echo::new(), p.window(0)).into(),
+        // A 4-value smoother, then `window` smoothed values for each of the
+        // `window` weights.
+        warm_up: |p| 2 * p.window(0).get() + 3,
+        doc: "John Ehlers' nonlinear filter (window): weights smoothed values by their distance to the recent past, within the input range; costs O(window) per update.",
+    }
+    Dsma {
+        name: "dsma", params: [Window], min_window: 4, requires: Any,
+        range: |a, _| a,
+        build: |p| Dsma::new(Echo::new(), p.window(0)).into(),
+        doc: "John Ehlers' deviation scaled moving average (period window): an EMA that speeds up on large moves, within the input range.",
+    }
+    ContinuationIndex {
+        name: "continuation_index", params: [Window], min_window: 4, requires: Any,
+        range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| Box::new(ContinuationIndex::new(Echo::new(), 0.8, 8, p.window(0))).into(),
+        doc: "John Ehlers' continuation index (length window; Laguerre gamma 0.8, order 8), in [-1, 1]: near 1 in an up-trend, near -1 in a down-trend.",
+    }
+    Emd {
+        name: "emd", params: [Window, Positive], min_window: 5, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(EmpiricalModeDecomposition::new(Echo::new(), p.window(0), p.real(1), 0.1)).into(),
+        check: check_emd,
+        // The view also averages the band-pass peaks over 50 updates.
+        warm_up: |p| (2 * p.window(0).get()).max(50),
+        doc: "Trend of John Ehlers' empirical mode decomposition (band-pass period window at most 100000, half-bandwidth delta positive from 0.005 to below window / 8): the band-pass averaged over 2 windows, oscillates around 0.",
+    }
+}
+
+/// The longest period of the band-pass and Butterworth filters: their
+/// recursions lose accuracy to rounding at long periods. The three-pole
+/// Butterworth's gain is off by 0.1% at 1e5 and it diverges by 1e7, and a
+/// band-pass pole radius rounds to 1 (unstable, which its constructor
+/// rejects) once `bandwidth / period` is below about 1e-17.
+const MAX_IIR_PERIOD: usize = 100_000;
+
+/// The narrowest relative bandwidth of the band-pass filters: narrower
+/// bands ring for more than 30 periods.
+const MIN_BANDWIDTH: f64 = 0.01;
+
+/// `Err` if a recursive filter's `period` exceeds [`MAX_IIR_PERIOD`].
+fn check_iir_period(period: NonZeroUsize) -> Result<(), String> {
+    if period.get() > MAX_IIR_PERIOD {
+        return Err(format!(
+            "the window {period} must be at most {MAX_IIR_PERIOD}, longer periods round the filter coefficients"
+        ));
+    }
+    Ok(())
+}
+
+/// The constraints of [`BandPass`]: a bandwidth from [`MIN_BANDWIDTH`] to
+/// below `period / 4` (so that `cos(2pi bandwidth / period) > 0` for a
+/// stable filter), and a period of at most [`MAX_IIR_PERIOD`].
+fn check_band_pass(period: NonZeroUsize, bandwidth: f64) -> Result<(), String> {
+    if bandwidth < MIN_BANDWIDTH {
+        return Err(format!(
+            "the bandwidth {bandwidth} must be at least {MIN_BANDWIDTH}"
+        ));
+    }
+    if 4.0 * bandwidth >= window_f64(period) {
+        return Err(format!(
+            "the bandwidth {bandwidth} must be below window / 4 = {}",
+            window_f64(period) / 4.0
+        ));
+    }
+    check_iir_period(period)
+}
+
+/// The constraints of [`EmpiricalModeDecomposition`], whose band-pass has
+/// the bandwidth `2 delta`: those of [`check_band_pass`], except that the
+/// view admits bandwidths of 1 and more.
+fn check_emd(p: Params<'_>) -> Result<(), String> {
+    let (period, delta) = (p.window(0), p.real(1));
+    if delta < MIN_BANDWIDTH / 2.0 {
+        return Err(format!(
+            "the delta {delta} must be at least {}",
+            MIN_BANDWIDTH / 2.0
+        ));
+    }
+    if 8.0 * delta >= window_f64(period) {
+        return Err(format!(
+            "the delta {delta} must be below window / 8 = {}",
+            window_f64(period) / 8.0
+        ));
+    }
+    check_iir_period(period)
+}
+
+/// The [`HighPassPoles`] of a checked `Integer { min: 1, max: 2 }`.
+fn high_pass_poles(poles: usize) -> HighPassPoles {
+    match poles {
+        1 => HighPassPoles::One,
+        2 => HighPassPoles::Two,
+        _ => unreachable!("checked poles {poles}"),
+    }
+}
+
+/// The [`GaussianPoles`] of a checked `Integer { min: 1, max: 4 }`.
+fn gaussian_poles(poles: usize) -> GaussianPoles {
+    match poles {
+        1 => GaussianPoles::One,
+        2 => GaussianPoles::Two,
+        3 => GaussianPoles::Three,
+        4 => GaussianPoles::Four,
+        _ => unreachable!("checked poles {poles}"),
+    }
+}
+
+/// The [`ButterworthPoles`] of a checked `Integer { min: 2, max: 3 }`.
+fn butterworth_poles(poles: usize) -> ButterworthPoles {
+    match poles {
+        2 => ButterworthPoles::Two,
+        3 => ButterworthPoles::Three,
+        _ => unreachable!("checked poles {poles}"),
+    }
 }
 
 /// The EMA that smooths `pfe` and `fisher`.
@@ -559,8 +861,9 @@ impl Function {
         out
     }
 
-    /// Check parameters against the signature and `max_window`; the error
-    /// says what is wrong.
+    /// Check parameters against the signature, `max_window` and the
+    /// function's own constraints; the error says what is wrong. Parameters
+    /// that pass never make the runtime form panic.
     pub fn check_params(self, params: &[f64], max_window: usize) -> Result<(), String> {
         let expected = self.params();
         if params.len() != expected.len() {
@@ -571,27 +874,20 @@ impl Function {
                 params.len()
             ));
         }
+        let min_window = self.min_window();
         for (kind, value) in expected.iter().zip(params) {
-            let valid = match kind {
-                Param::Window => window_len(*value)
-                    .is_some_and(|w| w.get() >= self.min_window() && w.get() <= max_window),
-                Param::Real => value.is_finite(),
-                Param::Fraction => *value > 0.0 && *value < 1.0,
-            };
-            if !valid {
-                let expected = match kind {
-                    Param::Window => {
-                        format!("an integer in [{}, {max_window}]", self.min_window())
-                    }
-                    Param::Real => "a finite number".to_string(),
-                    Param::Fraction => "a number strictly between 0 and 1".to_string(),
-                };
+            if !kind.admits(*value, min_window, max_window) {
                 return Err(format!(
-                    "{}: the {} parameter {value} must be {expected}",
+                    "{}: the {} parameter {value} must be {}",
                     self.signature(),
-                    kind.name()
+                    kind.name(),
+                    kind.expected(min_window, max_window)
                 ));
             }
+        }
+        if let Some(check) = self.check_fn() {
+            check(Params::new(self, params))
+                .map_err(|message| format!("{}: {message}", self.signature()))?;
         }
         Ok(())
     }
@@ -609,14 +905,18 @@ impl Function {
     }
 
     /// An estimate of the admitted updates of its argument a call needs
-    /// before it is ready: the sum of its windows (a log return needs one
-    /// more value). Pipelines sum it along their longest chain.
+    /// before it is ready: by default the sum of its windows (a log return
+    /// needs one more value), or the function's own estimate. Pipelines sum
+    /// it along their longest chain.
     ///
     /// # Panics
     ///
     /// If `params` do not pass [`Function::check_params`].
     pub fn warm_up(self, params: &[f64]) -> usize {
         let params = Params::new(self, params);
+        if let Some(warm_up) = self.warm_up_fn() {
+            return warm_up(params);
+        }
         let windows: usize = self
             .params()
             .iter()
@@ -625,6 +925,36 @@ impl Function {
             .map(|(i, _)| params.window(i).get())
             .sum();
         windows + usize::from(self == Function::LnReturn)
+    }
+
+    /// Parameters that pass the checks, at the small end: the `i`-th window
+    /// is `min_window + i` (so "first window below the second" constraints
+    /// hold), integers are at their minimum, reals are 0.5.
+    #[cfg(test)]
+    pub(super) fn example_params(self) -> Vec<f64> {
+        self.test_params(self.min_window(), |min, _| min)
+    }
+
+    /// Parameters that pass the checks, larger than
+    /// [`Function::example_params`]: the `i`-th window is `10 + i`, integers
+    /// are at their maximum, reals are 0.5.
+    #[cfg(test)]
+    pub(super) fn larger_params(self) -> Vec<f64> {
+        self.test_params(10.max(self.min_window()), |_, max| max)
+    }
+
+    #[cfg(test)]
+    fn test_params(self, first_window: usize, integer: fn(u8, u8) -> u8) -> Vec<f64> {
+        let mut next_window = first_window;
+        Vec::from_iter(self.params().iter().map(|kind| match *kind {
+            Param::Window => {
+                let window = next_window;
+                next_window += 1;
+                f64::from(u32::try_from(window).expect("small test window"))
+            }
+            Param::Real | Param::Fraction | Param::Positive => 0.5,
+            Param::Integer { min, max } => f64::from(integer(min, max)),
+        }))
     }
 
     /// A markdown table of every function: signature, what the argument
@@ -668,6 +998,8 @@ mod tests {
         assert!(reference.contains("| `pfe(a, window, window)` | any |"));
         assert!(reference.contains("| `ln(a)` | positive |"));
         assert!(reference.contains("| `laguerre_filter(a, fraction)` |"));
+        assert!(reference.contains("| `high_pass(a, window, integer)` | any |"));
+        assert!(reference.contains("| `emd(a, window, positive)` | any |"));
         assert_eq!(reference.lines().count(), Function::ALL.len() + 2);
     }
 
@@ -682,6 +1014,9 @@ mod tests {
     #[test]
     fn parameter_checks() {
         assert!(Function::Pfe.check_params(&[3.0, 3.0], 100).is_ok());
+        assert!(Function::HighPass.check_params(&[5.0, 2.0], 100).is_ok());
+        assert!(Function::Emd.check_params(&[5.0, 0.6], 100).is_ok());
+        assert!(Function::BandPass.check_params(&[3.0, 0.7], 100).is_ok());
         for (function, params) in [
             (Function::Sma, &[0.0][..]),
             (Function::Sma, &[2.5]),
@@ -692,8 +1027,24 @@ mod tests {
             (Function::LaguerreFilter, &[0.0]),
             (Function::Gte, &[f64::NAN]),
             (Function::Abs, &[1.0]),
+            // Integers: outside the range, or not whole.
+            (Function::HighPass, &[5.0, 0.0]),
+            (Function::HighPass, &[5.0, 3.0]),
+            (Function::HighPass, &[5.0, 1.5]),
+            (Function::Butterworth, &[5.0, 1.0]),
+            // Positive reals.
+            (Function::Emd, &[20.0, 0.0]),
+            (Function::Emd, &[20.0, -1.0]),
+            (Function::Emd, &[20.0, f64::INFINITY]),
+            // The table's own checks, just past their boundaries.
+            (Function::BandPass, &[3.0, 0.75]),
+            (Function::BandPass, &[20.0, 0.009]),
+            (Function::Emd, &[5.0, 0.625]),
+            (Function::Emd, &[20.0, 0.004]),
         ] {
-            let err = function.check_params(params, 100).expect_err("invalid");
+            let Err(err) = function.check_params(params, 100) else {
+                panic!("{function:?}{params:?} passed");
+            };
             assert!(err.starts_with(&function.signature()), "{err}");
         }
         let err = Function::Sma.check_params(&[0.0], 100).unwrap_err();
@@ -701,6 +1052,91 @@ mod tests {
             err,
             "sma(a, window): the window parameter 0 must be an integer in [1, 100]"
         );
+        let err = Function::HighPass
+            .check_params(&[5.0, 3.0], 100)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "high_pass(a, window, integer): the integer parameter 3 must be an integer in [1, 2]"
+        );
+        let err = Function::Emd.check_params(&[5.0, 0.0], 100).unwrap_err();
+        assert_eq!(
+            err,
+            "emd(a, window, positive): the positive parameter 0 must be a finite number above 0"
+        );
+        let err = Function::BandPass
+            .check_params(&[3.0, 0.75], 100)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "band_pass(a, window, fraction): the bandwidth 0.75 must be below window / 4 = 0.75"
+        );
+        assert!(
+            Function::Butterworth
+                .check_params(&[100_000.0, 3.0], 1_000_000)
+                .is_ok()
+        );
+        let err = Function::Butterworth
+            .check_params(&[100_001.0, 2.0], 1_000_000)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "butterworth(a, window, integer): the window 100001 must be at most 100000, \
+             longer periods round the filter coefficients"
+        );
+    }
+
+    #[test]
+    fn example_params_pass_the_checks() {
+        for function in Function::ALL {
+            for params in [function.example_params(), function.larger_params()] {
+                function
+                    .check_params(&params, 100)
+                    .unwrap_or_else(|e| panic!("{params:?}: {e}"));
+            }
+        }
+        assert_eq!(Function::Pfe.example_params(), [3.0, 4.0]);
+        assert_eq!(Function::Butterworth.example_params(), [2.0, 2.0]);
+        assert_eq!(Function::Butterworth.larger_params(), [10.0, 3.0]);
+        assert_eq!(Function::Emd.larger_params(), [10.0, 0.5]);
+    }
+
+    /// The constructors' asserts stay unreachable at the extremes of what
+    /// passes the checks with unbounded windows. Only views with O(1)
+    /// memory: the others would allocate their window.
+    #[test]
+    fn checked_extreme_parameters_construct() {
+        let huge = 9_007_199_254_740_992.0;
+        let max_iir = 100_000.0;
+        for (function, params) in [
+            (Function::HighPass, &[huge, 1.0][..]),
+            (Function::HighPass, &[huge, 2.0]),
+            (Function::HighPass, &[5.0, 1.0]),
+            (Function::BandPass, &[max_iir, 0.01]),
+            (Function::BandPass, &[max_iir, 0.999_999]),
+            (Function::BandPass, &[3.0, 0.749_999]),
+            (Function::BandPass, &[3.0, 0.01]),
+            (Function::UltimateSmoother, &[huge]),
+            (Function::Decycler, &[huge, 1.0]),
+            (Function::Decycler, &[huge, 2.0]),
+            (Function::DecyclerOscillator, &[huge]),
+            (Function::GaussianFilter, &[huge, 1.0]),
+            (Function::GaussianFilter, &[huge, 4.0]),
+            (Function::GaussianFilter, &[2.0, 4.0]),
+            (Function::Butterworth, &[max_iir, 2.0]),
+            (Function::Butterworth, &[max_iir, 3.0]),
+        ] {
+            function
+                .check_params(params, usize::MAX)
+                .unwrap_or_else(|e| panic!("{e}"));
+            let Kind::Stateful(mut state) = function.instantiate(Params::new(function, params))
+            else {
+                panic!("{function:?} is a view");
+            };
+            for v in [1.0, 2.0, 1.5] {
+                assert!(!state.update(v).is_infinite(), "{function:?}{params:?}");
+            }
+        }
     }
 
     #[test]

@@ -11,8 +11,23 @@ use crate::{
         Subtract,
     },
     sliding_windows::{
+        BandPass,
+        Butterworth,
+        ButterworthPoles,
+        ContinuationIndex,
+        Decycler,
+        DecyclerOscillator,
+        Dsma,
+        EhlersFilter,
         Ema,
+        EmpiricalModeDecomposition,
+        GaussianFilter,
+        GaussianPoles,
+        HighPass,
+        HighPassPoles,
         Sma,
+        UltimateBands,
+        UltimateSmoother,
         ZScoreStandardization,
     },
 };
@@ -33,14 +48,6 @@ fn random_walk(seed: u64, len: usize) -> Vec<f64> {
     Vec::from_iter((0..len).map(|_| {
         price += rng.f64() - 0.5;
         price
-    }))
-}
-
-/// Parameters at the smallest valid values.
-fn min_params(function: Function) -> Vec<f64> {
-    Vec::from_iter(function.params().iter().map(|p| match p {
-        Param::Window => f64::from(u32::try_from(function.min_window()).unwrap()),
-        Param::Real | Param::Fraction => 0.5,
     }))
 }
 
@@ -66,6 +73,93 @@ fn matches_the_hand_written_chain() {
         assert_eq!(pipeline.output(0), manual.last());
     }
     assert!(pipeline.output(0).is_some());
+}
+
+/// A call in the text form and the view it must equal, constructed
+/// directly, so a parameter in the wrong position or mapped to the wrong
+/// setting (e.g. pole count) shows. Add a case per new function, with
+/// parameters that differ from each other and from the defaults.
+fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
+    let e = Echo::new;
+    vec![
+        (
+            "high_pass(x, 20, 1)",
+            Box::new(HighPass::new(e(), window(20), HighPassPoles::One)),
+        ),
+        (
+            "high_pass(x, 7, 2)",
+            Box::new(HighPass::new(e(), window(7), HighPassPoles::Two)),
+        ),
+        (
+            "band_pass(x, 20, 0.3)",
+            Box::new(BandPass::new(e(), window(20), 0.3)),
+        ),
+        (
+            "ultimate_smoother(x, 9)",
+            Box::new(UltimateSmoother::new(e(), window(9))),
+        ),
+        (
+            "ultimate_bands(x, 9)",
+            Box::new(UltimateBands::new(e(), window(9), 1.0)),
+        ),
+        (
+            "decycler(x, 11, 1)",
+            Box::new(Decycler::new(e(), window(11), HighPassPoles::One)),
+        ),
+        (
+            "decycler(x, 11, 2)",
+            Box::new(Decycler::new(e(), window(11), HighPassPoles::Two)),
+        ),
+        (
+            "decycler_oscillator(x, 13)",
+            Box::new(DecyclerOscillator::new(e(), window(13), 1.0)),
+        ),
+        (
+            "gaussian_filter(x, 12, 1)",
+            Box::new(GaussianFilter::new(e(), window(12), GaussianPoles::One)),
+        ),
+        (
+            "gaussian_filter(x, 12, 3)",
+            Box::new(GaussianFilter::new(e(), window(12), GaussianPoles::Three)),
+        ),
+        (
+            "butterworth(x, 15, 2)",
+            Box::new(Butterworth::new(e(), window(15), ButterworthPoles::Two)),
+        ),
+        (
+            "butterworth(x, 15, 3)",
+            Box::new(Butterworth::new(e(), window(15), ButterworthPoles::Three)),
+        ),
+        (
+            "ehlers_filter(x, 6)",
+            Box::new(EhlersFilter::new(e(), window(6))),
+        ),
+        ("dsma(x, 17)", Box::new(Dsma::new(e(), window(17)))),
+        (
+            "continuation_index(x, 16)",
+            Box::new(ContinuationIndex::new(e(), 0.8, 8, window(16))),
+        ),
+        (
+            "emd(x, 18, 0.3)",
+            Box::new(EmpiricalModeDecomposition::new(e(), window(18), 0.3, 0.1)),
+        ),
+    ]
+}
+
+#[test]
+fn functions_compute_their_views() {
+    for (source, mut view) in direct_views() {
+        let inputs = vec![Input::new("x", Domain::positive())];
+        let mut p = Pipeline::compile(source, inputs, Limits::default())
+            .unwrap_or_else(|e| panic!("{source}: {e}"));
+        assert_eq!(p.to_string(), source);
+        for v in random_walk(5, 300) {
+            p.update(&[v]);
+            view.update(v);
+            assert_eq!(p.output(0), view.last(), "{source}");
+        }
+        assert!(p.output(0).is_some(), "{source}: never ready");
+    }
 }
 
 #[test]
@@ -238,34 +332,35 @@ fn arguments(b: &mut Builder, x: NodeId) -> Vec<NodeId> {
     vec![x, roc, diff]
 }
 
-/// Every function, at its minimum parameters, on every adversarial input
-/// and composed with arguments of both signs, never panics (debug
-/// assertions on) and only ever outputs finite values.
+/// Every function, at its example and larger parameters, on every
+/// adversarial input and composed with arguments of both signs, never
+/// panics (debug assertions on) and only ever outputs finite values.
 #[test]
 fn every_function_survives_adversarial_input() {
     let mut failures = Vec::new();
     for function in Function::ALL {
-        for input in adversarial_inputs() {
-            let run = std::panic::catch_unwind(|| {
-                let (mut b, x) = single_input();
-                for (i, arg) in arguments(&mut b, x).into_iter().enumerate() {
-                    let call = b.call(*function, arg, &min_params(*function)).unwrap();
-                    b.output(&format!("out{i}"), call).unwrap();
+        for params in [function.example_params(), function.larger_params()] {
+            for input in adversarial_inputs() {
+                let run = std::panic::catch_unwind(|| {
+                    let (mut b, x) = single_input();
+                    for (i, arg) in arguments(&mut b, x).into_iter().enumerate() {
+                        let call = b.call(*function, arg, &params).unwrap();
+                        b.output(&format!("out{i}"), call).unwrap();
+                    }
+                    let mut p = b.build().unwrap();
+                    input.iter().all(|v| {
+                        p.update(&[*v]);
+                        p.outputs().all(|o| o.is_none_or(f64::is_finite))
+                    })
+                });
+                let name = function.name();
+                match run {
+                    Ok(true) => {}
+                    Ok(false) => failures.push(format!("{name}{params:?}: non-finite output")),
+                    Err(_) => {
+                        failures.push(format!("{name}{params:?}: panicked on {:?}", &input[..3]))
+                    }
                 }
-                let mut p = b.build().unwrap();
-                input.iter().all(|v| {
-                    p.update(&[*v]);
-                    p.outputs().all(|o| o.is_none_or(f64::is_finite))
-                })
-            });
-            match run {
-                Ok(true) => {}
-                Ok(false) => failures.push(format!("{}: non-finite output", function.name())),
-                Err(_) => failures.push(format!(
-                    "{}: panicked on {:?}",
-                    function.name(),
-                    &input[..3]
-                )),
             }
         }
     }
@@ -278,35 +373,10 @@ fn every_function_survives_adversarial_input() {
 fn outputs_stay_in_their_declared_domain() {
     let mut failures = Vec::new();
     for function in Function::ALL {
-        let params = min_params(*function);
-        for input in adversarial_inputs() {
-            let lo = input.iter().copied().fold(f64::INFINITY, f64::min);
-            let hi = input.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-            let (mut b, x) = single_input();
-            let call = b.call(*function, x, &params).unwrap();
-            b.output("out", call).unwrap();
-            let mut p = b.build().unwrap();
-            let domain = function.output_domain(Domain::closed(lo, hi), &params);
-            for v in &input {
-                p.update(&[*v]);
-                let Some(out) = p.output(0) else { continue };
-                let Some(domain) = domain else {
-                    // A drawdown that never updated reports 0.
-                    if *function != Function::Drawdown {
-                        failures.push(format!("{}: ready but never admitted", function.name()));
-                    }
-                    break;
-                };
-                // Indicators round, e.g. a correlation of 1 + 1e-8.
-                let tolerance = 1e-6 * out.abs().max(1.0);
-                let inside = domain.contains(out)
-                    || (out >= domain.lo() - tolerance && out <= domain.hi() + tolerance);
-                if !inside {
-                    failures.push(format!(
-                        "{}: {out} outside {domain} on [{lo}, {hi}]",
-                        function.name()
-                    ));
-                    break;
+        for params in [function.example_params(), function.larger_params()] {
+            for input in adversarial_inputs() {
+                if let Err(failure) = check_domain(*function, &params, &input) {
+                    failures.push(failure);
                 }
             }
         }
@@ -314,17 +384,47 @@ fn outputs_stay_in_their_declared_domain() {
     assert!(failures.is_empty(), "{failures:#?}");
 }
 
+/// Whether every ready output of `function` over `input` lies in its
+/// declared domain.
+fn check_domain(function: Function, params: &[f64], input: &[f64]) -> Result<(), String> {
+    let name = function.name();
+    let lo = input.iter().copied().fold(f64::INFINITY, f64::min);
+    let hi = input.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let (mut b, x) = single_input();
+    let call = b.call(function, x, params).unwrap();
+    b.output("out", call).unwrap();
+    let mut p = b.build().unwrap();
+    let domain = function.output_domain(Domain::closed(lo, hi), params);
+    for v in input {
+        p.update(&[*v]);
+        let Some(out) = p.output(0) else { continue };
+        let Some(domain) = domain else {
+            // A drawdown that never updated reports 0.
+            if function == Function::Drawdown {
+                return Ok(());
+            }
+            return Err(format!("{name}{params:?}: ready but never admitted"));
+        };
+        // Indicators round, e.g. a correlation of 1 + 1e-8.
+        let tolerance = 1e-6 * out.abs().max(1.0);
+        let inside = domain.contains(out)
+            || (out >= domain.lo() - tolerance && out <= domain.hi() + tolerance);
+        if !inside {
+            return Err(format!(
+                "{name}{params:?}: {out} outside {domain} on [{lo}, {hi}]"
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// After its estimated warm-up on a positive random walk, every function
-/// is ready, at its minimum parameters and at larger ones.
+/// is ready, at its example parameters and at larger ones.
 #[test]
 fn the_warm_up_estimate_suffices() {
     let mut failures = Vec::new();
     for function in Function::ALL {
-        let larger = Vec::from_iter(function.params().iter().map(|p| match p {
-            Param::Window => 10.0,
-            Param::Real | Param::Fraction => 0.5,
-        }));
-        for params in [min_params(*function), larger] {
+        for params in [function.example_params(), function.larger_params()] {
             let (mut b, x) = single_input();
             let inner = b.call(Function::Ema, x, &[3.0]).unwrap();
             let call = b.call(*function, inner, &params).unwrap();

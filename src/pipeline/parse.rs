@@ -311,6 +311,8 @@ fn edit_distance(a: &str, b: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use super::{
         super::{
             Domain,
@@ -367,13 +369,8 @@ mod tests {
     fn every_function_round_trips() {
         for function in Function::ALL {
             let mut source = format!("{}(x", function.name());
-            for param in function.params() {
-                let value = match param {
-                    Param::Window => function.min_window().to_string(),
-                    Param::Real | Param::Fraction => "0.5".to_string(),
-                };
-                source.push_str(", ");
-                source.push_str(&value);
+            for value in function.example_params() {
+                write!(source, ", {value}").unwrap();
             }
             source.push(')');
             assert_eq!(canonical(&source), source);
@@ -538,11 +535,18 @@ mod tests {
             }
             _ => {
                 let function = Function::ALL[rng.range_usize(0..Function::ALL.len())];
-                let params = Vec::from_iter(function.params().iter().map(|p| match p {
-                    Param::Window => f64::from(rng.range_u8(3..=12)),
-                    Param::Real => f64::from(rng.range_u8(0..=8)) / 4.0 - 1.0,
-                    Param::Fraction => 0.5,
-                }));
+                // Random, but often valid: windows above the example ones
+                // (which pass the checks between parameters).
+                let example = function.example_params();
+                let params = Vec::from_iter(function.params().iter().zip(example).map(
+                    |(p, example)| match *p {
+                        Param::Window => example + f64::from(rng.range_u8(0..=9)),
+                        Param::Real => f64::from(rng.range_u8(0..=8)) / 4.0 - 1.0,
+                        Param::Fraction => 0.5,
+                        Param::Positive => f64::from(rng.range_u8(1..=8)) / 4.0,
+                        Param::Integer { min, max } => f64::from(rng.range_u8(min..=max)),
+                    },
+                ));
                 b.call(function, a, &params).ok()
             }
         }

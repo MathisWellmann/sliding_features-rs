@@ -11,13 +11,23 @@ use crate::{
     },
     sliding_windows::{
         Alma,
+        BandPass,
         BinaryEntropy,
+        Butterworth,
         CenterOfGravity,
+        ContinuationIndex,
         CorrelationTrendIndicator,
         Cumulative,
         CyberCycle,
+        Decycler,
+        DecyclerOscillator,
+        Dsma,
+        EhlersFilter,
         EhlersFisherTransform,
         Ema,
+        EmpiricalModeDecomposition,
+        GaussianFilter,
+        HighPass,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
@@ -35,6 +45,8 @@ use crate::{
         Sma,
         SuperSmoother,
         TrendFlex,
+        UltimateBands,
+        UltimateSmoother,
         Vst,
         WelfordOnline,
         ZScoreStandardization,
@@ -142,6 +154,8 @@ macro_rules! states {
 
 type E = Echo<f64>;
 
+// Views above about 200 bytes are boxed (clippy's `large_enum_variant`), so
+// they do not inflate the slot of every state in a pipeline.
 states! {
     LnReturn(LnReturn<f64, E>),
     Drawdown(Drawdown<f64, E>),
@@ -173,6 +187,18 @@ states! {
     BinaryEntropy(BinaryEntropy<f64, E>),
     Vst(Vst<f64, E>),
     Net(NoiseEliminationTechnology<f64, E>),
+    HighPass(HighPass<f64, E>),
+    BandPass(BandPass<f64, E>),
+    UltimateSmoother(UltimateSmoother<f64, E>),
+    UltimateBands(UltimateBands<f64, E>),
+    Decycler(Decycler<f64, E>),
+    DecyclerOscillator(DecyclerOscillator<f64, E>),
+    GaussianFilter(GaussianFilter<f64, E>),
+    Butterworth(Butterworth<f64, E>),
+    EhlersFilter(EhlersFilter<f64, E>),
+    Dsma(Dsma<f64, E>),
+    ContinuationIndex(Box<ContinuationIndex<f64, E>>),
+    Emd(Box<EmpiricalModeDecomposition<f64, E>>),
 }
 
 #[cfg(test)]
