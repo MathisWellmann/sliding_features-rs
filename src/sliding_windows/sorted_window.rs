@@ -110,7 +110,6 @@ impl<T: Float> SortedWindow<T> {
     }
 
     /// The median of the window, `None` if it is empty.
-    #[cfg(test)]
     pub(crate) fn median(&self) -> Option<T> {
         self.quantile(T::from(0.5).expect("can convert"))
     }

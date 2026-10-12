@@ -19,6 +19,7 @@ use sliding_features::{
         CoefficientOfVariation,
         EwmaVariance,
         Kurtosis,
+        RollingMedian,
         RollingQuantile,
         Skewness,
     },
@@ -161,12 +162,40 @@ fn ewma_variance(c: &mut Criterion) {
     });
 }
 
+fn rolling_median(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("rolling_median_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                RollingMedian::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                RollingMedian::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     rolling_quantile,
     skewness,
     kurtosis,
     coefficient_of_variation,
-    ewma_variance
+    ewma_variance,
+    rolling_median
 );
 criterion_main!(benches);
