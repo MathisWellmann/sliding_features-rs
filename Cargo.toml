@@ -129,3 +129,7 @@ harness = false
 [[bench]]
 name = "welford_online"
 harness = false
+
+[[bench]]
+name = "max_min"
+harness = false
