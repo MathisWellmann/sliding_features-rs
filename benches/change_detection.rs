@@ -16,6 +16,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     rolling::{
+        Bocpd,
         Cusum,
         PageHinkley,
         PageHinkleyDirection,
@@ -124,5 +125,31 @@ fn adwin(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, cusum, page_hinkley, adwin);
+fn bocpd(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("bocpd_100k");
+    group.sample_size(10);
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Bocpd::<f64, _>::new(Echo::new(), 250.0, 0.5, 1.0, 1.0, 0.1, 256);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Bocpd::<f32, _>::new(Echo::new(), 250.0, 0.5, 1.0, 1.0, 0.1, 256);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, cusum, page_hinkley, adwin, bocpd);
 criterion_main!(benches);
