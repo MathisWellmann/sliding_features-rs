@@ -165,3 +165,7 @@ harness = false
 [[bench]]
 name = "ehlers_adaptive"
 harness = false
+
+[[bench]]
+name = "complexity"
+harness = false
