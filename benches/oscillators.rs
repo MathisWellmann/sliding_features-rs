@@ -19,6 +19,7 @@ use sliding_features::{
         Apo,
         Macd,
         Ppo,
+        Rsx,
         StochRsi,
         Trix,
         Tsi,
@@ -197,6 +198,33 @@ fn stoch_rsi_benchmark(c: &mut Criterion) {
     });
 }
 
+fn rsx_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("rsx_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Rsx::<f64, _>::new(Echo::new(), NonZeroUsize::new(14).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Rsx::<f32, _>::new(Echo::new(), NonZeroUsize::new(14).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
@@ -204,6 +232,7 @@ criterion_group!(
     apo_benchmark,
     trix_benchmark,
     tsi_benchmark,
-    stoch_rsi_benchmark
+    stoch_rsi_benchmark,
+    rsx_benchmark
 );
 criterion_main!(benches);
