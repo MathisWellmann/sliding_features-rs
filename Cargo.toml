@@ -141,3 +141,7 @@ harness = false
 [[bench]]
 name = "moving_averages"
 harness = false
+
+[[bench]]
+name = "statistics"
+harness = false
