@@ -19,6 +19,7 @@ use sliding_features::{
         Dema,
         Ehma,
         Hma,
+        McGinleyDynamic,
         Rma,
         T3,
         Tema,
@@ -255,5 +256,44 @@ fn trima(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, wma, rma, dema, tema, t3, zlema, hma, ehma, trima);
+fn mc_ginley_dynamic(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("mc_ginley_dynamic_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random::<f64>() + 1.0));
+        b.iter(|| {
+            let mut view =
+                McGinleyDynamic::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random::<f32>() + 1.0));
+        b.iter(|| {
+            let mut view =
+                McGinleyDynamic::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    wma,
+    rma,
+    dema,
+    tema,
+    t3,
+    zlema,
+    hma,
+    ehma,
+    trima,
+    mc_ginley_dynamic
+);
 criterion_main!(benches);
