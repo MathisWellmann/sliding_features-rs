@@ -28,6 +28,7 @@ mod ehlers_hilbert_itrend;
 mod ehma;
 mod ema;
 mod empirical_mode_decomposition;
+mod even_better_sinewave;
 mod gaussian_filter;
 mod high_pass;
 mod hilbert_phasor;
@@ -112,6 +113,7 @@ pub use ehlers_fisher_transform::EhlersFisherTransform;
 pub use ehma::Ehma;
 pub use ema::Ema;
 pub use empirical_mode_decomposition::EmpiricalModeDecomposition;
+pub use even_better_sinewave::EvenBetterSinewave;
 pub use gaussian_filter::{
     GaussianFilter,
     GaussianPoles,
