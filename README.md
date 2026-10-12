@@ -117,14 +117,55 @@ A View defines the function which processes value updates. They currently includ
     * Ehlers Fisher Transform
     * SuperSmoother by JohnEhlers
     * RoofingFilter by JohnEhlers
+* John Ehlers filters
+    * HighPass (1 and 2 pole), BandPass
+    * UltimateSmoother, UltimateBands
+    * Decycler, DecyclerOscillator
+    * GaussianFilter (1 to 4 poles), Butterworth (2 and 3 poles)
+    * EhlersFilter (nonlinear FIR), DSMA (Deviation Scaled Moving Average)
+    * EmpiricalModeDecomposition, ContinuationIndex
+* John Ehlers cycle measurement and adaptive indicators
+    * HomodyneDominantCycle, HilbertPhasor, SineWave, InstantaneousTrendline, HilbertTrendMode
+    * MAMA / FAMA (MESA Adaptive Moving Average)
+    * AutocorrelationPeriodogram, EvenBetterSinewave
+    * AdaptiveRsi, AdaptiveLaguerreFilter, AutoTuneFilter, AdaptiveSuperSmoother
+* John Ehlers oscillators
+    * InverseFisherTransform, EhlersStochastic, UniversalOscillator, ReversionIndex
+* Oscillators
+    * MACD, PPO, APO, TRIX, TSI, CMO
+    * StochRSI, RSX, ConnorsRSI, QQE, Schaff Trend Cycle
+    * DPO, Coppock Curve, KST (Know Sure Thing)
+* Trend and regression
+    * Linear regression slope, intercept, angle, R², TSF, standard error
+    * Kaufman Efficiency Ratio, VHF (Vertical Horizontal Filter)
 * Normalization / variance / mean standardization
     * HLNormalizer, a sliding high-low normalizer
     * Variance Stabilizing Transform (VST)
     * Variance Stabilizing Centering Transform (VSCT) 
+    * QuantileNormalizer (rank to normal score), PercentileRank
+    * Box-Cox and Yeo-Johnson transforms
 * Moving Averages
     * ALMA (Arnaux Legoux Moving Average)
     * SMA (Simple Moving Average)
     * EMA (Exponential Moving Average)
+    * WMA, RMA (Wilder), DEMA, TEMA, T3, ZLEMA, TRIMA
+    * HMA, EHMA (Hull and exponential Hull)
+    * KAMA, VIDYA, McGinley Dynamic, JMA (open approximation)
+* Rolling statistics
+    * Min, Max (amortized O(1) monotonic deque)
+    * RollingQuantile, RollingMedian, IQR
+    * Skewness, Kurtosis, Coefficient of Variation, EWMA variance / volatility
+* Complexity and dependence
+    * Shannon, permutation and sample entropy
+    * Hurst exponent (R/S), variance ratio, autocorrelation, Ornstein-Uhlenbeck half-life
+* Adaptive estimators and robust filters
+    * One Euro filter, alpha-beta filter, 1D Kalman filter
+    * LMS, NLMS and RLS adaptive linear predictors
+    * Huber EMA, Hampel filter
+* Change detection
+    * CUSUM, Page-Hinkley, ADWIN, BOCPD (Bayesian online changepoint detection)
+* Risk
+    * Value at Risk, Conditional Value at Risk, Ulcer Index, Sharpe ratio, Sortino ratio
 * Math combinations of Views
     * Add
     * Subtract
