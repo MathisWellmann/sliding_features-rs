@@ -17,6 +17,7 @@ use sliding_features::{
         HilbertTrendMode,
         HomodyneDominantCycle,
         InstantaneousTrendline,
+        Mama,
         SineWave,
     },
 };
@@ -102,12 +103,22 @@ fn hilbert_trend_mode(c: &mut Criterion) {
     );
 }
 
+fn mama(c: &mut Criterion) {
+    bench_100k(
+        c,
+        "mama",
+        || Mama::<f64, _>::new(Echo::new()),
+        || Mama::<f32, _>::new(Echo::new()),
+    );
+}
+
 criterion_group!(
     benches,
     homodyne_dominant_cycle,
     hilbert_phasor,
     sine_wave,
     instantaneous_trendline,
-    hilbert_trend_mode
+    hilbert_trend_mode,
+    mama
 );
 criterion_main!(benches);
