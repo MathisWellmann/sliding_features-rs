@@ -137,3 +137,7 @@ harness = false
 [[bench]]
 name = "ehlers_filters"
 harness = false
+
+[[bench]]
+name = "moving_averages"
+harness = false

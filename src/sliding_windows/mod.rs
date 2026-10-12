@@ -30,6 +30,7 @@ mod super_smoother;
 mod trend_flex;
 mod variance_stabilizing_transformation;
 mod welford_online;
+mod wma;
 mod z_score_standardization;
 
 pub use alma::Alma;
@@ -64,4 +65,5 @@ pub use super_smoother::SuperSmoother;
 pub use trend_flex::TrendFlex;
 pub use variance_stabilizing_transformation::Vst;
 pub use welford_online::WelfordOnline;
+pub use wma::Wma;
 pub use z_score_standardization::ZScoreStandardization;
