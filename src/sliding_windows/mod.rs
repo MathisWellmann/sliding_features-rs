@@ -30,6 +30,7 @@ mod empirical_mode_decomposition;
 mod gaussian_filter;
 mod high_pass;
 mod hilbert_phasor;
+mod hilbert_trend_mode;
 mod hma;
 mod homodyne_dominant_cycle;
 mod instantaneous_trendline;
@@ -114,6 +115,7 @@ pub use high_pass::{
     HighPassPoles,
 };
 pub use hilbert_phasor::HilbertPhasor;
+pub use hilbert_trend_mode::HilbertTrendMode;
 pub use hma::Hma;
 pub use homodyne_dominant_cycle::HomodyneDominantCycle;
 pub use instantaneous_trendline::InstantaneousTrendline;

@@ -14,6 +14,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         HilbertPhasor,
+        HilbertTrendMode,
         HomodyneDominantCycle,
         InstantaneousTrendline,
         SineWave,
@@ -92,11 +93,21 @@ fn instantaneous_trendline(c: &mut Criterion) {
     );
 }
 
+fn hilbert_trend_mode(c: &mut Criterion) {
+    bench_100k(
+        c,
+        "hilbert_trend_mode",
+        || HilbertTrendMode::<f64, _>::new(Echo::new()),
+        || HilbertTrendMode::<f32, _>::new(Echo::new()),
+    );
+}
+
 criterion_group!(
     benches,
     homodyne_dominant_cycle,
     hilbert_phasor,
     sine_wave,
-    instantaneous_trendline
+    instantaneous_trendline,
+    hilbert_trend_mode
 );
 criterion_main!(benches);
