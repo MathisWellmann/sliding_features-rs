@@ -18,6 +18,7 @@ use sliding_features::{
     sliding_windows::{
         BandPass,
         Decycler,
+        DecyclerOscillator,
         HighPass,
         HighPassPoles,
         UltimateBands,
@@ -145,12 +146,21 @@ fn decycler(c: &mut Criterion) {
     );
 }
 
+fn decycler_oscillator(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "decycler_oscillator_100k",
+        DecyclerOscillator::new(Echo::new(), nz(125), 1.0)
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
     band_pass,
     ultimate_smoother,
     ultimate_bands,
-    decycler
+    decycler,
+    decycler_oscillator
 );
 criterion_main!(benches);
