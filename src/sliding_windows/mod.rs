@@ -35,6 +35,7 @@ mod ehma;
 mod ema;
 mod empirical_mode_decomposition;
 mod even_better_sinewave;
+mod ewma_variance;
 mod gaussian_filter;
 mod high_pass;
 mod hilbert_phasor;
@@ -139,6 +140,7 @@ pub use ehma::Ehma;
 pub use ema::Ema;
 pub use empirical_mode_decomposition::EmpiricalModeDecomposition;
 pub use even_better_sinewave::EvenBetterSinewave;
+pub use ewma_variance::EwmaVariance;
 pub use gaussian_filter::{
     GaussianFilter,
     GaussianPoles,
