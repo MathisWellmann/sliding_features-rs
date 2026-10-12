@@ -670,7 +670,7 @@ functions! {
         name: "roofing_filter", params: [Window, Window], min_window: 2, requires: Any,
         range: |_, _| Domain::REAL,
         build: |p| RoofingFilter::new(Echo::new(), p.window(0), p.window(1)).into(),
-        doc: "John Ehlers' roofing filter (low-pass window, high-pass window): a band-pass.",
+        doc: "John Ehlers' roofing filter (high-pass cutoff period window, super smoother period window): a band-pass, e.g. roofing_filter(a, 48, 10).",
     }
     ReFlex {
         name: "re_flex", params: [Window], min_window: 2, requires: Any,
