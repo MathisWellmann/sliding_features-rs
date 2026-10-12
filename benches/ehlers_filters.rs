@@ -17,6 +17,8 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         BandPass,
+        Butterworth,
+        ButterworthPoles,
         Decycler,
         DecyclerOscillator,
         GaussianFilter,
@@ -164,6 +166,14 @@ fn gaussian_filter(c: &mut Criterion) {
     );
 }
 
+fn butterworth(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "butterworth_100k",
+        Butterworth::new(Echo::new(), nz(20), ButterworthPoles::Three)
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -172,6 +182,7 @@ criterion_group!(
     ultimate_bands,
     decycler,
     decycler_oscillator,
-    gaussian_filter
+    gaussian_filter,
+    butterworth
 );
 criterion_main!(benches);

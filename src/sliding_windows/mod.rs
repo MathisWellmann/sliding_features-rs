@@ -5,6 +5,7 @@ mod alma;
 mod apo;
 mod band_pass;
 mod binary_entropy;
+mod butterworth;
 mod center_of_gravity;
 mod cmo;
 mod connors_rsi;
@@ -71,6 +72,10 @@ pub use alma::Alma;
 pub use apo::Apo;
 pub use band_pass::BandPass;
 pub use binary_entropy::BinaryEntropy;
+pub use butterworth::{
+    Butterworth,
+    ButterworthPoles,
+};
 pub use center_of_gravity::CenterOfGravity;
 pub use cmo::Cmo;
 pub use connors_rsi::ConnorsRsi;
