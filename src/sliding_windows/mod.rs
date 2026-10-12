@@ -5,6 +5,7 @@ mod adaptive_laguerre_filter;
 mod adaptive_rsi;
 mod alma;
 mod apo;
+mod auto_tune_filter;
 mod autocorrelation_periodogram;
 mod band_pass;
 mod binary_entropy;
@@ -89,6 +90,7 @@ pub use adaptive_laguerre_filter::AdaptiveLaguerreFilter;
 pub use adaptive_rsi::AdaptiveRsi;
 pub use alma::Alma;
 pub use apo::Apo;
+pub use auto_tune_filter::AutoTuneFilter;
 pub use autocorrelation_periodogram::{
     AutocorrelationAveraging,
     AutocorrelationPeriodogram,
