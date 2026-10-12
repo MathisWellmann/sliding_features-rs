@@ -173,3 +173,7 @@ harness = false
 [[bench]]
 name = "estimators"
 harness = false
+
+[[bench]]
+name = "change_detection"
+harness = false
