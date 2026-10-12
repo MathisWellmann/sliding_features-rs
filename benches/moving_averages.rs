@@ -16,6 +16,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     sliding_windows::{
+        Cmo,
         Dema,
         Ehma,
         Hma,
@@ -341,6 +342,31 @@ fn kama(c: &mut Criterion) {
     });
 }
 
+fn cmo(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("cmo_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Cmo::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Cmo::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     wma,
@@ -354,6 +380,7 @@ criterion_group!(
     trima,
     mc_ginley_dynamic,
     kaufman_efficiency_ratio,
-    kama
+    kama,
+    cmo
 );
 criterion_main!(benches);
