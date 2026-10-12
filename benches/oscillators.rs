@@ -20,6 +20,7 @@ use sliding_features::{
         Macd,
         Ppo,
         Rsx,
+        SchaffTrendCycle,
         StochRsi,
         Trix,
         Tsi,
@@ -225,6 +226,33 @@ fn rsx_benchmark(c: &mut Criterion) {
     });
 }
 
+fn schaff_trend_cycle_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("schaff_trend_cycle_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = SchaffTrendCycle::<f64, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = SchaffTrendCycle::<f32, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
@@ -233,6 +261,7 @@ criterion_group!(
     trix_benchmark,
     tsi_benchmark,
     stoch_rsi_benchmark,
-    rsx_benchmark
+    rsx_benchmark,
+    schaff_trend_cycle_benchmark
 );
 criterion_main!(benches);
