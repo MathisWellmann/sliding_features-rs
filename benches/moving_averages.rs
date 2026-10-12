@@ -19,6 +19,7 @@ use sliding_features::{
         Dema,
         Ehma,
         Hma,
+        Kama,
         KaufmanEfficiencyRatio,
         McGinleyDynamic,
         Rma,
@@ -315,6 +316,31 @@ fn kaufman_efficiency_ratio(c: &mut Criterion) {
     });
 }
 
+fn kama(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("kama_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Kama::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Kama::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     wma,
@@ -327,6 +353,7 @@ criterion_group!(
     ehma,
     trima,
     mc_ginley_dynamic,
-    kaufman_efficiency_ratio
+    kaufman_efficiency_ratio,
+    kama
 );
 criterion_main!(benches);
