@@ -21,6 +21,7 @@ use sliding_features::{
         ButterworthPoles,
         Decycler,
         DecyclerOscillator,
+        Dsma,
         EhlersFilter,
         GaussianFilter,
         GaussianPoles,
@@ -183,6 +184,10 @@ fn ehlers_filter(c: &mut Criterion) {
     );
 }
 
+fn dsma(c: &mut Criterion) {
+    bench_view!(c, "dsma_100k", Dsma::new(Echo::new(), nz(40)));
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -193,6 +198,7 @@ criterion_group!(
     decycler_oscillator,
     gaussian_filter,
     butterworth,
-    ehlers_filter
+    ehlers_filter,
+    dsma
 );
 criterion_main!(benches);
