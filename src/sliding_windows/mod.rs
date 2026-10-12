@@ -8,6 +8,7 @@ mod center_of_gravity;
 mod correlation_trend_indicator;
 mod cumulative;
 mod cyber_cycle;
+mod dema;
 mod ehlers_fisher_transform;
 mod ema;
 mod high_pass;
@@ -43,6 +44,7 @@ pub use center_of_gravity::CenterOfGravity;
 pub use correlation_trend_indicator::CorrelationTrendIndicator;
 pub use cumulative::Cumulative;
 pub use cyber_cycle::CyberCycle;
+pub use dema::Dema;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
 pub use ema::Ema;
 pub use high_pass::{
