@@ -13,6 +13,7 @@ mod binary_entropy;
 mod butterworth;
 mod center_of_gravity;
 mod cmo;
+mod coefficient_of_variation;
 mod connors_rsi;
 mod continuation_index;
 mod coppock;
@@ -119,6 +120,7 @@ pub use butterworth::{
 };
 pub use center_of_gravity::CenterOfGravity;
 pub use cmo::Cmo;
+pub use coefficient_of_variation::CoefficientOfVariation;
 pub use connors_rsi::ConnorsRsi;
 pub use continuation_index::ContinuationIndex;
 pub use coppock::Coppock;
