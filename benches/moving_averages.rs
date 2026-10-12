@@ -17,6 +17,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         Dema,
+        Ehma,
         Hma,
         Rma,
         T3,
@@ -203,5 +204,30 @@ fn hma(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, wma, rma, dema, tema, t3, zlema, hma);
+fn ehma(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("ehma_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Ehma::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Ehma::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, wma, rma, dema, tema, t3, zlema, hma, ehma);
 criterion_main!(benches);

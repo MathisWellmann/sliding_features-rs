@@ -10,6 +10,7 @@ mod cumulative;
 mod cyber_cycle;
 mod dema;
 mod ehlers_fisher_transform;
+mod ehma;
 mod ema;
 mod high_pass;
 mod hma;
@@ -50,6 +51,7 @@ pub use cumulative::Cumulative;
 pub use cyber_cycle::CyberCycle;
 pub use dema::Dema;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
+pub use ehma::Ehma;
 pub use ema::Ema;
 pub use high_pass::{
     HighPass,
