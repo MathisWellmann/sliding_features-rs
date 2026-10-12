@@ -26,6 +26,7 @@ use crate::{
         AdaptiveSuperSmoother,
         Alma,
         AutoTuneFilter,
+        Autocorrelation,
         AutocorrelationPeriodogram,
         BandPass,
         BinaryEntropy,
@@ -61,6 +62,7 @@ use crate::{
         HilbertTrendMode,
         Hma,
         HomodyneDominantCycle,
+        HurstExponent,
         InstantaneousTrendline,
         Iqr,
         Jma,
@@ -83,7 +85,9 @@ use crate::{
         MinMaxNormalizer,
         MyRSI,
         NoiseEliminationTechnology,
+        OuHalfLife,
         PercentileRank,
+        PermutationEntropy,
         PolarizedFractalEfficiency,
         Ppo,
         QuantileNormalizer,
@@ -97,7 +101,9 @@ use crate::{
         RoofingFilter,
         Rsi,
         Rsx,
+        SampleEntropy,
         SchaffTrendCycle,
+        ShannonEntropy,
         SineWave,
         Skewness,
         Sma,
@@ -114,6 +120,7 @@ use crate::{
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        VarianceRatio,
         Vhf,
         Vidya,
         Vst,
@@ -1270,6 +1277,70 @@ functions! {
         build: |p| Kind::Pure(Pure::YeoJohnson(p.real(0))),
         doc: "Yeo-Johnson transform (lambda real, usually in [-2, 2]; the identity at 1): `box_cox(a + 1, lambda)` for a >= 0 and its mirror image with 2 - lambda below 0, so it takes signed input such as returns; not ready where the power overflows.",
     }
+    // Complexity, memory and dependence measures over a sliding window.
+    // Horizons that must stay below the window (a lag, an aggregation
+    // period) come first, so that the shorter horizon reads first.
+    ShannonEntropy {
+        name: "shannon_entropy", params: [Window, Integer { min: 2, max: 100 }, Real, Positive], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        // The range is `lo` and a width rather than `lo` and `hi`, so that
+        // every pair of finite parameters orders its ends.
+        build: |p| ShannonEntropy::new(Echo::new(), p.window(0), count(p.integer(1)), p.real(2), p.real(2) + p.real(3)).into(),
+        check: |p| check_bin_range(p.real(2), p.real(3)),
+        doc: "Normalized Shannon entropy of the window (window, bins integer from 2 to 100, lo real, width positive) binned into equal bins over the fixed range [lo, lo + width], values outside clamped into the end bins, in [0, 1]: 0 when all values share a bin, 1 when spread evenly; normalize the input first, e.g. `shannon_entropy(min_max(x, 50), 100, 10, -1, 2)`.",
+    }
+    PermutationEntropy {
+        name: "permutation_entropy", params: [Window, Integer { min: 2, max: 7 }], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| PermutationEntropy::new(Echo::new(), p.window(0), p.integer(1), PERMUTATION_DELAY).into(),
+        // The first pattern needs `order` values.
+        warm_up: |p| p.window(0).get() + p.integer(1) - 1,
+        doc: "Bandt and Pompe's normalized permutation entropy (window of patterns, order integer from 2 to 7; delay 1): the entropy of the ordinal patterns of `order` consecutive values over the window, in [0, 1]: 0 for a monotone (or flat) series, near 1 for noise; wants a window well above order!.",
+    }
+    SampleEntropy {
+        // Shorter windows have so few template pairs that the entropy is
+        // mostly undefined (no pair matches) or 0. 20 also covers the
+        // constructor's `window >= m + 2`.
+        name: "sample_entropy", params: [Window, Integer { min: 1, max: 5 }, Positive], min_window: 20, requires: Any,
+        range: |_, p| Domain::closed(0.0, sample_entropy_max(p.window(0), p.integer(1))),
+        build: |p| SampleEntropy::new(Echo::new(), p.window(0), count(p.integer(1)), p.real(2)).into(),
+        check: |p| check_quadratic_window(p.window(0)),
+        doc: "Richman and Moorman's sample entropy -ln(A / B) of the window (window from 20 to 100, template length m integer from 1 to 5, usually 2; tolerance r positive times the window's standard deviation, usually 0.2): low for regular series; in [0, ln(P)] for the P pairs of templates; not ready while no template pair matches at length m + 1; costs O(window^2 m) per update.",
+    }
+    Hurst {
+        name: "hurst", params: [Window], min_window: 32, requires: Any,
+        // The regression slope is not clamped.
+        range: |_, _| Domain::REAL,
+        build: |p| HurstExponent::new(Echo::new(), p.window(0)).into(),
+        check: |p| check_log_linear_window(p.window(0)),
+        doc: "Hurst exponent of returns, not levels (window from 32 to 1000), by rescaled range analysis over chunks of 8, 16, 32, ...: about 0.5 for uncorrelated returns, above for trending, below for mean-reverting; typically in [0, 1] but not clamped; not ready for a flat window; costs O(window log window) per update.",
+    }
+    VarianceRatio {
+        name: "variance_ratio", params: [Window, Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::non_negative(),
+        build: |p| VarianceRatio::new(Echo::new(), p.window(1), p.window(0).get()).into(),
+        check: |p| check_horizon("period", p.window(0), p.window(1)),
+        // The period's sums lie within the window.
+        warm_up: |p| p.window(1).get(),
+        doc: "Lo and MacKinlay's variance ratio of returns, not levels (period q window, window above q): the variance of overlapping q-period returns over q times that of 1-period returns, non-negative: about 1 for a random walk, above for trending, below for mean-reverting; not ready for flat returns.",
+    }
+    Autocorrelation {
+        name: "autocorrelation", params: [Window, Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| Autocorrelation::new(Echo::new(), p.window(1), p.window(0)).into(),
+        check: |p| check_horizon("lag", p.window(0), p.window(1)),
+        warm_up: |p| p.window(1).get(),
+        doc: "Sample autocorrelation (lag window, window above the lag) against the mean of the whole window (Box-Jenkins, biased towards 0 by (window - lag) / window), in [-1, 1]; 0 for a flat window.",
+    }
+    OuHalfLife {
+        name: "ou_half_life", params: [Window], min_window: 3, requires: Any,
+        // The view reports exactly 0 for an AR(1) coefficient of 0.
+        range: |_, _| Domain::non_negative(),
+        build: |p| OuHalfLife::new(Echo::new(), p.window(0)).into(),
+        // `window` changes need one more value.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Mean-reversion half-life in updates of levels, not returns (window of changes): -ln 2 / ln |phi| of the AR(1) coefficient phi fitted by OLS over the window, non-negative; not ready without mean reversion (|phi| >= 1) or for a flat window.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1431,6 +1502,63 @@ fn check_emd(p: Params<'_>) -> Result<(), String> {
         ));
     }
     check_iir_period(period)
+}
+
+/// The embedding delay of [`PermutationEntropy`]: consecutive values, as
+/// Bandt and Pompe.
+const PERMUTATION_DELAY: NonZeroUsize = NonZeroUsize::MIN;
+
+/// `Err` unless `[lo, lo + width]` has finite ends that rounding keeps
+/// apart, which [`ShannonEntropy::new`] asserts (a `width` far below the
+/// spacing of floats at `lo` would vanish).
+fn check_bin_range(lo: f64, width: f64) -> Result<(), String> {
+    let hi = lo + width;
+    if !hi.is_finite() || !(hi - lo).is_finite() || hi <= lo {
+        return Err(format!(
+            "the range [{lo}, {lo} + {width}] must have finite, distinct ends"
+        ));
+    }
+    Ok(())
+}
+
+/// The largest sample entropy of a `window` with templates of length `m`:
+/// `ln` of the number of template pairs, as at least one pair matches.
+fn sample_entropy_max(window: NonZeroUsize, m: usize) -> f64 {
+    let templates = window_f64(window) - f64::from(u8::try_from(m).expect("checked integer"));
+    (templates * (templates - 1.0) / 2.0).ln()
+}
+
+/// The longest window of views that cost O(window log window) per update:
+/// 1000 keeps an update of [`HurstExponent`] (two passes over the window
+/// per chunk size 8, 16, ..., 512) at about 10^4 operations, like
+/// [`MAX_QUADRATIC_WINDOW`].
+const MAX_LOG_LINEAR_WINDOW: usize = 1000;
+
+/// `Err` if the `window` of a view that costs O(window log window) per
+/// update exceeds [`MAX_LOG_LINEAR_WINDOW`].
+fn check_log_linear_window(window: NonZeroUsize) -> Result<(), String> {
+    if window.get() > MAX_LOG_LINEAR_WINDOW {
+        return Err(format!(
+            "the window {window} must be at most {MAX_LOG_LINEAR_WINDOW}, the cost per update grows with window log window"
+        ));
+    }
+    Ok(())
+}
+
+/// `Err` unless a horizon (a lag, an aggregation period) is below the
+/// window that holds it, which the constructors assert.
+fn check_horizon(what: &str, horizon: NonZeroUsize, window: NonZeroUsize) -> Result<(), String> {
+    if horizon >= window {
+        return Err(format!(
+            "the {what} {horizon} must be below the window {window}"
+        ));
+    }
+    Ok(())
+}
+
+/// A checked integer parameter of at least 1 as a count.
+fn count(n: usize) -> NonZeroUsize {
+    NonZeroUsize::new(n).expect("checked integer of at least 1")
 }
 
 /// The [`HighPassPoles`] of a checked `Integer { min: 1, max: 2 }`.
@@ -1753,6 +1881,23 @@ mod tests {
             (Function::EwmaVariance, &[1.0]),
             (Function::BoxCox, &[f64::NAN]),
             (Function::YeoJohnson, &[f64::INFINITY]),
+            (Function::ShannonEntropy, &[10.0, 1.0, 0.0, 1.0]),
+            (Function::ShannonEntropy, &[10.0, 101.0, 0.0, 1.0]),
+            (Function::ShannonEntropy, &[10.0, 10.0, 0.0, 0.0]),
+            (Function::ShannonEntropy, &[10.0, 10.0, 1e20, 1.0]),
+            (Function::ShannonEntropy, &[10.0, 10.0, 1e308, 1e308]),
+            (Function::PermutationEntropy, &[10.0, 8.0]),
+            (Function::PermutationEntropy, &[10.0, 1.0]),
+            (Function::SampleEntropy, &[101.0, 2.0, 0.2]),
+            (Function::SampleEntropy, &[19.0, 2.0, 0.2]),
+            (Function::SampleEntropy, &[20.0, 6.0, 0.2]),
+            (Function::SampleEntropy, &[10.0, 2.0, 0.0]),
+            (Function::Hurst, &[31.0]),
+            (Function::Hurst, &[1001.0]),
+            (Function::VarianceRatio, &[1.0, 10.0]),
+            (Function::VarianceRatio, &[10.0, 10.0]),
+            (Function::Autocorrelation, &[10.0, 10.0]),
+            (Function::OuHalfLife, &[2.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1810,6 +1955,32 @@ mod tests {
         assert_eq!(
             err,
             "mama(a, fraction, fraction): the slow limit 0.51 must be at most the fast limit 0.5"
+        );
+        for (function, params) in [
+            (Function::SampleEntropy, &[100.0, 5.0, 1e300][..]),
+            (Function::SampleEntropy, &[20.0, 5.0, 0.2]),
+            (Function::Hurst, &[1000.0]),
+            (Function::ShannonEntropy, &[10.0, 100.0, -1e308, 1e308]),
+            (Function::ShannonEntropy, &[10.0, 2.0, 1e20, 1e5]),
+        ] {
+            function
+                .check_params(params, 100_000)
+                .unwrap_or_else(|e| panic!("{e}"));
+        }
+        let err = Function::Autocorrelation
+            .check_params(&[20.0, 10.0], 100)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "autocorrelation(a, window, window): the lag 20 must be below the window 10"
+        );
+        let err = Function::SampleEntropy
+            .check_params(&[101.0, 2.0, 0.2], 1000)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "sample_entropy(a, window, integer, positive): the window 101 must be at most 100, \
+             the cost per update grows with its square"
         );
         let err = Function::Butterworth
             .check_params(&[100_001.0, 2.0], 1_000_000)
@@ -1896,6 +2067,15 @@ mod tests {
             (Function::Vhf, &[2.0]),
             (Function::EwmaVariance, &[huge]),
             (Function::EwmaVariance, &[2.0]),
+            (Function::ShannonEntropy, &[2.0, 100.0, -1e308, 1e308]),
+            (Function::ShannonEntropy, &[2.0, 2.0, 1e20, 1e5]),
+            (Function::PermutationEntropy, &[2.0, 7.0]),
+            (Function::SampleEntropy, &[20.0, 1.0, 1e-300]),
+            (Function::SampleEntropy, &[100.0, 5.0, 1e300]),
+            (Function::Hurst, &[32.0]),
+            (Function::VarianceRatio, &[2.0, 3.0]),
+            (Function::Autocorrelation, &[1.0, 2.0]),
+            (Function::OuHalfLife, &[3.0]),
         ] {
             function
                 .check_params(params, usize::MAX)

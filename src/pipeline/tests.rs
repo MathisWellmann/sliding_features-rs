@@ -18,6 +18,7 @@ use crate::{
         AdaptiveRsi,
         AdaptiveSuperSmoother,
         AutoTuneFilter,
+        Autocorrelation,
         AutocorrelationPeriodogram,
         BandPass,
         Butterworth,
@@ -47,6 +48,7 @@ use crate::{
         HilbertTrendMode,
         Hma,
         HomodyneDominantCycle,
+        HurstExponent,
         InstantaneousTrendline,
         Iqr,
         Jma,
@@ -60,7 +62,10 @@ use crate::{
         Macd,
         Mama,
         McGinleyDynamic,
+        MinMaxNormalizer,
+        OuHalfLife,
         PercentileRank,
+        PermutationEntropy,
         Ppo,
         QuantileNormalizer,
         RSquared,
@@ -69,7 +74,9 @@ use crate::{
         RollingMedian,
         RollingQuantile,
         Rsx,
+        SampleEntropy,
         SchaffTrendCycle,
+        ShannonEntropy,
         SineWave,
         Skewness,
         Sma,
@@ -84,6 +91,7 @@ use crate::{
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        VarianceRatio,
         Vhf,
         Vidya,
         Wma,
@@ -374,6 +382,45 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
         ("box_cox(x, 0)", Box::new(BoxCox::new(e(), 0.0))),
         ("box_cox(x, -1.5)", Box::new(BoxCox::new(e(), -1.5))),
         ("yeo_johnson(x, 1.7)", Box::new(YeoJohnson::new(e(), 1.7))),
+        (
+            "shannon_entropy(x, 20, 8, 95, 10)",
+            Box::new(ShannonEntropy::new(e(), window(20), window(8), 95.0, 105.0)),
+        ),
+        // The example of its doc.
+        (
+            "shannon_entropy(min_max(x, 50), 100, 10, -1, 2)",
+            Box::new(ShannonEntropy::new(
+                MinMaxNormalizer::new(e(), window(50)),
+                window(100),
+                window(10),
+                -1.0,
+                1.0,
+            )),
+        ),
+        (
+            "permutation_entropy(x, 30, 3)",
+            Box::new(PermutationEntropy::new(e(), window(30), 3, window(1))),
+        ),
+        (
+            "sample_entropy(x, 25, 2, 0.2)",
+            Box::new(SampleEntropy::new(e(), window(25), window(2), 0.2)),
+        ),
+        (
+            "hurst(x, 64)",
+            Box::new(HurstExponent::new(e(), window(64))),
+        ),
+        (
+            "variance_ratio(x, 4, 30)",
+            Box::new(VarianceRatio::new(e(), window(30), 4)),
+        ),
+        (
+            "autocorrelation(x, 3, 20)",
+            Box::new(Autocorrelation::new(e(), window(20), window(3))),
+        ),
+        (
+            "ou_half_life(x, 15)",
+            Box::new(OuHalfLife::new(e(), window(15))),
+        ),
     ]
 }
 
