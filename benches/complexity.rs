@@ -16,7 +16,10 @@ use rand::{
 use sliding_features::{
     View,
     pure_functions::Echo,
-    sliding_windows::ShannonEntropy,
+    sliding_windows::{
+        PermutationEntropy,
+        ShannonEntropy,
+    },
 };
 
 const N: usize = 100_000;
@@ -59,5 +62,29 @@ fn shannon_entropy(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, shannon_entropy);
+fn permutation_entropy(c: &mut Criterion) {
+    let window = NonZeroUsize::new(1024).unwrap();
+    let delay = NonZeroUsize::new(1).unwrap();
+    let mut group = c.benchmark_group("permutation_entropy_100k");
+    group.bench_function("f64", |b| {
+        let vals = random_vals::<f64>();
+        b.iter(|| {
+            run(
+                PermutationEntropy::new(Echo::new(), window, 5, delay),
+                &vals,
+            )
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = random_vals::<f32>();
+        b.iter(|| {
+            run(
+                PermutationEntropy::new(Echo::new(), window, 5, delay),
+                &vals,
+            )
+        })
+    });
+}
+
+criterion_group!(benches, shannon_entropy, permutation_entropy);
 criterion_main!(benches);
