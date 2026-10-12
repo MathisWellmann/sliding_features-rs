@@ -23,6 +23,7 @@ mod ehlers_filter;
 mod ehlers_fisher_transform;
 mod ehma;
 mod ema;
+mod empirical_mode_decomposition;
 mod gaussian_filter;
 mod high_pass;
 mod hma;
@@ -96,6 +97,7 @@ pub use ehlers_filter::EhlersFilter;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
 pub use ehma::Ehma;
 pub use ema::Ema;
+pub use empirical_mode_decomposition::EmpiricalModeDecomposition;
 pub use gaussian_filter::{
     GaussianFilter,
     GaussianPoles,

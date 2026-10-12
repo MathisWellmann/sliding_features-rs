@@ -24,6 +24,7 @@ use sliding_features::{
         DecyclerOscillator,
         Dsma,
         EhlersFilter,
+        EmpiricalModeDecomposition,
         GaussianFilter,
         GaussianPoles,
         HighPass,
@@ -197,6 +198,14 @@ fn continuation_index(c: &mut Criterion) {
     );
 }
 
+fn empirical_mode_decomposition(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "empirical_mode_decomposition_100k",
+        EmpiricalModeDecomposition::new(Echo::new(), nz(20), 0.5, 0.1)
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -209,6 +218,7 @@ criterion_group!(
     butterworth,
     ehlers_filter,
     dsma,
-    continuation_index
+    continuation_index,
+    empirical_mode_decomposition
 );
 criterion_main!(benches);
