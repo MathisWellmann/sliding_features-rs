@@ -19,6 +19,7 @@ use sliding_features::{
         BandPass,
         HighPass,
         HighPassPoles,
+        UltimateBands,
         UltimateSmoother,
     },
 };
@@ -127,5 +128,19 @@ fn ultimate_smoother(c: &mut Criterion) {
     );
 }
 
-criterion_group!(benches, high_pass, band_pass, ultimate_smoother);
+fn ultimate_bands(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "ultimate_bands_100k",
+        UltimateBands::new(Echo::new(), nz(20), 1.0)
+    );
+}
+
+criterion_group!(
+    benches,
+    high_pass,
+    band_pass,
+    ultimate_smoother,
+    ultimate_bands
+);
 criterion_main!(benches);
