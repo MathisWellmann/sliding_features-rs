@@ -99,6 +99,10 @@ name = "re_flex"
 harness = false
 
 [[bench]]
+name = "regression"
+harness = false
+
+[[bench]]
 name = "roc"
 harness = false
 
