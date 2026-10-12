@@ -70,10 +70,13 @@ where
             debug_assert!(change.is_finite(), "`change` must be finite");
             self.old_ref = old_val;
             self.q_vals.pop_front();
+            // Rounding can leave a running average of non-negative moves
+            // slightly below zero once they all left the window, which
+            // pushed the RSI below 0 or made `1 + rs` zero.
             if change > T::zero() {
-                self.avg_gain = self.avg_gain - change / window_len;
+                self.avg_gain = (self.avg_gain - change / window_len).max(T::zero());
             } else {
-                self.avg_loss = self.avg_loss - change.abs() / window_len;
+                self.avg_loss = (self.avg_loss - change.abs() / window_len).max(T::zero());
             }
         }
         self.q_vals.push_back(val);
@@ -99,7 +102,11 @@ where
         } else {
             let rs = self.avg_gain / self.avg_loss;
             debug_assert!(rs.is_finite(), "`rs` must be finite");
-            let rsi = hundred - hundred / (T::one() + rs);
+            // Clamped as the running averages round, e.g. a gain that
+            // should be 0 can be left at 1e-17.
+            let rsi = (hundred - hundred / (T::one() + rs))
+                .max(T::zero())
+                .min(hundred);
             debug_assert!(rsi.is_finite(), "value must be finite");
             self.out = Some(rsi);
         }
@@ -132,6 +139,19 @@ mod tests {
         }
         let filename = "img/rsi.png";
         plot_values(out, filename).unwrap();
+    }
+
+    /// The moves leave the window in another order than they entered it,
+    /// so the rounded average gain ended at -5.6e-17 and the RSI at -1.4e-14.
+    #[test]
+    fn rsi_stays_in_range_when_rounded_moves_leave_the_window() {
+        let mut rsi = Rsi::new(Echo::new(), NonZeroUsize::new(3).unwrap());
+        for v in [-2.0, 1.0, 2.0, 0.0, 0.0, 0.0] {
+            rsi.update(v);
+            if let Some(out) = rsi.last() {
+                assert!((0.0..=100.0).contains(&out), "{out}");
+            }
+        }
     }
 
     #[test]
