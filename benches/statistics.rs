@@ -21,6 +21,7 @@ use sliding_features::{
         Iqr,
         Kurtosis,
         PercentileRank,
+        QuantileNormalizer,
         RollingMedian,
         RollingQuantile,
         Skewness,
@@ -243,6 +244,33 @@ fn percentile_rank(c: &mut Criterion) {
     });
 }
 
+fn quantile_normalizer(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("quantile_normalizer_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                QuantileNormalizer::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                QuantileNormalizer::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     rolling_quantile,
@@ -252,6 +280,7 @@ criterion_group!(
     ewma_variance,
     rolling_median,
     iqr,
-    percentile_rank
+    percentile_rank,
+    quantile_normalizer
 );
 criterion_main!(benches);
