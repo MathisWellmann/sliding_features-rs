@@ -10,8 +10,12 @@ use crate::{
     View,
     pure_functions::Echo,
     rolling::{
+        AlphaBetaFilter,
         Drawdown,
+        HuberEma,
+        Kalman1d,
         LnReturn,
+        OneEuroFilter,
     },
     sliding_windows::{
         AdaptiveLaguerreFilter,
@@ -47,6 +51,7 @@ use crate::{
         EvenBetterSinewave,
         EwmaVariance,
         GaussianFilter,
+        HampelFilter,
         HighPass,
         HilbertPhasor,
         HilbertTrendMode,
@@ -74,6 +79,7 @@ use crate::{
         Min,
         MinMaxNormalizer,
         MyRSI,
+        NlmsFilter,
         NoiseEliminationTechnology,
         OuHalfLife,
         PercentileRank,
@@ -84,6 +90,7 @@ use crate::{
         RSquared,
         ReFlex,
         ReversionIndex,
+        RlsFilter,
         Rma,
         Roc,
         RollingMedian,
@@ -345,6 +352,13 @@ states! {
     VarianceRatio(VarianceRatio<f64, E>),
     Autocorrelation(Autocorrelation<f64, E>),
     OuHalfLife(OuHalfLife<f64, E>),
+    OneEuro(OneEuroFilter<f64, E>),
+    AlphaBeta(AlphaBetaFilter<f64, E>),
+    Kalman(Kalman1d<f64, E>),
+    HuberEma(HuberEma<f64, E>),
+    Nlms(NlmsFilter<f64, E>),
+    Rls(RlsFilter<f64, E>),
+    Hampel(HampelFilter<f64, E>),
 }
 
 #[cfg(test)]

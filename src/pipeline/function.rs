@@ -17,8 +17,12 @@ use super::{
 use crate::{
     pure_functions::Echo,
     rolling::{
+        AlphaBetaFilter,
         Drawdown,
+        HuberEma,
+        Kalman1d,
         LnReturn,
+        OneEuroFilter,
     },
     sliding_windows::{
         AdaptiveLaguerreFilter,
@@ -56,6 +60,7 @@ use crate::{
         EwmaVariance,
         GaussianFilter,
         GaussianPoles,
+        HampelFilter,
         HighPass,
         HighPassPoles,
         HilbertPhasor,
@@ -84,6 +89,7 @@ use crate::{
         Min,
         MinMaxNormalizer,
         MyRSI,
+        NlmsFilter,
         NoiseEliminationTechnology,
         OuHalfLife,
         PercentileRank,
@@ -94,6 +100,7 @@ use crate::{
         RSquared,
         ReFlex,
         ReversionIndex,
+        RlsFilter,
         Rma,
         Roc,
         RollingMedian,
@@ -1341,6 +1348,65 @@ functions! {
         warm_up: |p| p.window(0).get() + 1,
         doc: "Mean-reversion half-life in updates of levels, not returns (window of changes): -ln 2 / ln |phi| of the AR(1) coefficient phi fitted by OLS over the window, non-negative; not ready without mean reversion (|phi| >= 1) or for a flat window.",
     }
+    // Estimators and robust filters, ready from their first value unless
+    // they predict from a tap history.
+    OneEuro {
+        name: "one_euro", params: [Positive, Real], min_window: 1, requires: Any,
+        // An EMA with an adaptive factor in [0, 1]: within the input's hull.
+        range: |a, _| a,
+        build: |p| OneEuroFilter::new(Echo::new(), p.real(0), p.real(1), ONE_EURO_D_CUTOFF).into(),
+        check: |p| check_non_negative("beta", p.real(1)),
+        doc: "Casiez's 1 euro filter (min_cutoff positive, beta non-negative real; derivative cutoff 1, one update per time unit): an EMA whose cutoff frequency, in cycles per update, grows from min_cutoff by beta times the smoothed speed, so it lags little in moves and jitters little at rest; within the input's range.",
+    }
+    AlphaBeta {
+        name: "alpha_beta", params: [Fraction, Positive], min_window: 1, requires: Any,
+        // The constant-velocity model overshoots turns.
+        range: |_, _| Domain::REAL,
+        build: |p| AlphaBetaFilter::new(Echo::new(), p.real(0), p.real(1)).into(),
+        check: |p| check_alpha_beta(p.real(0), p.real(1)),
+        doc: "Alpha-beta (g-h) tracker's position estimate (alpha fraction position gain, beta positive velocity gain, at most 2 and with 4 - 2 alpha - beta > 0 for stability): a fixed-gain constant-velocity Kalman filter; overshoots turns, so any real.",
+    }
+    Kalman {
+        name: "kalman", params: [Positive, Positive], min_window: 1, requires: Any,
+        // The gain is in [0, 1]: within the input's hull.
+        range: |a, _| a,
+        build: |p| Kalman1d::new(Echo::new(), p.real(0), p.real(1)).into(),
+        check: |p| check_kalman(p.real(0), p.real(1)),
+        doc: "Scalar Kalman filter of the local-level (random walk plus noise) model (q positive process variance, r positive measurement variance, in squared input units; only q / r matters): an EMA whose gain settles where q / r puts it; within the input's range.",
+    }
+    HuberEma {
+        name: "huber_ema", params: [Fraction, Fraction, Positive], min_window: 1, requires: Any,
+        // Each step moves the level towards the value by at most alpha of
+        // the residual: within the input's hull.
+        range: |a, _| a,
+        build: |p| HuberEma::new(Echo::new(), p.real(0), p.real(1), p.real(2)).into(),
+        doc: "Robust EMA of Gelper, Fried and Croux (level_alpha fraction, scale_alpha fraction, k positive, usually 1 to 3): residuals beyond k times an EMA of absolute residuals are clipped, bounding the pull of outliers; within the input's range.",
+    }
+    Nlms {
+        name: "nlms", params: [Integer { min: 1, max: 64 }, Positive], min_window: 1, requires: Any,
+        // A linear predictor extrapolates.
+        range: |_, _| Domain::REAL,
+        build: |p| NlmsFilter::new(Echo::new(), count(p.integer(0)), p.real(1), NLMS_EPSILON).into(),
+        check: |p| check_nlms_mu(p.real(1)),
+        // The first weight update needs `order` values before it.
+        warm_up: |p| p.integer(0) + 1,
+        doc: "Normalized LMS adaptive linear predictor's forecast of the next value (order integer taps from 1 to 64, mu positive step below 2, scale-free; regularizer 1e-12): the weights adapt by a gradient step normalized by the tap energy; any real. Plain LMS is not offered: its step must suit the unknown input power or it diverges.",
+    }
+    Rls {
+        name: "rls", params: [Integer { min: 1, max: 32 }, Fraction], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| RlsFilter::new(Echo::new(), count(p.integer(0)), p.real(1), RLS_DELTA).into(),
+        warm_up: |p| p.integer(0) + 1,
+        doc: "Recursive least squares adaptive linear predictor's forecast of the next value (order integer taps from 1 to 32, lambda fraction forgetting factor, usually 0.95 to 0.999; initial inverse correlation 100 I): exponentially weighted least squares, converging faster than nlms at O(order^2) per update; any real.",
+    }
+    Hampel {
+        name: "hampel", params: [Window, Positive], min_window: 3, requires: Any,
+        // The value or the window's median.
+        range: |a, _| a,
+        build: |p| HampelFilter::new(Echo::new(), p.window(0), p.real(1)).into(),
+        check: |p| check_log_linear_window(p.window(0)),
+        doc: "Causal Hampel filter (window from 3 to 1000, t positive threshold, usually 3): the value, or the window's median if the value lies more than t scaled MADs (1.4826 MAD) from it; within the input's range; costs O(window log window) per update.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1560,6 +1626,64 @@ fn check_horizon(what: &str, horizon: NonZeroUsize, window: NonZeroUsize) -> Res
 fn count(n: usize) -> NonZeroUsize {
     NonZeroUsize::new(n).expect("checked integer of at least 1")
 }
+
+/// The derivative cutoff of [`OneEuroFilter`], in cycles per update: the
+/// reference implementation's default.
+const ONE_EURO_D_CUTOFF: f64 = 1.0;
+
+/// `Err` if `value` is negative.
+fn check_non_negative(what: &str, value: f64) -> Result<(), String> {
+    if value < 0.0 {
+        return Err(format!("the {what} {value} must be at least 0"));
+    }
+    Ok(())
+}
+
+/// The stability region [`AlphaBetaFilter::new`] asserts beyond the
+/// per-kind checks: `beta <= 2` and `4 - 2 alpha - beta > 0`, computed as
+/// the constructor does, since near `alpha = 1, beta = 2` rounding decides.
+fn check_alpha_beta(alpha: f64, beta: f64) -> Result<(), String> {
+    if beta > 2.0 {
+        return Err(format!("the beta {beta} must be at most 2"));
+    }
+    if 4.0 - 2.0 * alpha - beta <= 0.0 {
+        return Err(format!(
+            "the gains alpha {alpha} and beta {beta} must satisfy 4 - 2 alpha - beta > 0"
+        ));
+    }
+    Ok(())
+}
+
+/// `Err` unless [`Kalman1d`]'s variance sums stay finite: the estimate
+/// variance stays at most about `r`, so an update sums at most about
+/// `q + 2 r`.
+fn check_kalman(q: f64, r: f64) -> Result<(), String> {
+    if !(2.0 * (q + r)).is_finite() {
+        return Err(format!(
+            "the variances q {q} and r {r} must sum to below half the largest float"
+        ));
+    }
+    Ok(())
+}
+
+/// The regularizer of [`NlmsFilter`], in squared input units: small
+/// against the tap energy of most inputs, yet it bounds a weight step to
+/// `mu |error| / (2 sqrt(epsilon))` while the taps are near zero.
+const NLMS_EPSILON: f64 = 1e-12;
+
+/// `Err` unless the [`NlmsFilter`] step is below 2, which its constructor
+/// asserts for stability.
+fn check_nlms_mu(mu: f64) -> Result<(), String> {
+    if mu >= 2.0 {
+        return Err(format!("the mu {mu} must be below 2"));
+    }
+    Ok(())
+}
+
+/// The initialization of [`RlsFilter`]'s inverse correlation matrix
+/// `I / delta`: Haykin's small delta for a weak prior on the weights,
+/// which the forgetting factor soon forgets.
+const RLS_DELTA: f64 = 0.01;
 
 /// The [`HighPassPoles`] of a checked `Integer { min: 1, max: 2 }`.
 fn high_pass_poles(poles: usize) -> HighPassPoles {
@@ -1898,6 +2022,22 @@ mod tests {
             (Function::VarianceRatio, &[10.0, 10.0]),
             (Function::Autocorrelation, &[10.0, 10.0]),
             (Function::OuHalfLife, &[2.0]),
+            (Function::OneEuro, &[0.0, 0.5]),
+            (Function::OneEuro, &[0.5, -0.1]),
+            (Function::AlphaBeta, &[0.5, 2.5]),
+            // 4 - 2 alpha rounds to 2 just below alpha = 1.
+            (Function::AlphaBeta, &[1.0 - f64::EPSILON / 2.0, 2.0]),
+            (Function::Kalman, &[1e308, 1e308]),
+            (Function::Kalman, &[0.0, 1.0]),
+            (Function::Nlms, &[4.0, 2.0]),
+            (Function::Nlms, &[0.0, 0.5]),
+            (Function::Nlms, &[65.0, 0.5]),
+            (Function::Rls, &[33.0, 0.5]),
+            (Function::Rls, &[4.0, 1.0]),
+            (Function::HuberEma, &[1.0, 0.5, 1.0]),
+            (Function::Hampel, &[2.0, 3.0]),
+            (Function::Hampel, &[1001.0, 3.0]),
+            (Function::Hampel, &[10.0, 0.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -2076,6 +2216,21 @@ mod tests {
             (Function::VarianceRatio, &[2.0, 3.0]),
             (Function::Autocorrelation, &[1.0, 2.0]),
             (Function::OuHalfLife, &[3.0]),
+            (Function::OneEuro, &[5e-324, 1e308]),
+            (Function::OneEuro, &[1e308, 0.0]),
+            (Function::AlphaBeta, &[0.999_999, 2.0]),
+            (Function::AlphaBeta, &[1e-9, 1e-300]),
+            (Function::Kalman, &[4e307, 4e307]),
+            (Function::Kalman, &[1e-300, 1e300]),
+            (Function::Kalman, &[5e-324, 5e-324]),
+            (Function::HuberEma, &[1e-9, 0.999_999, 1e-300]),
+            (Function::HuberEma, &[0.999_999, 1e-9, 1e300]),
+            (Function::Nlms, &[1.0, 1e-300]),
+            (Function::Nlms, &[64.0, 1.999_999]),
+            (Function::Rls, &[1.0, 1e-9]),
+            (Function::Rls, &[32.0, 0.999_999]),
+            (Function::Hampel, &[3.0, 1e-300]),
+            (Function::Hampel, &[1000.0, 1e300]),
         ] {
             function
                 .check_params(params, usize::MAX)

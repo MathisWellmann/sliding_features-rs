@@ -13,6 +13,12 @@ use crate::{
         Subtract,
         YeoJohnson,
     },
+    rolling::{
+        AlphaBetaFilter,
+        HuberEma,
+        Kalman1d,
+        OneEuroFilter,
+    },
     sliding_windows::{
         AdaptiveLaguerreFilter,
         AdaptiveRsi,
@@ -42,6 +48,7 @@ use crate::{
         EwmaVariance,
         GaussianFilter,
         GaussianPoles,
+        HampelFilter,
         HighPass,
         HighPassPoles,
         HilbertPhasor,
@@ -63,6 +70,7 @@ use crate::{
         Mama,
         McGinleyDynamic,
         MinMaxNormalizer,
+        NlmsFilter,
         OuHalfLife,
         PercentileRank,
         PermutationEntropy,
@@ -70,6 +78,7 @@ use crate::{
         QuantileNormalizer,
         RSquared,
         ReversionIndex,
+        RlsFilter,
         Rma,
         RollingMedian,
         RollingQuantile,
@@ -420,6 +429,34 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
         (
             "ou_half_life(x, 15)",
             Box::new(OuHalfLife::new(e(), window(15))),
+        ),
+        (
+            "one_euro(x, 0.05, 0.3)",
+            Box::new(OneEuroFilter::new(e(), 0.05, 0.3, 1.0)),
+        ),
+        (
+            "alpha_beta(x, 0.4, 0.1)",
+            Box::new(AlphaBetaFilter::new(e(), 0.4, 0.1)),
+        ),
+        (
+            "kalman(x, 0.01, 2)",
+            Box::new(Kalman1d::new(e(), 0.01, 2.0)),
+        ),
+        (
+            "huber_ema(x, 0.2, 0.05, 1.5)",
+            Box::new(HuberEma::new(e(), 0.2, 0.05, 1.5)),
+        ),
+        (
+            "nlms(x, 4, 0.3)",
+            Box::new(NlmsFilter::new(e(), window(4), 0.3, 1e-12)),
+        ),
+        (
+            "rls(x, 3, 0.98)",
+            Box::new(RlsFilter::new(e(), window(3), 0.98, 0.01)),
+        ),
+        (
+            "hampel(x, 11, 2.5)",
+            Box::new(HampelFilter::new(e(), window(11), 2.5)),
         ),
     ]
 }
