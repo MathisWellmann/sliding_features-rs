@@ -13,6 +13,7 @@ use sliding_features::{
     pure_functions::Echo,
     rolling::{
         AlphaBetaFilter,
+        HuberEma,
         Kalman1d,
         OneEuroFilter,
     },
@@ -188,6 +189,33 @@ fn benchmark_rls(c: &mut Criterion) {
     });
 }
 
+fn benchmark_huber_ema(c: &mut Criterion) {
+    let rng = romu::Rng::from_seed_with_64bit(7);
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("huber_ema_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.f64()));
+        b.iter(|| {
+            let mut view = HuberEma::<f64, _>::new(Echo::new(), 0.1, 0.1, 3.0);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.f64() as f32));
+        b.iter(|| {
+            let mut view = HuberEma::<f32, _>::new(Echo::new(), 0.1, 0.1, 3.0);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     benchmark_one_euro,
@@ -195,6 +223,7 @@ criterion_group!(
     benchmark_kalman1d,
     benchmark_lms,
     benchmark_nlms,
-    benchmark_rls
+    benchmark_rls,
+    benchmark_huber_ema
 );
 criterion_main!(benches);
