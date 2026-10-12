@@ -148,7 +148,7 @@ impl<T: Float> StatisticsMoments<T> {
 
     /// The mean of the window.
     ///
-    /// Not used by library code yet (only `Kurtosis` and `Skewness` need the
+    /// Not used by library code yet (`Skewness` and `Kurtosis` only need the
     /// central moments below); `#[cfg(test)]` to avoid a `dead_code`
     /// warning. Remove the attribute when using it.
     #[cfg(test)]
@@ -170,11 +170,6 @@ impl<T: Float> StatisticsMoments<T> {
     }
 
     /// The population fourth central moment of the window.
-    ///
-    /// Not used by library code yet (only `Kurtosis` needs it);
-    /// `#[cfg(test)]` to avoid a `dead_code` warning. Remove the attribute
-    /// when using it.
-    #[cfg(test)]
     pub(crate) fn central_moment4(&self) -> T {
         self.m4 / self.n()
     }
