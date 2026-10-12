@@ -107,7 +107,6 @@ use crate::{
         Tsf,
         Tsi,
         UlcerIndex,
-        UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
         ValueAtRisk,
@@ -185,10 +184,6 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
         (
             "ultimate_smoother(x, 9)",
             Box::new(UltimateSmoother::new(e(), window(9))),
-        ),
-        (
-            "ultimate_bands(x, 9)",
-            Box::new(UltimateBands::new(e(), window(9), 1.0)),
         ),
         (
             "decycler(x, 11, 1)",

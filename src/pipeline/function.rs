@@ -133,7 +133,6 @@ use crate::{
         Tsf,
         Tsi,
         UlcerIndex,
-        UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
         ValueAtRisk,
@@ -753,12 +752,6 @@ functions! {
         range: |_, _| Domain::REAL,
         build: |p| UltimateSmoother::new(Echo::new(), p.window(0)).into(),
         doc: "John Ehlers' UltimateSmoother (critical period window): a low-pass with almost no lag that can overshoot the input.",
-    }
-    UltimateBands {
-        name: "ultimate_bands", params: [Window], min_window: 2, requires: Any,
-        range: |_, _| Domain::REAL,
-        build: |p| UltimateBands::new(Echo::new(), p.window(0), 1.0).into(),
-        doc: "Center line of John Ehlers' Ultimate Bands (period window): the values of `ultimate_smoother`; the bands are not exposed.",
     }
     Decycler {
         name: "decycler", params: [Window, Integer { min: 1, max: 2 }], min_window: 5, requires: Any,
