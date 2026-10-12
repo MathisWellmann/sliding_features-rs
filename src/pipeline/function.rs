@@ -38,10 +38,12 @@ use crate::{
         CyberCycle,
         Decycler,
         DecyclerOscillator,
+        Dema,
         Dsma,
         EhlersFilter,
         EhlersFisherTransform,
         EhlersStochastic,
+        Ehma,
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
@@ -51,14 +53,18 @@ use crate::{
         HighPassPoles,
         HilbertPhasor,
         HilbertTrendMode,
+        Hma,
         HomodyneDominantCycle,
         InstantaneousTrendline,
+        Jma,
+        Kama,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
         MadScaler,
         Mama,
         Max,
+        McGinleyDynamic,
         Min,
         MinMaxNormalizer,
         MyRSI,
@@ -66,19 +72,26 @@ use crate::{
         PolarizedFractalEfficiency,
         ReFlex,
         ReversionIndex,
+        Rma,
         Roc,
         RoofingFilter,
         Rsi,
         SineWave,
         Sma,
         SuperSmoother,
+        T3,
+        Tema,
         TrendFlex,
+        Trima,
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        Vidya,
         Vst,
         WelfordOnline,
+        Wma,
         ZScoreStandardization,
+        Zlema,
     },
 };
 
@@ -886,6 +899,102 @@ functions! {
         build: |p| ReversionIndex::new(Echo::new(), p.window(0), p.window(1)).into(),
         doc: "John Ehlers' reversion index (length window, about half the dominant cycle; smoother window, 4 or 8 in the article): sum of changes over the sum of their absolute values, super smoothed; roughly in [-1, 1] (can overshoot slightly).",
     }
+    // Moving averages. The convex combinations of past inputs stay within
+    // the input range; the lag-reducing ones overshoot it on reversals.
+    Wma {
+        name: "wma", params: [Window], min_window: 1, requires: Any,
+        range: |a, _| a,
+        build: |p| Wma::new(Echo::new(), p.window(0)).into(),
+        doc: "Linearly weighted moving average (window), within the input range.",
+    }
+    Rma {
+        name: "rma", params: [Window], min_window: 1, requires: Any,
+        range: |a, _| a,
+        build: |p| Rma::new(Echo::new(), p.window(0)).into(),
+        doc: "Wilder's moving average (window): an EMA with alpha = 1 / window seeded with the SMA, within the input range.",
+    }
+    Dema {
+        name: "dema", params: [Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Dema::new(Echo::new(), p.window(0)).into(),
+        // The outer EMA starts once the inner one is ready.
+        warm_up: |p| 2 * p.window(0).get() - 1,
+        doc: "Double exponential moving average 2 EMA - EMA(EMA) (window): less lag than an EMA, can overshoot the input.",
+    }
+    Tema {
+        name: "tema", params: [Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(Tema::new(Echo::new(), p.window(0))).into(),
+        warm_up: |p| 3 * p.window(0).get() - 2,
+        doc: "Triple exponential moving average 3 EMA - 3 EMA(EMA) + EMA(EMA(EMA)) (window): less lag than DEMA, can overshoot the input.",
+    }
+    T3 {
+        name: "t3", params: [Window, Fraction], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(T3::with_volume_factor(Echo::new(), p.window(0), p.real(1))).into(),
+        // Six chained EMAs.
+        warm_up: |p| 6 * p.window(0).get() - 5,
+        doc: "Tillson's T3 (window, volume factor fraction, 0.7 classic): six chained EMAs, smoother than TEMA, can overshoot the input.",
+    }
+    Zlema {
+        name: "zlema", params: [Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Zlema::new(Echo::new(), p.window(0)).into(),
+        // The de-lagging reaches back (window - 1) / 2 updates.
+        warm_up: |p| p.window(0).get() + (p.window(0).get() - 1) / 2,
+        doc: "Zero-lag EMA (window): an EMA of 2 a - a[(window - 1) / 2], can overshoot the input.",
+    }
+    Hma {
+        name: "hma", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(Hma::new(Echo::new(), p.window(0))).into(),
+        warm_up: |p| hull_warm_up(p.window(0)),
+        doc: "Hull moving average WMA(2 WMA(window / 2) - WMA(window), sqrt(window)) (window): low lag, can overshoot the input.",
+    }
+    Ehma {
+        name: "ehma", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(Ehma::new(Echo::new(), p.window(0))).into(),
+        warm_up: |p| hull_warm_up(p.window(0)),
+        doc: "Exponential Hull moving average: `hma` with EMAs instead of WMAs (window), can overshoot the input.",
+    }
+    Trima {
+        name: "trima", params: [Window], min_window: 1, requires: Any,
+        range: |a, _| a,
+        build: |p| Trima::new(Echo::new(), p.window(0)).into(),
+        doc: "Triangular moving average (window): an SMA of an SMA, weights peak at the window center, within the input range.",
+    }
+    McGinleyDynamic {
+        // Its speed adapts to the ratio of the input to the average.
+        name: "mc_ginley_dynamic", params: [Window], min_window: 1, requires: Positive,
+        range: |a, _| a,
+        build: |p| McGinleyDynamic::new(Echo::new(), p.window(0)).into(),
+        doc: "McGinley dynamic of a positive input (window; k 0.6): a moving average that speeds up when the input falls away from it, within the input range.",
+    }
+    Kama {
+        name: "kama", params: [Window], min_window: 1, requires: Any,
+        // An EMA whose smoothing factor stays in (0, 1).
+        range: |a, _| a,
+        build: |p| Kama::new(Echo::new(), p.window(0)).into(),
+        // The efficiency ratio needs window changes.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Kaufman's adaptive moving average (efficiency ratio window; fast 2, slow 30): fast in clean trends, slow in noise, within the input range.",
+    }
+    Vidya {
+        name: "vidya", params: [Window], min_window: 1, requires: Any,
+        range: |a, _| a,
+        build: |p| Vidya::new(Echo::new(), p.window(0)).into(),
+        // The CMO needs window changes.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Chande's variable index dynamic average (window): an EMA scaled by |CMO| / 100 over the window, within the input range.",
+    }
+    Jma {
+        name: "jma", params: [Window, Real], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Jma::with_params(Echo::new(), p.window(0), p.real(1), JMA_POWER).into(),
+        check: |p| check_jma_phase(p.real(1)),
+        doc: "Jurik moving average, the open reconstruction (period window, phase real in [-100, 100], 0 balanced, higher overshoots more; power 2): low lag, can overshoot the input.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -911,6 +1020,30 @@ const PERIODOGRAM_WARM_UP: usize = 48 + 10 + 48 + 3;
 /// The RMS length of [`AdaptiveSuperSmoother`]'s rate of change, the
 /// paper's value.
 const ADAPTIVE_RMS_LEN: NonZeroUsize = NonZeroUsize::new(81).expect("81 is not zero");
+
+/// The power of [`Jma`]'s kernel, its documented default.
+const JMA_POWER: i32 = 2;
+
+/// The largest phase magnitude of [`Jma`]: the view clamps beyond it, so a
+/// larger value would silently mean the same as 100.
+const MAX_JMA_PHASE: f64 = 100.0;
+
+/// `Err` if a [`Jma`] phase lies outside `[-100, 100]`.
+fn check_jma_phase(phase: f64) -> Result<(), String> {
+    if phase.abs() > MAX_JMA_PHASE {
+        return Err(format!(
+            "the phase {phase} must be in [-{MAX_JMA_PHASE}, {MAX_JMA_PHASE}]"
+        ));
+    }
+    Ok(())
+}
+
+/// Updates before [`Hma`] and [`Ehma`] are ready: the full window, then
+/// the final stage over `round(sqrt(window))` values, at most
+/// `isqrt(window) + 1`.
+fn hull_warm_up(window: NonZeroUsize) -> usize {
+    window.get() + window.get().isqrt()
+}
 
 /// The longest window of views that cost O(window^2) per update: 100
 /// keeps an update at about 10^4 multiply-adds, while the maximum window
@@ -1220,6 +1353,8 @@ mod tests {
         assert!(Function::Emd.check_params(&[5.0, 0.6], 100).is_ok());
         assert!(Function::BandPass.check_params(&[3.0, 0.7], 100).is_ok());
         assert!(Function::Mama.check_params(&[0.5, 0.5], 100).is_ok());
+        assert!(Function::Jma.check_params(&[9.0, 100.0], 100).is_ok());
+        assert!(Function::Jma.check_params(&[9.0, -100.0], 100).is_ok());
         assert!(
             Function::AutoTuneFilter
                 .check_params(&[100.0], 1000)
@@ -1257,6 +1392,11 @@ mod tests {
             (Function::EhlersStochastic, &[2.0, 2.0, 1.0]),
             (Function::UniversalOscillator, &[1.0]),
             (Function::ReversionIndex, &[1.0, 4.0]),
+            (Function::Hma, &[1.0]),
+            (Function::T3, &[5.0, 1.0]),
+            (Function::T3, &[5.0, 0.0]),
+            (Function::Jma, &[9.0, 100.5]),
+            (Function::Jma, &[9.0, -101.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1299,6 +1439,11 @@ mod tests {
             err,
             "auto_tune_filter(a, window): the window 101 must be at most 100, \
              the cost per update grows with its square"
+        );
+        let err = Function::Jma.check_params(&[9.0, 100.5], 100).unwrap_err();
+        assert_eq!(
+            err,
+            "jma(a, window, real): the phase 100.5 must be in [-100, 100]"
         );
         let err = Function::Mama.check_params(&[0.5, 0.51], 100).unwrap_err();
         assert_eq!(
@@ -1364,6 +1509,15 @@ mod tests {
             (Function::AdaptiveSuperSmoother, &[2.0]),
             (Function::UniversalOscillator, &[huge]),
             (Function::UniversalOscillator, &[2.0]),
+            (Function::Dema, &[huge]),
+            (Function::Tema, &[huge]),
+            (Function::T3, &[huge, 0.999_999]),
+            (Function::T3, &[1.0, 1e-9]),
+            (Function::Ehma, &[huge]),
+            (Function::Ehma, &[2.0]),
+            (Function::McGinleyDynamic, &[huge]),
+            (Function::Jma, &[huge, 100.0]),
+            (Function::Jma, &[2.0, -100.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
