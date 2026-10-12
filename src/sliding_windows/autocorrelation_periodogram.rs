@@ -189,6 +189,16 @@ where
         Some(p)
     }
 
+    /// The roofing filtered history, newest first, once all lags are covered.
+    /// Shared with the indicators that are tuned by this periodogram,
+    /// so they do not need a second roofing filter.
+    pub(super) fn filtered_history(&self) -> Option<&[T]> {
+        if !self.is_ready() {
+            return None;
+        }
+        Some(&self.history[self.pos..self.pos + self.cap])
+    }
+
     #[inline]
     fn is_ready(&self) -> bool {
         self.n_filt >= self.cap
