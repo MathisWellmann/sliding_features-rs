@@ -15,14 +15,19 @@ use crate::{
     },
     rolling::{
         AlphaBetaFilter,
+        Bocpd,
+        Cusum,
         HuberEma,
         Kalman1d,
         OneEuroFilter,
+        PageHinkley,
+        PageHinkleyDirection,
     },
     sliding_windows::{
         AdaptiveLaguerreFilter,
         AdaptiveRsi,
         AdaptiveSuperSmoother,
+        Adwin,
         AutoTuneFilter,
         Autocorrelation,
         AutocorrelationPeriodogram,
@@ -31,6 +36,7 @@ use crate::{
         ButterworthPoles,
         Cmo,
         CoefficientOfVariation,
+        ConditionalValueAtRisk,
         ConnorsRsi,
         ContinuationIndex,
         Coppock,
@@ -80,15 +86,18 @@ use crate::{
         ReversionIndex,
         RlsFilter,
         Rma,
+        Roc,
         RollingMedian,
         RollingQuantile,
         Rsx,
         SampleEntropy,
         SchaffTrendCycle,
         ShannonEntropy,
+        SharpeRatio,
         SineWave,
         Skewness,
         Sma,
+        SortinoRatio,
         StandardError,
         StochRsi,
         T3,
@@ -97,9 +106,11 @@ use crate::{
         Trix,
         Tsf,
         Tsi,
+        UlcerIndex,
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        ValueAtRisk,
         VarianceRatio,
         Vhf,
         Vidya,
@@ -458,6 +469,76 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
             "hampel(x, 11, 2.5)",
             Box::new(HampelFilter::new(e(), window(11), 2.5)),
         ),
+        (
+            "cusum(x, 0.3, 4)",
+            Box::new(Cusum::new(e(), 0.0, 1.0, 0.3, 4.0)),
+        ),
+        (
+            "page_hinkley(x, 7, 0.02, 2.5, 0)",
+            Box::new(PageHinkley::new(
+                e(),
+                PageHinkleyDirection::Both,
+                window(7),
+                0.02,
+                2.5,
+                0.9999,
+            )),
+        ),
+        (
+            "page_hinkley(x, 12, 0.01, 3, 1)",
+            Box::new(PageHinkley::new(
+                e(),
+                PageHinkleyDirection::Increase,
+                window(12),
+                0.01,
+                3.0,
+                0.9999,
+            )),
+        ),
+        (
+            "page_hinkley(x, 9, 0.03, 2, 2)",
+            Box::new(PageHinkley::new(
+                e(),
+                PageHinkleyDirection::Decrease,
+                window(9),
+                0.03,
+                2.0,
+                0.9999,
+            )),
+        ),
+        (
+            "bocpd(x, 50, 120)",
+            Box::new(Bocpd::new(e(), 50.0, 0.0, 1.0, 1.0, 1.0, 120)),
+        ),
+        (
+            "adwin(x, 0.01)",
+            Box::new(Adwin::new(e(), 0.01, window(5), window(32))),
+        ),
+        (
+            "var(x, 30, 0.9)",
+            Box::new(ValueAtRisk::new(e(), window(30), 0.9)),
+        ),
+        (
+            "cvar(x, 40, 0.8)",
+            Box::new(ConditionalValueAtRisk::new(e(), window(40), 0.8)),
+        ),
+        (
+            "ulcer_index(x, 14)",
+            Box::new(UlcerIndex::new(e(), window(14))),
+        ),
+        (
+            "sharpe(x, 25, 0.1)",
+            Box::new(SharpeRatio::new(e(), window(25), 0.1)),
+        ),
+        // Returns, as its doc asks: prices never fall below the target.
+        (
+            "sortino(roc(x, 1), 20, 0.001)",
+            Box::new(SortinoRatio::new(
+                Roc::new(e(), window(1)),
+                window(20),
+                0.001,
+            )),
+        ),
     ]
 }
 
@@ -741,7 +822,12 @@ fn the_warm_up_estimate_suffices() {
     for function in Function::ALL {
         for params in [function.example_params(), function.larger_params()] {
             let (mut b, x) = single_input();
-            let inner = b.call(Function::Ema, x, &[3.0]).unwrap();
+            let mut inner = b.call(Function::Ema, x, &[3.0]).unwrap();
+            // Only ready while a value is below its target, which returns
+            // are (as its doc asks) and prices around 100 are not.
+            if *function == Function::Sortino {
+                inner = b.call(Function::Roc, inner, &[1.0]).unwrap();
+            }
             let call = b.call(*function, inner, &params).unwrap();
             b.output("out", call).unwrap();
             let mut p = b.build().unwrap();

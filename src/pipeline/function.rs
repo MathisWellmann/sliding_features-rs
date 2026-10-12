@@ -18,16 +18,21 @@ use crate::{
     pure_functions::Echo,
     rolling::{
         AlphaBetaFilter,
+        Bocpd,
+        Cusum,
         Drawdown,
         HuberEma,
         Kalman1d,
         LnReturn,
         OneEuroFilter,
+        PageHinkley,
+        PageHinkleyDirection,
     },
     sliding_windows::{
         AdaptiveLaguerreFilter,
         AdaptiveRsi,
         AdaptiveSuperSmoother,
+        Adwin,
         Alma,
         AutoTuneFilter,
         Autocorrelation,
@@ -39,6 +44,7 @@ use crate::{
         CenterOfGravity,
         Cmo,
         CoefficientOfVariation,
+        ConditionalValueAtRisk,
         ConnorsRsi,
         ContinuationIndex,
         Coppock,
@@ -111,9 +117,11 @@ use crate::{
         SampleEntropy,
         SchaffTrendCycle,
         ShannonEntropy,
+        SharpeRatio,
         SineWave,
         Skewness,
         Sma,
+        SortinoRatio,
         StandardError,
         StochRsi,
         SuperSmoother,
@@ -124,9 +132,11 @@ use crate::{
         Trix,
         Tsf,
         Tsi,
+        UlcerIndex,
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        ValueAtRisk,
         VarianceRatio,
         Vhf,
         Vidya,
@@ -1407,6 +1417,80 @@ functions! {
         check: |p| check_log_linear_window(p.window(0)),
         doc: "Causal Hampel filter (window from 3 to 1000, t positive threshold, usually 3): the value, or the window's median if the value lies more than t scaled MADs (1.4826 MAD) from it; within the input's range; costs O(window log window) per update.",
     }
+    // Change detectors and risk measures. The detectors report their
+    // statistic, not their alarms: an alarm is the statistic crossing the
+    // threshold, which `gte`/`lte` and arithmetic express.
+    Cusum {
+        name: "cusum", params: [Real, Positive], min_window: 1, requires: Any,
+        range: |a, p| cusum_range(a, p.real(0), p.real(1)),
+        build: |p| Cusum::new(Echo::new(), 0.0, 1.0, p.real(0), p.real(1)).into(),
+        check: |p| check_non_negative("k", p.real(0)),
+        doc: "Two-sided tabular CUSUM of standardized input, in-control mean 0 and standard deviation 1 (k non-negative real slack, h positive threshold; Montgomery's k = 0.5, h = 5): the signed statistic S+ if S+ >= S-, else -S-, both reset after one exceeds h, which it still reports; standardize the input first, e.g. `cusum((x - 0.001) / 0.02, 0.5, 5)` or `cusum(zscore(x, 100), 0.5, 5)`.",
+    }
+    PageHinkley {
+        name: "page_hinkley", params: [Window, Real, Positive, Integer { min: 0, max: 2 }], min_window: 1, requires: Any,
+        range: |a, p| page_hinkley_range(a, p),
+        build: |p| PageHinkley::new(Echo::new(), page_hinkley_direction(p.integer(3)), p.window(0), p.real(1), p.real(2), PAGE_HINKLEY_ALPHA).into(),
+        check: |p| check_non_negative("delta", p.real(1)),
+        doc: "Page-Hinkley test for shifts of the mean (min_instances window before alarms, delta non-negative real tolerated change, lambda positive threshold, both in input units; direction integer: 0 both, 1 increases, 2 decreases; forgetting 0.9999 as scikit-multiflow): the cumulative deviation from the running mean, positive for increases and negative for decreases, with mean and statistics reset after it exceeds lambda, which it still reports.",
+    }
+    Bocpd {
+        name: "bocpd", params: [Window, Window], min_window: 2, requires: Any,
+        range: |_, p| Domain::closed(0.0, window_f64(p.window(1))),
+        build: |p| Bocpd::new(Echo::new(), window_f64(p.window(0)), 0.0, 1.0, 1.0, 1.0, p.window(1).get()).into(),
+        check: |p| check_max_run_length(p.window(1)),
+        // Ready from the first value; neither window is a span of history.
+        warm_up: |_| 0,
+        doc: "Adams and MacKay's Bayesian online changepoint detection of mean and variance of standardized input (lambda window expected run length, max_run_length window at most 1000; prior mean 0 worth 1 value, variance prior Inverse-Gamma(1, 1)): the most probable number of values since the last changepoint, in [0, max_run_length]; costs O(max_run_length) per update.",
+    }
+    Adwin {
+        name: "adwin", params: [Fraction], min_window: 1, requires: Any,
+        // The mean of the retained values.
+        range: |a, _| a,
+        build: |p| Adwin::new(Echo::new(), p.real(0), ADWIN_MAX_BUCKETS, ADWIN_CLOCK).into(),
+        doc: "Bifet and Gavalda's ADWIN2 (delta fraction confidence, MOA's 0.002; 5 buckets per level, cut checks every 32 updates as MOA): the mean of an adaptive window that drops its older part when its mean differs significantly from the newer one, within the input's range.",
+    }
+    Var {
+        name: "var", params: [Window, Fraction], min_window: 2, requires: Any,
+        // The negated quantile of the window.
+        range: |a, _| a.neg(),
+        build: |p| ValueAtRisk::new(Echo::new(), p.window(0), p.real(1)).into(),
+        doc: "Historical value at risk of returns, not prices (window, confidence fraction, e.g. 0.95): minus the 1 - confidence quantile of the window (as `quantile`), so a loss is positive; within the negated input range; costs O(window) per update.",
+    }
+    Cvar {
+        name: "cvar", params: [Window, Fraction], min_window: 2, requires: Any,
+        // Minus the mean of the lowest values of the window.
+        range: |a, _| a.neg(),
+        build: |p| ConditionalValueAtRisk::new(Echo::new(), p.window(0), p.real(1)).into(),
+        doc: "Historical conditional value at risk (expected shortfall) of returns, not prices (window, confidence fraction, e.g. 0.975): minus the mean of the returns at or below the 1 - confidence quantile of the window, so a loss is positive, at least `var`; within the negated input range; costs O(window) per update.",
+    }
+    UlcerIndex {
+        name: "ulcer_index", params: [Window], min_window: 2, requires: Positive,
+        // The root mean square of drawdowns in percent, each in (-100, 0].
+        range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| UlcerIndex::new(Echo::new(), p.window(0)).into(),
+        // A drawdown needs a full window of prices, the mean a full window
+        // of drawdowns.
+        warm_up: |p| 2 * p.window(0).get() - 1,
+        doc: "Martin's Ulcer Index of prices, not returns (window): the root mean square of the percent drawdowns from the rolling window maximum over the window, in [0, 100]: 0 without drawdowns.",
+    }
+    Sharpe {
+        name: "sharpe", params: [Window, Real], min_window: 2, requires: Any,
+        // Unbounded as the standard deviation vanishes.
+        range: |_, _| Domain::REAL,
+        build: |p| SharpeRatio::new(Echo::new(), p.window(0), p.real(1)).into(),
+        check: |p| check_rate("risk_free", p.real(1)),
+        doc: "Per-period Sharpe ratio of returns, not prices (window, risk_free real rate per period, at most 1e6 in magnitude): the mean excess return over the sample standard deviation of the window, not annualized; not ready for a flat window.",
+    }
+    Sortino {
+        name: "sortino", params: [Window, Real], min_window: 2, requires: Any,
+        // The mean excess return is at least minus the root mean square of
+        // its negative parts, the downside deviation.
+        range: |_, _| Domain::closed(-1.0, f64::INFINITY),
+        build: |p| SortinoRatio::new(Echo::new(), p.window(0), p.real(1)).into(),
+        check: |p| check_rate("target", p.real(1)),
+        doc: "Per-period Sortino ratio of returns, not prices (window, target real minimum acceptable return per period, e.g. 0, at most 1e6 in magnitude): the mean excess return over the downside deviation of the window (over all its returns), not annualized, at least -1; not ready while no return of the window is below the target.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1684,6 +1768,83 @@ fn check_nlms_mu(mu: f64) -> Result<(), String> {
 /// `I / delta`: Haykin's small delta for a weak prior on the weights,
 /// which the forgetting factor soon forgets.
 const RLS_DELTA: f64 = 0.01;
+
+/// The output range of [`Cusum`] with mean 0 and standard deviation 1 for
+/// an argument in `arg`: before an update both statistics are at most `h`
+/// (an alarm resets them), and an update adds at most `hi - k` to `S+`
+/// and `-lo - k` to `S-`.
+fn cusum_range(arg: Domain, k: f64, h: f64) -> Domain {
+    let up = (h + arg.hi() - k).max(0.0);
+    let down = (h - arg.lo() - k).max(0.0);
+    Domain::closed(-down, up)
+}
+
+/// The forgetting factor of [`PageHinkley`]'s statistics: scikit-multiflow's
+/// `1 - 0.0001`.
+const PAGE_HINKLEY_ALPHA: f64 = 0.9999;
+
+/// The [`PageHinkleyDirection`] of a checked `Integer { min: 0, max: 2 }`.
+fn page_hinkley_direction(direction: usize) -> PageHinkleyDirection {
+    match direction {
+        0 => PageHinkleyDirection::Both,
+        1 => PageHinkleyDirection::Increase,
+        2 => PageHinkleyDirection::Decrease,
+        _ => unreachable!("checked integer in [0, 2]"),
+    }
+}
+
+/// The output range of [`PageHinkley`] for an argument in `arg`: an update
+/// adds at most `w = max(0, hi - lo - delta)` to a statistic (the running
+/// mean lies in `[lo, hi]`). After `min_instances` values a statistic
+/// above `lambda` resets, so it reaches at most `lambda + w`; before (also
+/// after each reset) it accumulates to at most `min_instances w`.
+fn page_hinkley_range(arg: Domain, p: Params<'_>) -> Domain {
+    let (min_instances, delta, lambda) = (window_f64(p.window(0)), p.real(1), p.real(2));
+    let step = (arg.hi() - arg.lo() - delta).max(0.0);
+    let bound = (min_instances * step).max(lambda + step);
+    match page_hinkley_direction(p.integer(3)) {
+        PageHinkleyDirection::Both => Domain::closed(-bound, bound),
+        PageHinkleyDirection::Increase => Domain::closed(0.0, bound),
+        PageHinkleyDirection::Decrease => Domain::closed(-bound, 0.0),
+    }
+}
+
+/// The longest run length [`Bocpd`] tracks: it costs O(max_run_length) per
+/// update with a logarithm and an exponential per run length, so 1000
+/// keeps an update near 10^4 operations, like [`MAX_LOG_LINEAR_WINDOW`].
+const MAX_RUN_LENGTH: usize = 1000;
+
+/// `Err` if [`Bocpd`]'s `max_run_length` exceeds [`MAX_RUN_LENGTH`].
+fn check_max_run_length(max_run_length: NonZeroUsize) -> Result<(), String> {
+    if max_run_length.get() > MAX_RUN_LENGTH {
+        return Err(format!(
+            "the max_run_length {max_run_length} must be at most {MAX_RUN_LENGTH}, the cost per update grows with it"
+        ));
+    }
+    Ok(())
+}
+
+/// The largest magnitude of a rate per period of [`SharpeRatio`] and
+/// [`SortinoRatio`]: far beyond any rate (even in percent), yet small
+/// enough that the excess return over the smallest positive deviation
+/// (about 1e-162, whose square is the smallest float) stays finite.
+const MAX_RATE: f64 = 1e6;
+
+/// `Err` if a rate per period exceeds [`MAX_RATE`] in magnitude.
+fn check_rate(what: &str, rate: f64) -> Result<(), String> {
+    if rate.abs() > MAX_RATE {
+        return Err(format!(
+            "the {what} {rate} must be at most {MAX_RATE} in magnitude, it is a rate per period"
+        ));
+    }
+    Ok(())
+}
+
+/// The buckets per level of [`Adwin`]'s exponential histogram: MOA's default.
+const ADWIN_MAX_BUCKETS: NonZeroUsize = NonZeroUsize::new(5).expect("5 is not zero");
+
+/// The updates between [`Adwin`]'s cut checks: MOA's default.
+const ADWIN_CLOCK: NonZeroUsize = NonZeroUsize::new(32).expect("32 is not zero");
 
 /// The [`HighPassPoles`] of a checked `Integer { min: 1, max: 2 }`.
 fn high_pass_poles(poles: usize) -> HighPassPoles {
@@ -2038,6 +2199,22 @@ mod tests {
             (Function::Hampel, &[2.0, 3.0]),
             (Function::Hampel, &[1001.0, 3.0]),
             (Function::Hampel, &[10.0, 0.0]),
+            (Function::Cusum, &[-0.1, 5.0]),
+            (Function::Cusum, &[0.5, 0.0]),
+            (Function::PageHinkley, &[0.0, 0.0, 1.0, 0.0]),
+            (Function::PageHinkley, &[10.0, -0.1, 1.0, 0.0]),
+            (Function::PageHinkley, &[10.0, 0.0, 0.0, 0.0]),
+            (Function::PageHinkley, &[10.0, 0.0, 1.0, 3.0]),
+            (Function::Bocpd, &[1.0, 10.0]),
+            (Function::Bocpd, &[10.0, 1001.0]),
+            (Function::Adwin, &[1.0]),
+            (Function::Var, &[1.0, 0.95]),
+            (Function::Var, &[20.0, 1.0]),
+            (Function::Cvar, &[20.0, 0.0]),
+            (Function::UlcerIndex, &[1.0]),
+            (Function::Sharpe, &[1.0, 0.0]),
+            (Function::Sharpe, &[20.0, 1e7]),
+            (Function::Sortino, &[20.0, -1e7]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -2231,6 +2408,19 @@ mod tests {
             (Function::Rls, &[32.0, 0.999_999]),
             (Function::Hampel, &[3.0, 1e-300]),
             (Function::Hampel, &[1000.0, 1e300]),
+            (Function::Cusum, &[0.0, 1e-300]),
+            (Function::Cusum, &[1e308, 1e308]),
+            (Function::PageHinkley, &[huge, 0.0, 5e-324, 0.0]),
+            (Function::PageHinkley, &[1.0, 1e308, 1e308, 2.0]),
+            (Function::Bocpd, &[2.0, 1000.0]),
+            (Function::Bocpd, &[huge, 2.0]),
+            (Function::Adwin, &[1e-300]),
+            (Function::Adwin, &[0.999_999]),
+            (Function::Var, &[2.0, 1e-9]),
+            (Function::Cvar, &[2.0, 0.999_999]),
+            (Function::UlcerIndex, &[2.0]),
+            (Function::Sharpe, &[2.0, 1e6]),
+            (Function::Sortino, &[2.0, -1e6]),
         ] {
             function
                 .check_params(params, usize::MAX)
