@@ -14,6 +14,7 @@ mod lte;
 mod multiply;
 mod subtract;
 mod tanh;
+mod yeo_johnson;
 
 pub use abs::Abs;
 pub use add::Add;
@@ -28,3 +29,4 @@ pub use lte::LTE;
 pub use multiply::Multiply;
 pub use subtract::Subtract;
 pub use tanh::Tanh;
+pub use yeo_johnson::YeoJohnson;

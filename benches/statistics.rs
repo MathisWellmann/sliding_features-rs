@@ -17,6 +17,7 @@ use sliding_features::{
     pure_functions::{
         BoxCox,
         Echo,
+        YeoJohnson,
     },
     sliding_windows::{
         CoefficientOfVariation,
@@ -299,6 +300,31 @@ fn box_cox(c: &mut Criterion) {
     });
 }
 
+fn yeo_johnson(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("yeo_johnson_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random::<f64>() - 0.5));
+        b.iter(|| {
+            let mut view = YeoJohnson::new(Echo::new(), 0.5);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random::<f32>() - 0.5));
+        b.iter(|| {
+            let mut view = YeoJohnson::new(Echo::new(), 0.5);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     rolling_quantile,
@@ -310,6 +336,7 @@ criterion_group!(
     iqr,
     percentile_rank,
     quantile_normalizer,
-    box_cox
+    box_cox,
+    yeo_johnson
 );
 criterion_main!(benches);
