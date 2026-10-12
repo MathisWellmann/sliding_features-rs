@@ -32,13 +32,17 @@ use crate::{
         Butterworth,
         ButterworthPoles,
         CenterOfGravity,
+        Cmo,
+        ConnorsRsi,
         ContinuationIndex,
+        Coppock,
         CorrelationTrendIndicator,
         Cumulative,
         CyberCycle,
         Decycler,
         DecyclerOscillator,
         Dema,
+        Dpo,
         Dsma,
         EhlersFilter,
         EhlersFisherTransform,
@@ -58,9 +62,11 @@ use crate::{
         InstantaneousTrendline,
         Jma,
         Kama,
+        Kst,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
+        Macd,
         MadScaler,
         Mama,
         Max,
@@ -70,19 +76,25 @@ use crate::{
         MyRSI,
         NoiseEliminationTechnology,
         PolarizedFractalEfficiency,
+        Ppo,
         ReFlex,
         ReversionIndex,
         Rma,
         Roc,
         RoofingFilter,
         Rsi,
+        Rsx,
+        SchaffTrendCycle,
         SineWave,
         Sma,
+        StochRsi,
         SuperSmoother,
         T3,
         Tema,
         TrendFlex,
         Trima,
+        Trix,
+        Tsi,
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
@@ -995,6 +1007,105 @@ functions! {
         check: |p| check_jma_phase(p.real(1)),
         doc: "Jurik moving average, the open reconstruction (period window, phase real in [-100, 100], 0 balanced, higher overshoots more; power 2): low lag, can overshoot the input.",
     }
+    // Oscillators. Multi-output views expose their main line; signal lines
+    // can be composed, e.g. `ema(macd(x, 12, 26), 9)`.
+    Cmo {
+        name: "cmo", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(-100.0, 100.0),
+        build: |p| Cmo::new(Echo::new(), p.window(0)).into(),
+        // `window` changes need one more value.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Chande momentum oscillator (window): 100 (up - down) / (up + down) of the changes over the window, in [-100, 100].",
+    }
+    Macd {
+        name: "macd", params: [Window, Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(Macd::with_periods(Echo::new(), p.window(0), p.window(1), MACD_SIGNAL)).into(),
+        check: |p| check_fast_slow(p.window(0), p.window(1)),
+        // Both EMAs run in parallel.
+        warm_up: |p| p.window(1).get(),
+        doc: "MACD line EMA(fast) - EMA(slow) (fast window below slow window, classic 12 and 26), TA-Lib's APO; in input units.",
+    }
+    Ppo {
+        // A percentage of the slow EMA, which only has a meaning (and a
+        // fixed sign) for positive prices.
+        name: "ppo", params: [Window, Window], min_window: 1, requires: Positive,
+        // The fast EMA of positive values is positive.
+        range: |_, _| Domain::closed(-100.0, f64::INFINITY),
+        build: |p| Box::new(Ppo::with_periods(Echo::new(), p.window(0), p.window(1), MACD_SIGNAL)).into(),
+        check: |p| check_fast_slow(p.window(0), p.window(1)),
+        warm_up: |p| p.window(1).get(),
+        doc: "Percentage price oscillator of a positive price (fast window below slow window, classic 12 and 26): 100 (EMA(fast) - EMA(slow)) / EMA(slow), above -100.",
+    }
+    Trix {
+        name: "trix", params: [Window], min_window: 2, requires: Positive,
+        // The rate of change of a positive triple EMA.
+        range: |_, _| Domain::closed(-100.0, f64::INFINITY),
+        build: |p| Box::new(Trix::new(Echo::new(), p.window(0))).into(),
+        // Three chained EMAs, then one more value for the rate of change.
+        warm_up: |p| 3 * p.window(0).get() - 1,
+        doc: "TRIX of a positive price (window): the 1-bar rate of change in percent of a triple EMA, above -100, oscillates around 0.",
+    }
+    Tsi {
+        name: "tsi", params: [Window, Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(-100.0, 100.0),
+        build: |p| Box::new(Tsi::with_periods(Echo::new(), p.window(0), p.window(1), TSI_SIGNAL)).into(),
+        doc: "True strength index (long window, classic 25; short window, classic 13): double smoothed momentum over double smoothed absolute momentum, in [-100, 100].",
+    }
+    StochRsi {
+        name: "stoch_rsi", params: [Window, Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| Box::new(StochRsi::new(Echo::new(), p.window(0), p.window(1), STOCH_RSI_D)).into(),
+        doc: "Stochastic RSI %K (RSI window, stochastic window; classic 14 and 14): the RSI's position in its range over the stochastic window, in [0, 1] (0 when flat).",
+    }
+    Rsx {
+        name: "rsx", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| Rsx::new(Echo::new(), p.window(0)).into(),
+        doc: "Jurik's RSX (window): a smoother RSI from triple smoothed momentum, in [0, 100]; reports 50 during its short warm-up.",
+    }
+    SchaffTrendCycle {
+        name: "schaff_trend_cycle", params: [Window, Window, Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| Box::new(SchaffTrendCycle::with_periods(Echo::new(), p.window(0), p.window(1), p.window(2))).into(),
+        check: |p| check_fast_slow(p.window(0), p.window(1)),
+        // The MACD, then two stochastic stages over the cycle.
+        warm_up: |p| p.window(1).get() + 2 * p.window(2).get(),
+        doc: "Schaff trend cycle (fast window below slow window, cycle window; classic 23, 50, 10): a double smoothed stochastic of the MACD, in [0, 100].",
+    }
+    ConnorsRsi {
+        name: "connors_rsi", params: [Window, Window, Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| Box::new(ConnorsRsi::with_params(Echo::new(), p.window(0), p.window(1), p.window(2))).into(),
+        doc: "ConnorsRSI (RSI window, streak RSI window, percent rank window; classic 3, 2, 100): the mean of an RSI, an RSI of the up/down streak and the percent rank of the 1-bar change, in [0, 100]; costs O(log rank window) per update.",
+    }
+    Dpo {
+        name: "dpo", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Dpo::new(Echo::new(), p.window(0)).into(),
+        // The SMA, and the value window / 2 + 1 updates ago.
+        warm_up: |p| p.window(0).get().max(p.window(0).get() / 2 + 2),
+        doc: "Detrended price oscillator (window): the value window / 2 + 1 updates ago minus the SMA over the window, oscillates around 0.",
+    }
+    Coppock {
+        name: "coppock", params: [Window, Window, Window], min_window: 1, requires: Positive,
+        // A WMA of two rates of change of a positive price, each above -100.
+        range: |_, _| Domain::closed(-200.0, f64::INFINITY),
+        build: |p| Box::new(Coppock::with_periods(Echo::new(), p.window(0), p.window(1), p.window(2))).into(),
+        // The view reports once its WMA is full, but its rates of change
+        // compare against the first value until their windows are full.
+        warm_up: |p| p.window(0).get().max(p.window(1).get()) + p.window(2).get(),
+        doc: "Coppock curve of a positive price (long ROC window, short ROC window, WMA window; classic 14, 11, 10): a WMA of the sum of two rates of change in percent, above -200.",
+    }
+    Kst {
+        name: "kst", params: [], min_window: 1, requires: Positive,
+        // Weights 1 to 4 of SMAs of rates of change, each above -100.
+        range: |_, _| Domain::closed(-1000.0, f64::INFINITY),
+        build: |_| Box::new(Kst::new(Echo::new())).into(),
+        // The slowest leg: ROC(30), then its SMA(15).
+        warm_up: |_| KST_WARM_UP,
+        doc: "Pring's know sure thing of a positive price with the classic settings (ROC 10, 15, 20, 30 smoothed by SMA 10, 10, 10, 15, weighted 1 to 4): above -1000, oscillates around 0; ready after 45 updates.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1020,6 +1131,33 @@ const PERIODOGRAM_WARM_UP: usize = 48 + 10 + 48 + 3;
 /// The RMS length of [`AdaptiveSuperSmoother`]'s rate of change, the
 /// paper's value.
 const ADAPTIVE_RMS_LEN: NonZeroUsize = NonZeroUsize::new(81).expect("81 is not zero");
+
+/// The signal period of [`Macd`] and [`Ppo`], unused by the pipeline
+/// but required by their constructors: Appel's 9.
+const MACD_SIGNAL: NonZeroUsize = NonZeroUsize::new(9).expect("9 is not zero");
+
+/// The signal period of [`Tsi`], unused by the pipeline: the view's
+/// default.
+const TSI_SIGNAL: NonZeroUsize = NonZeroUsize::new(7).expect("7 is not zero");
+
+/// The %D period of [`StochRsi`], unused by the pipeline: TA-Lib's
+/// default.
+const STOCH_RSI_D: NonZeroUsize = NonZeroUsize::new(3).expect("3 is not zero");
+
+/// Updates before [`Kst::new`] compares every rate of change against a
+/// full window: its slowest leg, ROC(30) smoothed by SMA(15).
+const KST_WARM_UP: usize = 30 + 15;
+
+/// `Err` unless the fast window is below the slow one, which the
+/// constructors of the two-EMA oscillators assert.
+fn check_fast_slow(fast: NonZeroUsize, slow: NonZeroUsize) -> Result<(), String> {
+    if fast >= slow {
+        return Err(format!(
+            "the fast window {fast} must be below the slow window {slow}"
+        ));
+    }
+    Ok(())
+}
 
 /// The power of [`Jma`]'s kernel, its documented default.
 const JMA_POWER: i32 = 2;
@@ -1397,6 +1535,12 @@ mod tests {
             (Function::T3, &[5.0, 0.0]),
             (Function::Jma, &[9.0, 100.5]),
             (Function::Jma, &[9.0, -101.0]),
+            (Function::Cmo, &[1.0]),
+            (Function::Macd, &[12.0, 12.0]),
+            (Function::Macd, &[26.0, 12.0]),
+            (Function::Ppo, &[13.0, 12.0]),
+            (Function::SchaffTrendCycle, &[50.0, 23.0, 10.0]),
+            (Function::Kst, &[10.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1439,6 +1583,11 @@ mod tests {
             err,
             "auto_tune_filter(a, window): the window 101 must be at most 100, \
              the cost per update grows with its square"
+        );
+        let err = Function::Macd.check_params(&[26.0, 12.0], 100).unwrap_err();
+        assert_eq!(
+            err,
+            "macd(a, window, window): the fast window 26 must be below the slow window 12"
         );
         let err = Function::Jma.check_params(&[9.0, 100.5], 100).unwrap_err();
         assert_eq!(
@@ -1518,6 +1667,13 @@ mod tests {
             (Function::McGinleyDynamic, &[huge]),
             (Function::Jma, &[huge, 100.0]),
             (Function::Jma, &[2.0, -100.0]),
+            (Function::Macd, &[1.0, huge]),
+            (Function::Macd, &[huge - 1.0, huge]),
+            (Function::Ppo, &[1.0, 2.0]),
+            (Function::Trix, &[huge]),
+            (Function::Tsi, &[huge, huge]),
+            (Function::Rsx, &[huge]),
+            (Function::Rsx, &[2.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
