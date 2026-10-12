@@ -170,6 +170,21 @@ impl<T: Float> LinRegWindow<T> {
         debug_assert!(r_squared.is_finite(), "value must be finite");
         Some(r_squared)
     }
+
+    /// Residual sum of squares `sum((y - fitted_y)^2)` of the fit, or `None`
+    /// during warmup.
+    ///
+    /// Uses the standard OLS identity `SSE = Syy - b*Sy - m*Sxy`, which
+    /// avoids a second pass over the window buffer. Clamped to `0` to guard
+    /// against a tiny negative result from floating-point rounding (the true
+    /// value is never negative).
+    pub(super) fn sse(&self) -> Option<T> {
+        let (m, b) = self.fit()?;
+        let sse = self.sum_yy - b * self.sum_y - m * self.sum_xy;
+        let sse = sse.max(T::zero());
+        debug_assert!(sse.is_finite(), "value must be finite");
+        Some(sse)
+    }
 }
 
 #[cfg(test)]
