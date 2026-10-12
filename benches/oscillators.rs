@@ -20,6 +20,7 @@ use sliding_features::{
         ConnorsRsi,
         Coppock,
         Dpo,
+        Kst,
         Macd,
         Ppo,
         Qqe,
@@ -365,6 +366,33 @@ fn coppock_benchmark(c: &mut Criterion) {
     });
 }
 
+fn kst_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("kst_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Kst::<f64, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Kst::<f32, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
@@ -378,6 +406,7 @@ criterion_group!(
     qqe_benchmark,
     connors_rsi_benchmark,
     dpo_benchmark,
-    coppock_benchmark
+    coppock_benchmark,
+    kst_benchmark
 );
 criterion_main!(benches);
