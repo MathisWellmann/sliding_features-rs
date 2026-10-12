@@ -17,6 +17,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         ConditionalValueAtRisk,
+        UlcerIndex,
         ValueAtRisk,
     },
 };
@@ -83,5 +84,35 @@ fn conditional_value_at_risk(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, value_at_risk, conditional_value_at_risk);
+fn ulcer_index(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("ulcer_index_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| 1.0 + rng.random::<f64>()));
+        b.iter(|| {
+            let mut view = UlcerIndex::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| 1.0 + rng.random::<f32>()));
+        b.iter(|| {
+            let mut view = UlcerIndex::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    value_at_risk,
+    conditional_value_at_risk,
+    ulcer_index
+);
 criterion_main!(benches);
