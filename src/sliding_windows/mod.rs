@@ -2,6 +2,7 @@
 //! Usually more memory intensive than the implementations in `rolling`.
 
 mod alma;
+mod apo;
 mod band_pass;
 mod binary_entropy;
 mod center_of_gravity;
@@ -52,6 +53,7 @@ mod z_score_standardization;
 mod zlema;
 
 pub use alma::Alma;
+pub use apo::Apo;
 pub use band_pass::BandPass;
 pub use binary_entropy::BinaryEntropy;
 pub use center_of_gravity::CenterOfGravity;

@@ -13,6 +13,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     sliding_windows::{
+        Apo,
         Macd,
         Ppo,
     },
@@ -72,5 +73,32 @@ fn ppo_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, macd_benchmark, ppo_benchmark);
+fn apo_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("apo_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Apo::<f64, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Apo::<f32, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, macd_benchmark, ppo_benchmark, apo_benchmark);
 criterion_main!(benches);
