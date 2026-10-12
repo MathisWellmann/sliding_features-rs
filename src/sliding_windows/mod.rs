@@ -19,6 +19,7 @@ mod dpo;
 mod ehlers_fisher_transform;
 mod ehma;
 mod ema;
+mod gaussian_filter;
 mod high_pass;
 mod hma;
 mod jma;
@@ -84,6 +85,10 @@ pub use dpo::Dpo;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
 pub use ehma::Ehma;
 pub use ema::Ema;
+pub use gaussian_filter::{
+    GaussianFilter,
+    GaussianPoles,
+};
 pub use high_pass::{
     HighPass,
     HighPassPoles,

@@ -19,6 +19,8 @@ use sliding_features::{
         BandPass,
         Decycler,
         DecyclerOscillator,
+        GaussianFilter,
+        GaussianPoles,
         HighPass,
         HighPassPoles,
         UltimateBands,
@@ -154,6 +156,14 @@ fn decycler_oscillator(c: &mut Criterion) {
     );
 }
 
+fn gaussian_filter(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "gaussian_filter_100k",
+        GaussianFilter::new(Echo::new(), nz(20), GaussianPoles::Four)
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -161,6 +171,7 @@ criterion_group!(
     ultimate_smoother,
     ultimate_bands,
     decycler,
-    decycler_oscillator
+    decycler_oscillator,
+    gaussian_filter
 );
 criterion_main!(benches);
