@@ -156,6 +156,18 @@ impl<T: Float> HilbertCore<T> {
         self.n_inputs
     }
 
+    /// The latest InPhase component (`Detrender[3]`).
+    #[inline(always)]
+    pub(super) fn i1(&self) -> T {
+        self.detrender[3]
+    }
+
+    /// The latest Quadrature component.
+    #[inline(always)]
+    pub(super) fn q1(&self) -> T {
+        self.q1[0]
+    }
+
     /// The constrained, 0.2 / 0.8 smoothed period in bars.
     #[inline(always)]
     pub(super) fn period(&self) -> T {

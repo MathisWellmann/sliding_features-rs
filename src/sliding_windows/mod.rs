@@ -27,6 +27,7 @@ mod ema;
 mod empirical_mode_decomposition;
 mod gaussian_filter;
 mod high_pass;
+mod hilbert_phasor;
 mod hma;
 mod homodyne_dominant_cycle;
 mod jma;
@@ -108,6 +109,7 @@ pub use high_pass::{
     HighPass,
     HighPassPoles,
 };
+pub use hilbert_phasor::HilbertPhasor;
 pub use hma::Hma;
 pub use homodyne_dominant_cycle::HomodyneDominantCycle;
 pub use jma::Jma;
