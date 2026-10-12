@@ -11,6 +11,11 @@ use crate::{
         Subtract,
     },
     sliding_windows::{
+        AdaptiveLaguerreFilter,
+        AdaptiveRsi,
+        AdaptiveSuperSmoother,
+        AutoTuneFilter,
+        AutocorrelationPeriodogram,
         BandPass,
         Butterworth,
         ButterworthPoles,
@@ -21,10 +26,17 @@ use crate::{
         EhlersFilter,
         Ema,
         EmpiricalModeDecomposition,
+        EvenBetterSinewave,
         GaussianFilter,
         GaussianPoles,
         HighPass,
         HighPassPoles,
+        HilbertPhasor,
+        HilbertTrendMode,
+        HomodyneDominantCycle,
+        InstantaneousTrendline,
+        Mama,
+        SineWave,
         Sma,
         UltimateBands,
         UltimateSmoother,
@@ -142,6 +154,45 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
         (
             "emd(x, 18, 0.3)",
             Box::new(EmpiricalModeDecomposition::new(e(), window(18), 0.3, 0.1)),
+        ),
+        (
+            "homodyne_dominant_cycle(x)",
+            Box::new(HomodyneDominantCycle::new(e())),
+        ),
+        ("hilbert_phasor(x)", Box::new(HilbertPhasor::new(e()))),
+        ("sine_wave(x)", Box::new(SineWave::new(e()))),
+        (
+            "instantaneous_trendline(x)",
+            Box::new(InstantaneousTrendline::new(e())),
+        ),
+        (
+            "hilbert_trend_mode(x)",
+            Box::new(HilbertTrendMode::new(e())),
+        ),
+        (
+            "mama(x, 0.4, 0.07)",
+            Box::new(Mama::with_limits(e(), 0.4, 0.07)),
+        ),
+        (
+            "autocorrelation_periodogram(x)",
+            Box::new(AutocorrelationPeriodogram::new(e())),
+        ),
+        (
+            "even_better_sinewave(x, 19)",
+            Box::new(EvenBetterSinewave::new(e(), window(19))),
+        ),
+        ("adaptive_rsi(x)", Box::new(AdaptiveRsi::new(e()))),
+        (
+            "adaptive_laguerre_filter(x, 14)",
+            Box::new(AdaptiveLaguerreFilter::new(e(), window(14))),
+        ),
+        (
+            "auto_tune_filter(x, 12)",
+            Box::new(AutoTuneFilter::new(e(), window(12))),
+        ),
+        (
+            "adaptive_super_smoother(x, 23)",
+            Box::new(AdaptiveSuperSmoother::new(e(), window(23), window(81))),
         ),
     ]
 }

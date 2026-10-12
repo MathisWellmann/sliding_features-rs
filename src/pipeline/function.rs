@@ -21,7 +21,12 @@ use crate::{
         LnReturn,
     },
     sliding_windows::{
+        AdaptiveLaguerreFilter,
+        AdaptiveRsi,
+        AdaptiveSuperSmoother,
         Alma,
+        AutoTuneFilter,
+        AutocorrelationPeriodogram,
         BandPass,
         BinaryEntropy,
         Butterworth,
@@ -38,14 +43,20 @@ use crate::{
         EhlersFisherTransform,
         Ema,
         EmpiricalModeDecomposition,
+        EvenBetterSinewave,
         GaussianFilter,
         GaussianPoles,
         HighPass,
         HighPassPoles,
+        HilbertPhasor,
+        HilbertTrendMode,
+        HomodyneDominantCycle,
+        InstantaneousTrendline,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
         MadScaler,
+        Mama,
         Max,
         Min,
         MinMaxNormalizer,
@@ -56,6 +67,7 @@ use crate::{
         Roc,
         RoofingFilter,
         Rsi,
+        SineWave,
         Sma,
         SuperSmoother,
         TrendFlex,
@@ -735,6 +747,158 @@ functions! {
         warm_up: |p| (2 * p.window(0).get()).max(50),
         doc: "Trend of John Ehlers' empirical mode decomposition (band-pass period window at most 100000, half-bandwidth delta positive from 0.005 to below window / 8): the band-pass averaged over 2 windows, oscillates around 0.",
     }
+    // John Ehlers' cycle measurements and adaptive indicators. The Hilbert
+    // transform views and the autocorrelation periodogram have fixed
+    // internals, so they take no parameters and override the warm-up.
+    HomodyneDominantCycle {
+        name: "homodyne_dominant_cycle", params: [], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(6.0, 50.0),
+        build: |_| Box::new(HomodyneDominantCycle::new(Echo::new())).into(),
+        warm_up: |_| HILBERT_PERIOD_WARM_UP,
+        doc: "John Ehlers' dominant cycle period from the Hilbert transform homodyne discriminator (TA-Lib's HT_DCPERIOD), in [6, 50] bars; ready after 50 updates.",
+    }
+    HilbertPhasor {
+        name: "hilbert_phasor", params: [], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(-180.0, 180.0),
+        build: |_| Box::new(HilbertPhasor::new(Echo::new())).into(),
+        warm_up: |_| HILBERT_PERIOD_WARM_UP,
+        doc: "Angle of John Ehlers' Hilbert transform phasor (TA-Lib's HT_PHASOR) in degrees, in [-180, 180]: decreases by 360 / period per bar in a cycle; ready after 50 updates.",
+    }
+    SineWave {
+        name: "sine_wave", params: [], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |_| Box::new(SineWave::new(Echo::new())).into(),
+        warm_up: |_| HILBERT_CYCLE_WARM_UP,
+        doc: "John Ehlers' Hilbert sine wave (TA-Lib's HT_SINE): the sine of the dominant cycle phase, in [-1, 1]; the lead sine is not exposed; ready after 63 updates.",
+    }
+    InstantaneousTrendline {
+        name: "instantaneous_trendline", params: [], min_window: 1, requires: Any,
+        // A WMA of averages of past inputs over one dominant cycle.
+        range: |a, _| a,
+        build: |_| Box::new(InstantaneousTrendline::new(Echo::new())).into(),
+        warm_up: |_| HILBERT_CYCLE_WARM_UP,
+        doc: "John Ehlers' instantaneous trendline (TA-Lib's HT_TRENDLINE): the input averaged over one measured dominant cycle, within the input range; ready after 63 updates.",
+    }
+    HilbertTrendMode {
+        // Its 1.5% deviation rule is relative to the trendline, which is
+        // only meaningful for positive prices: near zero it always says trend.
+        name: "hilbert_trend_mode", params: [], min_window: 1, requires: Positive,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |_| Box::new(HilbertTrendMode::new(Echo::new())).into(),
+        warm_up: |_| HILBERT_CYCLE_WARM_UP,
+        doc: "John Ehlers' Hilbert transform trend mode (TA-Lib's HT_TRENDMODE) of a positive price: 1 in trend mode, 0 in cycle mode; ready after 63 updates.",
+    }
+    Mama {
+        name: "mama", params: [Fraction, Fraction], min_window: 1, requires: Any,
+        // An EMA with a smoothing factor in [slow, fast] that starts at the
+        // first input.
+        range: |a, _| a,
+        build: |p| Box::new(Mama::with_limits(Echo::new(), p.real(0), p.real(1))).into(),
+        check: |p| check_mama(p.real(0), p.real(1)),
+        warm_up: |_| MAMA_WARM_UP,
+        doc: "John Ehlers' MESA adaptive moving average (fast limit fraction, slow limit fraction at most the fast limit; Ehlers uses 0.5 and 0.05), within the input range; FAMA is not exposed; ready after 32 updates.",
+    }
+    AutocorrelationPeriodogram {
+        name: "autocorrelation_periodogram", params: [], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(PERIODOGRAM_MIN_PERIOD, PERIODOGRAM_MAX_PERIOD),
+        build: |_| Box::new(AutocorrelationPeriodogram::new(Echo::new())).into(),
+        warm_up: |_| PERIODOGRAM_WARM_UP,
+        doc: "John Ehlers' autocorrelation periodogram dominant cycle with the book's settings (periods 10 to 48, averaging 3 bars), in [10, 48] bars; ready after 109 updates.",
+    }
+    EvenBetterSinewave {
+        name: "even_better_sinewave", params: [Window], min_window: 5, requires: Any,
+        range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| Box::new(EvenBetterSinewave::new(Echo::new(), p.window(0))).into(),
+        // The high-pass, the 10-bar super smoother, then 3 filtered values.
+        warm_up: |p| p.window(0).get() + 13,
+        doc: "John Ehlers' even better sinewave (high-pass cutoff period window, 40 in the book; smoother 10): in [-1, 1], swings between -1 and 1 in cycles and stays near 1 (-1) in up (down) trends.",
+    }
+    AdaptiveRsi {
+        name: "adaptive_rsi", params: [], min_window: 1, requires: Any,
+        // The final super smoother can overshoot [0, 1].
+        range: |_, _| Domain::REAL,
+        build: |_| Box::new(AdaptiveRsi::new(Echo::new())).into(),
+        // The smoother needs 10 more bars after the periodogram.
+        warm_up: |_| PERIODOGRAM_WARM_UP + 10,
+        doc: "John Ehlers' adaptive RSI over half the autocorrelation periodogram's dominant cycle (book settings): roughly in [0, 1] (can overshoot slightly), reference lines 0.3 and 0.7; ready after 119 updates.",
+    }
+    AdaptiveLaguerreFilter {
+        name: "adaptive_laguerre_filter", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| AdaptiveLaguerreFilter::new(Echo::new(), p.window(0)).into(),
+        // A median of 5 normalized tracking errors after the first window.
+        warm_up: |p| p.window(0).get() + 4,
+        doc: "John Ehlers' adaptive Laguerre filter (tracking error length window, 20 in the book): smooths heavily in ranges and follows trends; costs O(window) per update.",
+    }
+    AutoTuneFilter {
+        name: "auto_tune_filter", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| AutoTuneFilter::new(Echo::new(), p.window(0)).into(),
+        check: |p| check_quadratic_window(p.window(0)),
+        // 2 windows of high-pass history, then the dominant cycle ramps up
+        // by 2 bars per bar.
+        warm_up: |p| 3 * p.window(0).get(),
+        doc: "John Ehlers' AutoTune filter (correlation window at most 100, 20 in the paper): a band-pass tuned to twice the lag of the minimum autocorrelation, oscillates around 0; costs O(window^2) per update.",
+    }
+    AdaptiveSuperSmoother {
+        name: "adaptive_super_smoother", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| AdaptiveSuperSmoother::new(Echo::new(), p.window(0), ADAPTIVE_RMS_LEN).into(),
+        // Ready once the RMS of the rate of change covers its 81 values.
+        warm_up: |_| ADAPTIVE_RMS_LEN.get(),
+        doc: "John Ehlers' adaptive super smoother (longest period window, 20 in the paper; RMS length 81): shortens its period on fast moves, can overshoot the input; ready after 81 updates.",
+    }
+}
+
+/// Updates before the Hilbert transform cycle period settles (see
+/// [`HomodyneDominantCycle`]).
+const HILBERT_PERIOD_WARM_UP: usize = 50;
+
+/// Updates before the Hilbert transform views that also average over one
+/// dominant cycle report: TA-Lib's lookback, see [`SineWave`].
+const HILBERT_CYCLE_WARM_UP: usize = 63;
+
+/// Updates before [`Mama`] reports: TA-Lib's lookback.
+const MAMA_WARM_UP: usize = 32;
+
+/// The book's period range of [`AutocorrelationPeriodogram::new`].
+const PERIODOGRAM_MIN_PERIOD: f64 = 10.0;
+const PERIODOGRAM_MAX_PERIOD: f64 = 48.0;
+
+/// Updates before [`AutocorrelationPeriodogram::new`] reports: its 48-bar
+/// high-pass, its 10-bar super smoother, then a filtered history of 48
+/// lags plus 3 averaged bars.
+const PERIODOGRAM_WARM_UP: usize = 48 + 10 + 48 + 3;
+
+/// The RMS length of [`AdaptiveSuperSmoother`]'s rate of change, the
+/// paper's value.
+const ADAPTIVE_RMS_LEN: NonZeroUsize = NonZeroUsize::new(81).expect("81 is not zero");
+
+/// The longest window of views that cost O(window^2) per update: 100
+/// keeps an update at about 10^4 multiply-adds, while the maximum window
+/// of a pipeline (100000) would cost 10^10.
+const MAX_QUADRATIC_WINDOW: usize = 100;
+
+/// `Err` if the `window` of a view that costs O(window^2) per update
+/// exceeds [`MAX_QUADRATIC_WINDOW`].
+fn check_quadratic_window(window: NonZeroUsize) -> Result<(), String> {
+    if window.get() > MAX_QUADRATIC_WINDOW {
+        return Err(format!(
+            "the window {window} must be at most {MAX_QUADRATIC_WINDOW}, the cost per update grows with its square"
+        ));
+    }
+    Ok(())
+}
+
+/// The constraint of [`Mama::with_limits`] the fraction checks do not
+/// cover: a slow limit of at most the fast limit.
+fn check_mama(fast_limit: f64, slow_limit: f64) -> Result<(), String> {
+    if slow_limit > fast_limit {
+        return Err(format!(
+            "the slow limit {slow_limit} must be at most the fast limit {fast_limit}"
+        ));
+    }
+    Ok(())
 }
 
 /// The longest period of the band-pass and Butterworth filters: their
@@ -1017,6 +1181,12 @@ mod tests {
         assert!(Function::HighPass.check_params(&[5.0, 2.0], 100).is_ok());
         assert!(Function::Emd.check_params(&[5.0, 0.6], 100).is_ok());
         assert!(Function::BandPass.check_params(&[3.0, 0.7], 100).is_ok());
+        assert!(Function::Mama.check_params(&[0.5, 0.5], 100).is_ok());
+        assert!(
+            Function::AutoTuneFilter
+                .check_params(&[100.0], 1000)
+                .is_ok()
+        );
         for (function, params) in [
             (Function::Sma, &[0.0][..]),
             (Function::Sma, &[2.5]),
@@ -1041,6 +1211,8 @@ mod tests {
             (Function::BandPass, &[20.0, 0.009]),
             (Function::Emd, &[5.0, 0.625]),
             (Function::Emd, &[20.0, 0.004]),
+            (Function::Mama, &[0.5, 0.51]),
+            (Function::AutoTuneFilter, &[101.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1075,6 +1247,19 @@ mod tests {
             Function::Butterworth
                 .check_params(&[100_000.0, 3.0], 1_000_000)
                 .is_ok()
+        );
+        let err = Function::AutoTuneFilter
+            .check_params(&[101.0], 1000)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            "auto_tune_filter(a, window): the window 101 must be at most 100, \
+             the cost per update grows with its square"
+        );
+        let err = Function::Mama.check_params(&[0.5, 0.51], 100).unwrap_err();
+        assert_eq!(
+            err,
+            "mama(a, fraction, fraction): the slow limit 0.51 must be at most the fast limit 0.5"
         );
         let err = Function::Butterworth
             .check_params(&[100_001.0, 2.0], 1_000_000)
@@ -1125,6 +1310,14 @@ mod tests {
             (Function::GaussianFilter, &[2.0, 4.0]),
             (Function::Butterworth, &[max_iir, 2.0]),
             (Function::Butterworth, &[max_iir, 3.0]),
+            (Function::Mama, &[0.999_999, 1e-9]),
+            (Function::Mama, &[1e-9, 1e-9]),
+            (Function::EvenBetterSinewave, &[huge]),
+            (Function::EvenBetterSinewave, &[5.0]),
+            (Function::AutoTuneFilter, &[2.0]),
+            (Function::AutoTuneFilter, &[100.0]),
+            (Function::AdaptiveSuperSmoother, &[huge]),
+            (Function::AdaptiveSuperSmoother, &[2.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
