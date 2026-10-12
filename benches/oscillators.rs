@@ -19,6 +19,7 @@ use sliding_features::{
         Apo,
         Macd,
         Ppo,
+        StochRsi,
         Trix,
         Tsi,
     },
@@ -159,12 +160,50 @@ fn tsi_benchmark(c: &mut Criterion) {
     });
 }
 
+fn stoch_rsi_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("stoch_rsi_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = StochRsi::<f64, _>::new(
+                Echo::new(),
+                NonZeroUsize::new(14).unwrap(),
+                NonZeroUsize::new(14).unwrap(),
+                NonZeroUsize::new(3).unwrap(),
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = StochRsi::<f32, _>::new(
+                Echo::new(),
+                NonZeroUsize::new(14).unwrap(),
+                NonZeroUsize::new(14).unwrap(),
+                NonZeroUsize::new(3).unwrap(),
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
     ppo_benchmark,
     apo_benchmark,
     trix_benchmark,
-    tsi_benchmark
+    tsi_benchmark,
+    stoch_rsi_benchmark
 );
 criterion_main!(benches);
