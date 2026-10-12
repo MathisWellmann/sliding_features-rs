@@ -17,6 +17,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         Apo,
+        ConnorsRsi,
         Macd,
         Ppo,
         Qqe,
@@ -281,6 +282,33 @@ fn qqe_benchmark(c: &mut Criterion) {
     });
 }
 
+fn connors_rsi_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("connors_rsi_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = ConnorsRsi::<f64, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = ConnorsRsi::<f32, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
@@ -291,6 +319,7 @@ criterion_group!(
     stoch_rsi_benchmark,
     rsx_benchmark,
     schaff_trend_cycle_benchmark,
-    qqe_benchmark
+    qqe_benchmark,
+    connors_rsi_benchmark
 );
 criterion_main!(benches);
