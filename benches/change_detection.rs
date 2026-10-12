@@ -20,6 +20,7 @@ use sliding_features::{
         PageHinkley,
         PageHinkleyDirection,
     },
+    sliding_windows::Adwin,
 };
 
 const N: usize = 100_000;
@@ -88,5 +89,40 @@ fn page_hinkley(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, cusum, page_hinkley);
+fn adwin(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("adwin_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Adwin::<f64, _>::new(
+                Echo::new(),
+                0.002,
+                NonZeroUsize::new(5).unwrap(),
+                NonZeroUsize::new(32).unwrap(),
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Adwin::<f32, _>::new(
+                Echo::new(),
+                0.002,
+                NonZeroUsize::new(5).unwrap(),
+                NonZeroUsize::new(32).unwrap(),
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, cusum, page_hinkley, adwin);
 criterion_main!(benches);
