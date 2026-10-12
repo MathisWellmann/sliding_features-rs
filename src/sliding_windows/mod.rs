@@ -2,6 +2,7 @@
 //! Usually more memory intensive than the implementations in `rolling`.
 
 mod alma;
+mod band_pass;
 mod binary_entropy;
 mod center_of_gravity;
 mod correlation_trend_indicator;
@@ -32,6 +33,7 @@ mod welford_online;
 mod z_score_standardization;
 
 pub use alma::Alma;
+pub use band_pass::BandPass;
 pub use binary_entropy::BinaryEntropy;
 pub use center_of_gravity::CenterOfGravity;
 pub use correlation_trend_indicator::CorrelationTrendIndicator;
