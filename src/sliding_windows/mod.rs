@@ -3,6 +3,7 @@
 
 mod adaptive_laguerre_filter;
 mod adaptive_rsi;
+mod adaptive_super_smoother;
 mod alma;
 mod apo;
 mod auto_tune_filter;
@@ -88,6 +89,7 @@ mod zlema;
 
 pub use adaptive_laguerre_filter::AdaptiveLaguerreFilter;
 pub use adaptive_rsi::AdaptiveRsi;
+pub use adaptive_super_smoother::AdaptiveSuperSmoother;
 pub use alma::Alma;
 pub use apo::Apo;
 pub use auto_tune_filter::AutoTuneFilter;
