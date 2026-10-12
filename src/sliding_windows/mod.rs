@@ -9,6 +9,7 @@ mod cumulative;
 mod cyber_cycle;
 mod ehlers_fisher_transform;
 mod ema;
+mod high_pass;
 mod lag;
 mod laguerre_filter;
 mod laguerre_rsi;
@@ -38,6 +39,10 @@ pub use cumulative::Cumulative;
 pub use cyber_cycle::CyberCycle;
 pub use ehlers_fisher_transform::EhlersFisherTransform;
 pub use ema::Ema;
+pub use high_pass::{
+    HighPass,
+    HighPassPoles,
+};
 pub use lag::Lag;
 pub use laguerre_filter::LaguerreFilter;
 pub use laguerre_rsi::LaguerreRSI;

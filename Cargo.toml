@@ -133,3 +133,7 @@ harness = false
 [[bench]]
 name = "max_min"
 harness = false
+
+[[bench]]
+name = "ehlers_filters"
+harness = false
