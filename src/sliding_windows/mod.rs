@@ -12,6 +12,7 @@ mod dema;
 mod ehlers_fisher_transform;
 mod ema;
 mod high_pass;
+mod hma;
 mod lag;
 mod laguerre_filter;
 mod laguerre_rsi;
@@ -54,6 +55,7 @@ pub use high_pass::{
     HighPass,
     HighPassPoles,
 };
+pub use hma::Hma;
 pub use lag::Lag;
 pub use laguerre_filter::LaguerreFilter;
 pub use laguerre_rsi::LaguerreRSI;
