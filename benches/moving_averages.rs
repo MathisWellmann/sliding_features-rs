@@ -18,6 +18,7 @@ use sliding_features::{
     sliding_windows::{
         Dema,
         Rma,
+        T3,
         Tema,
         Wma,
     },
@@ -125,5 +126,30 @@ fn tema(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, wma, rma, dema, tema);
+fn t3(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("t3_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = T3::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = T3::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, wma, rma, dema, tema, t3);
 criterion_main!(benches);
