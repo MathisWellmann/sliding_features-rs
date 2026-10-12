@@ -15,6 +15,7 @@ mod ehma;
 mod ema;
 mod high_pass;
 mod hma;
+mod jma;
 mod kama;
 mod kaufman_efficiency_ratio;
 mod lag;
@@ -65,6 +66,7 @@ pub use high_pass::{
     HighPassPoles,
 };
 pub use hma::Hma;
+pub use jma::Jma;
 pub use kama::Kama;
 pub use kaufman_efficiency_ratio::KaufmanEfficiencyRatio;
 pub use lag::Lag;

@@ -20,6 +20,7 @@ use sliding_features::{
         Dema,
         Ehma,
         Hma,
+        Jma,
         Kama,
         KaufmanEfficiencyRatio,
         McGinleyDynamic,
@@ -202,6 +203,31 @@ fn hma(c: &mut Criterion) {
         let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
         b.iter(|| {
             let mut view = Hma::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+fn jma(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("jma_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Jma::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Jma::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
             for v in vals.iter() {
                 view.update(*v);
                 let _ = black_box(view.last());
@@ -402,6 +428,7 @@ criterion_group!(
     t3,
     zlema,
     hma,
+    jma,
     ehma,
     trima,
     mc_ginley_dynamic,
