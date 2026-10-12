@@ -8,7 +8,7 @@ use super::ehlers_hilbert_core::c;
 
 /// Capacity of the smoothed price history, the largest possible dominant cycle in bars.
 /// Equals `MAX_PERIOD`, checked in the tests.
-const SIZE: usize = 50;
+pub(super) const SIZE: usize = 50;
 
 /// Integer dominant cycle length: `SmoothPeriod` rounded to the nearest bar.
 #[inline(always)]
