@@ -19,10 +19,45 @@ use sliding_features::{
         BandPass,
         HighPass,
         HighPassPoles,
+        UltimateSmoother,
     },
 };
 
 const N: usize = 100_000;
+
+/// Benchmarks `N` updates of the view built by `$make`, for `f64` and `f32`.
+/// A macro because the view type depends on the float type.
+/// Inputs are positive, as some indicators divide by the price.
+macro_rules! bench_view {
+    ($c:expr, $name:expr, $make:expr) => {{
+        let mut rng = rng();
+        let mut group = $c.benchmark_group($name);
+        group.bench_function("f64", |b| {
+            let vals = Vec::<f64>::from_iter((0..N).map(|_| 1.0 + rng.random::<f64>()));
+            b.iter(|| {
+                let mut view = $make;
+                for v in vals.iter() {
+                    view.update(*v);
+                    let _ = black_box(view.last());
+                }
+            })
+        });
+        group.bench_function("f32", |b| {
+            let vals = Vec::<f32>::from_iter((0..N).map(|_| 1.0 + rng.random::<f32>()));
+            b.iter(|| {
+                let mut view = $make;
+                for v in vals.iter() {
+                    view.update(*v);
+                    let _ = black_box(view.last());
+                }
+            })
+        });
+    }};
+}
+
+fn nz(n: usize) -> NonZeroUsize {
+    NonZeroUsize::new(n).expect("benchmark parameters are non-zero")
+}
 
 fn high_pass(c: &mut Criterion) {
     let mut rng = rng();
@@ -84,5 +119,13 @@ fn band_pass(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, high_pass, band_pass);
+fn ultimate_smoother(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "ultimate_smoother_100k",
+        UltimateSmoother::new(Echo::new(), nz(20))
+    );
+}
+
+criterion_group!(benches, high_pass, band_pass, ultimate_smoother);
 criterion_main!(benches);
