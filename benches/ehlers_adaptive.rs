@@ -16,6 +16,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     sliding_windows::{
+        AdaptiveLaguerreFilter,
         AdaptiveRsi,
         AutocorrelationPeriodogram,
         EvenBetterSinewave,
@@ -103,10 +104,38 @@ fn even_better_sinewave(c: &mut Criterion) {
     });
 }
 
+fn adaptive_laguerre_filter(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("adaptive_laguerre_filter_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                AdaptiveLaguerreFilter::<f64, _>::new(Echo::new(), NonZeroUsize::new(20).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view =
+                AdaptiveLaguerreFilter::<f32, _>::new(Echo::new(), NonZeroUsize::new(20).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     autocorrelation_periodogram,
     even_better_sinewave,
-    adaptive_rsi
+    adaptive_rsi,
+    adaptive_laguerre_filter
 );
 criterion_main!(benches);

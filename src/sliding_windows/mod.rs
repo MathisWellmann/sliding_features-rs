@@ -1,6 +1,7 @@
 //! This module contains `View` implementations that act like sliding windows, usually containinig a history of values over the window.
 //! Usually more memory intensive than the implementations in `rolling`.
 
+mod adaptive_laguerre_filter;
 mod adaptive_rsi;
 mod alma;
 mod apo;
@@ -84,6 +85,7 @@ mod wma;
 mod z_score_standardization;
 mod zlema;
 
+pub use adaptive_laguerre_filter::AdaptiveLaguerreFilter;
 pub use adaptive_rsi::AdaptiveRsi;
 pub use alma::Alma;
 pub use apo::Apo;
