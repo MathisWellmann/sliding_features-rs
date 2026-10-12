@@ -17,6 +17,7 @@ use sliding_features::{
     View,
     pure_functions::Echo,
     sliding_windows::{
+        HurstExponent,
         PermutationEntropy,
         SampleEntropy,
         ShannonEntropy,
@@ -103,10 +104,26 @@ fn sample_entropy(c: &mut Criterion) {
     });
 }
 
+fn hurst_exponent(c: &mut Criterion) {
+    // O(n log n) per update, so a moderate window keeps the bench fast.
+    let window = NonZeroUsize::new(128).unwrap();
+    let mut group = c.benchmark_group("hurst_exponent_100k");
+    group.sample_size(10);
+    group.bench_function("f64", |b| {
+        let vals = random_vals::<f64>();
+        b.iter(|| run(HurstExponent::new(Echo::new(), window), &vals))
+    });
+    group.bench_function("f32", |b| {
+        let vals = random_vals::<f32>();
+        b.iter(|| run(HurstExponent::new(Echo::new(), window), &vals))
+    });
+}
+
 criterion_group!(
     benches,
     shannon_entropy,
     permutation_entropy,
-    sample_entropy
+    sample_entropy,
+    hurst_exponent
 );
 criterion_main!(benches);
