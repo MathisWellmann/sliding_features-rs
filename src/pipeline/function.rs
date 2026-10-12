@@ -62,10 +62,14 @@ use crate::{
         InstantaneousTrendline,
         Jma,
         Kama,
+        KaufmanEfficiencyRatio,
         Kst,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
+        LinRegAngle,
+        LinRegIntercept,
+        LinRegSlope,
         Macd,
         MadScaler,
         Mama,
@@ -77,6 +81,7 @@ use crate::{
         NoiseEliminationTechnology,
         PolarizedFractalEfficiency,
         Ppo,
+        RSquared,
         ReFlex,
         ReversionIndex,
         Rma,
@@ -87,6 +92,7 @@ use crate::{
         SchaffTrendCycle,
         SineWave,
         Sma,
+        StandardError,
         StochRsi,
         SuperSmoother,
         T3,
@@ -94,10 +100,12 @@ use crate::{
         TrendFlex,
         Trima,
         Trix,
+        Tsf,
         Tsi,
         UltimateBands,
         UltimateSmoother,
         UniversalOscillator,
+        Vhf,
         Vidya,
         Vst,
         WelfordOnline,
@@ -1106,6 +1114,64 @@ functions! {
         warm_up: |_| KST_WARM_UP,
         doc: "Pring's know sure thing of a positive price with the classic settings (ROC 10, 15, 20, 30 smoothed by SMA 10, 10, 10, 15, weighted 1 to 4): above -1000, oscillates around 0; ready after 45 updates.",
     }
+    // Trend strength and linear regression over a sliding window, with
+    // x = 0 at the oldest value of the window.
+    EfficiencyRatio {
+        name: "efficiency_ratio", params: [Window], min_window: 1, requires: Any,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| KaufmanEfficiencyRatio::new(Echo::new(), p.window(0)).into(),
+        // `window` changes need one more value.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Kaufman's efficiency ratio (window): the net change over the window divided by the sum of the absolute changes, in [0, 1]: 1 in a straight trend, near 0 in noise.",
+    }
+    LinRegSlope {
+        name: "lin_reg_slope", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| LinRegSlope::new(Echo::new(), p.window(0)).into(),
+        doc: "Slope of the least-squares line over the window (window), TA-Lib's LINEARREG_SLOPE: input units per update.",
+    }
+    LinRegIntercept {
+        name: "lin_reg_intercept", params: [Window], min_window: 2, requires: Any,
+        // The fitted value at the oldest update can lie outside the input
+        // range.
+        range: |_, _| Domain::REAL,
+        build: |p| LinRegIntercept::new(Echo::new(), p.window(0)).into(),
+        doc: "Intercept of the least-squares line over the window (window), TA-Lib's LINEARREG_INTERCEPT: the fitted value at the oldest update of the window.",
+    }
+    LinRegAngle {
+        name: "lin_reg_angle", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(-90.0, 90.0),
+        build: |p| LinRegAngle::new(Echo::new(), p.window(0)).into(),
+        doc: "Angle atan(slope) in degrees of the least-squares line over the window (window), TA-Lib's LINEARREG_ANGLE, in [-90, 90]; depends on the input scale.",
+    }
+    RSquared {
+        name: "r_squared", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| RSquared::new(Echo::new(), p.window(0)).into(),
+        doc: "Coefficient of determination R^2 of the least-squares line over the window (window), in [0, 1]: 1 when a line explains the window (or it is flat), 0 when no better than the mean.",
+    }
+    Tsf {
+        name: "tsf", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::REAL,
+        build: |p| Tsf::new(Echo::new(), p.window(0)).into(),
+        doc: "Time series forecast (window), TA-Lib's TSF: the least-squares line over the window extended one update past the newest value; can overshoot the input.",
+    }
+    StandardError {
+        name: "standard_error", params: [Window], min_window: 3, requires: Any,
+        range: |_, _| Domain::non_negative(),
+        build: |p| StandardError::new(Echo::new(), p.window(0)).into(),
+        doc: "Standard error of the least-squares line over the window (window): sqrt(SSE / (window - 2)) of the residuals, non-negative, in input units.",
+    }
+    Vhf {
+        name: "vhf", params: [Window], min_window: 2, requires: Any,
+        // The range of the window is at most the path between its extremes,
+        // which the sum of the absolute changes covers.
+        range: |_, _| Domain::closed(0.0, 1.0),
+        build: |p| Vhf::new(Echo::new(), p.window(0)).into(),
+        // The oldest change needs one value before the window.
+        warm_up: |p| p.window(0).get() + 1,
+        doc: "Vertical horizontal filter (window): the range of the window over the sum of its absolute changes, in [0, 1]: high in trends, low in ranges; costs O(window) per update.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1541,6 +1607,9 @@ mod tests {
             (Function::Ppo, &[13.0, 12.0]),
             (Function::SchaffTrendCycle, &[50.0, 23.0, 10.0]),
             (Function::Kst, &[10.0]),
+            (Function::LinRegSlope, &[1.0]),
+            (Function::StandardError, &[2.0]),
+            (Function::Vhf, &[1.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1674,6 +1743,14 @@ mod tests {
             (Function::Tsi, &[huge, huge]),
             (Function::Rsx, &[huge]),
             (Function::Rsx, &[2.0]),
+            (Function::EfficiencyRatio, &[1.0]),
+            (Function::LinRegSlope, &[2.0]),
+            (Function::LinRegIntercept, &[2.0]),
+            (Function::LinRegAngle, &[2.0]),
+            (Function::RSquared, &[2.0]),
+            (Function::Tsf, &[2.0]),
+            (Function::StandardError, &[3.0]),
+            (Function::Vhf, &[2.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
