@@ -9,6 +9,7 @@ mod butterworth;
 mod center_of_gravity;
 mod cmo;
 mod connors_rsi;
+mod continuation_index;
 mod coppock;
 mod correlation_trend_indicator;
 mod cumulative;
@@ -81,6 +82,7 @@ pub use butterworth::{
 pub use center_of_gravity::CenterOfGravity;
 pub use cmo::Cmo;
 pub use connors_rsi::ConnorsRsi;
+pub use continuation_index::ContinuationIndex;
 pub use coppock::Coppock;
 pub use correlation_trend_indicator::CorrelationTrendIndicator;
 pub use cumulative::Cumulative;

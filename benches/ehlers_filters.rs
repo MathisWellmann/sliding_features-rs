@@ -19,6 +19,7 @@ use sliding_features::{
         BandPass,
         Butterworth,
         ButterworthPoles,
+        ContinuationIndex,
         Decycler,
         DecyclerOscillator,
         Dsma,
@@ -188,6 +189,14 @@ fn dsma(c: &mut Criterion) {
     bench_view!(c, "dsma_100k", Dsma::new(Echo::new(), nz(40)));
 }
 
+fn continuation_index(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "continuation_index_100k",
+        ContinuationIndex::new(Echo::new(), 0.8, 8, nz(40))
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
@@ -199,6 +208,7 @@ criterion_group!(
     gaussian_filter,
     butterworth,
     ehlers_filter,
-    dsma
+    dsma,
+    continuation_index
 );
 criterion_main!(benches);
