@@ -83,6 +83,10 @@ name = "noise_elimination_technology"
 harness = false
 
 [[bench]]
+name = "oscillators"
+harness = false
+
+[[bench]]
 name = "pipeline"
 harness = false
 
