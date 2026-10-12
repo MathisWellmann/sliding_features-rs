@@ -121,7 +121,6 @@ impl<T: Float> SortedWindow<T> {
     }
 
     /// The number of values in the window below or equal to `x`.
-    #[cfg(test)]
     pub(crate) fn count_less_equal(&self, x: T) -> usize {
         debug_assert!(!x.is_nan(), "x must not be NaN");
         self.sorted.partition_point(|p| *p <= x)
