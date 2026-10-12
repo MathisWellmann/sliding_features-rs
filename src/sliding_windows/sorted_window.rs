@@ -127,7 +127,6 @@ impl<T: Float> SortedWindow<T> {
     }
 
     /// The values of the window in ascending order.
-    #[cfg(test)]
     pub(crate) fn sorted(&self) -> &[T] {
         &self.sorted
     }
