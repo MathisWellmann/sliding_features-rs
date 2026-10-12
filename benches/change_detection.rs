@@ -1,4 +1,7 @@
-use std::hint::black_box;
+use std::{
+    hint::black_box,
+    num::NonZeroUsize,
+};
 
 use criterion::{
     Criterion,
@@ -12,7 +15,11 @@ use rand::{
 use sliding_features::{
     View,
     pure_functions::Echo,
-    rolling::Cusum,
+    rolling::{
+        Cusum,
+        PageHinkley,
+        PageHinkleyDirection,
+    },
 };
 
 const N: usize = 100_000;
@@ -42,5 +49,44 @@ fn cusum(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, cusum);
+fn page_hinkley(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("page_hinkley_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = PageHinkley::<f64, _>::new(
+                Echo::new(),
+                PageHinkleyDirection::Both,
+                NonZeroUsize::new(30).unwrap(),
+                0.005,
+                50.0,
+                1.0 - 0.0001,
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = PageHinkley::<f32, _>::new(
+                Echo::new(),
+                PageHinkleyDirection::Both,
+                NonZeroUsize::new(30).unwrap(),
+                0.005,
+                50.0,
+                1.0 - 0.0001,
+            );
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(benches, cusum, page_hinkley);
 criterion_main!(benches);
