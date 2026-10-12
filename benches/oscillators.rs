@@ -1,4 +1,7 @@
-use std::hint::black_box;
+use std::{
+    hint::black_box,
+    num::NonZeroUsize,
+};
 
 use criterion::{
     Criterion,
@@ -16,6 +19,7 @@ use sliding_features::{
         Apo,
         Macd,
         Ppo,
+        Trix,
     },
 };
 
@@ -100,5 +104,38 @@ fn apo_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, macd_benchmark, ppo_benchmark, apo_benchmark);
+fn trix_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("trix_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Trix::<f64, _>::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Trix::<f32, _>::new(Echo::new(), NonZeroUsize::new(16).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    macd_benchmark,
+    ppo_benchmark,
+    apo_benchmark,
+    trix_benchmark
+);
 criterion_main!(benches);
