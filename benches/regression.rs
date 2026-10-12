@@ -20,6 +20,7 @@ use sliding_features::{
         LinRegIntercept,
         LinRegSlope,
         RSquared,
+        Tsf,
     },
 };
 
@@ -137,11 +138,39 @@ fn bench_r_squared(c: &mut Criterion) {
     });
 }
 
+fn bench_tsf(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("tsf_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Tsf::<f64, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Tsf::<f32, _>::new(Echo::new(), NonZeroUsize::new(1024).unwrap());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     bench_lin_reg_slope,
     bench_lin_reg_intercept,
     bench_lin_reg_angle,
-    bench_r_squared
+    bench_r_squared,
+    bench_tsf
 );
 criterion_main!(benches);
