@@ -17,6 +17,7 @@ use sliding_features::{
     pure_functions::Echo,
     sliding_windows::{
         BandPass,
+        Decycler,
         HighPass,
         HighPassPoles,
         UltimateBands,
@@ -136,11 +137,20 @@ fn ultimate_bands(c: &mut Criterion) {
     );
 }
 
+fn decycler(c: &mut Criterion) {
+    bench_view!(
+        c,
+        "decycler_100k",
+        Decycler::new(Echo::new(), nz(125), HighPassPoles::Two)
+    );
+}
+
 criterion_group!(
     benches,
     high_pass,
     band_pass,
     ultimate_smoother,
-    ultimate_bands
+    ultimate_bands,
+    decycler
 );
 criterion_main!(benches);
