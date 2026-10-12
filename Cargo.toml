@@ -153,3 +153,7 @@ harness = false
 [[bench]]
 name = "ehlers_hilbert"
 harness = false
+
+[[bench]]
+name = "ehlers_adaptive"
+harness = false

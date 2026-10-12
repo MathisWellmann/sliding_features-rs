@@ -3,6 +3,7 @@
 
 mod alma;
 mod apo;
+mod autocorrelation_periodogram;
 mod band_pass;
 mod binary_entropy;
 mod butterworth;
@@ -83,6 +84,10 @@ mod zlema;
 
 pub use alma::Alma;
 pub use apo::Apo;
+pub use autocorrelation_periodogram::{
+    AutocorrelationAveraging,
+    AutocorrelationPeriodogram,
+};
 pub use band_pass::BandPass;
 pub use binary_entropy::BinaryEntropy;
 pub use butterworth::{
