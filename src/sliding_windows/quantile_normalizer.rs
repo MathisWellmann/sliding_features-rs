@@ -103,7 +103,7 @@ where
 ///
 /// # Panics
 /// If `p` is not in `(0, 1)`.
-fn inverse_normal_cdf<T: Float>(p: T) -> T {
+pub(crate) fn inverse_normal_cdf<T: Float>(p: T) -> T {
     assert!(p > T::zero(), "p must be > 0");
     assert!(p < T::one(), "p must be < 1");
 

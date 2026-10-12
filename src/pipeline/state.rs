@@ -1,7 +1,11 @@
 //! What a call becomes at runtime: a stateless function evaluated inline,
 //! or a sliding view of this crate held in one enum.
 
-use super::function::sigmoid;
+use super::function::{
+    box_cox,
+    sigmoid,
+    yeo_johnson,
+};
 use crate::{
     View,
     pure_functions::Echo,
@@ -21,6 +25,7 @@ use crate::{
         Butterworth,
         CenterOfGravity,
         Cmo,
+        CoefficientOfVariation,
         ConnorsRsi,
         ContinuationIndex,
         Coppock,
@@ -39,6 +44,7 @@ use crate::{
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
+        EwmaVariance,
         GaussianFilter,
         HighPass,
         HilbertPhasor,
@@ -46,10 +52,12 @@ use crate::{
         Hma,
         HomodyneDominantCycle,
         InstantaneousTrendline,
+        Iqr,
         Jma,
         Kama,
         KaufmanEfficiencyRatio,
         Kst,
+        Kurtosis,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
@@ -65,18 +73,23 @@ use crate::{
         MinMaxNormalizer,
         MyRSI,
         NoiseEliminationTechnology,
+        PercentileRank,
         PolarizedFractalEfficiency,
         Ppo,
+        QuantileNormalizer,
         RSquared,
         ReFlex,
         ReversionIndex,
         Rma,
         Roc,
+        RollingMedian,
+        RollingQuantile,
         RoofingFilter,
         Rsi,
         Rsx,
         SchaffTrendCycle,
         SineWave,
+        Skewness,
         Sma,
         StandardError,
         StochRsi,
@@ -117,6 +130,12 @@ pub(super) enum Pure {
     /// John Ehlers' inverse Fisher transform `tanh(gain * v)` with the
     /// gain, as [`crate::pure_functions::InverseFisherTransform`].
     InverseFisher(f64),
+    /// The Box-Cox transform with lambda, as
+    /// [`crate::pure_functions::BoxCox`]: NaN for non-positive values.
+    BoxCox(f64),
+    /// The Yeo-Johnson transform with lambda, as
+    /// [`crate::pure_functions::YeoJohnson`].
+    YeoJohnson(f64),
     Gte(f64),
     Lte(f64),
 }
@@ -152,6 +171,10 @@ impl Pure {
             Pure::Sigmoid => sigmoid(v),
             Pure::Asinh => v.asinh(),
             Pure::InverseFisher(gain) => (gain * v).tanh(),
+            // `BoxCox` is not ready there; `box_cox` would give a limit.
+            Pure::BoxCox(_) if v <= 0.0 => f64::NAN,
+            Pure::BoxCox(lambda) => box_cox(v, lambda),
+            Pure::YeoJohnson(lambda) => yeo_johnson(v, lambda),
             Pure::Gte(c) => v.max(c),
             Pure::Lte(c) => v.min(c),
         }
@@ -299,6 +322,15 @@ states! {
     Tsf(Tsf<f64, E>),
     StandardError(StandardError<f64, E>),
     Vhf(Vhf<f64, E>),
+    Quantile(RollingQuantile<f64, E>),
+    Median(RollingMedian<f64, E>),
+    Iqr(Iqr<f64, E>),
+    PercentileRank(PercentileRank<f64, E>),
+    GaussianRank(QuantileNormalizer<f64, E>),
+    Skewness(Skewness<f64, E>),
+    Kurtosis(Kurtosis<f64, E>),
+    CoefficientOfVariation(CoefficientOfVariation<f64, E>),
+    EwmaVariance(EwmaVariance<f64, E>),
 }
 
 #[cfg(test)]
@@ -319,6 +351,8 @@ mod tests {
             Pure::Sigmoid,
             Pure::Asinh,
             Pure::InverseFisher(2.0),
+            Pure::BoxCox(0.5),
+            Pure::YeoJohnson(0.5),
             Pure::Gte(0.0),
             Pure::Lte(0.0),
         ] {
@@ -337,5 +371,11 @@ mod tests {
         assert_eq!(Pure::Square.eval(-3.0), 9.0);
         assert_eq!(Pure::InverseFisher(2.0).eval(0.5), 1.0_f64.tanh());
         assert_eq!(Pure::InverseFisher(1e300).eval(1e300), 1.0);
+        assert!(Pure::BoxCox(-1.0).eval(0.0).is_nan());
+        assert_eq!(Pure::BoxCox(0.0).eval(1.0), 0.0);
+        assert_eq!(Pure::BoxCox(2.0).eval(3.0), 4.0);
+        assert_eq!(Pure::YeoJohnson(1.0).eval(-3.0), -3.0);
+        assert_eq!(Pure::YeoJohnson(2.0).eval(-1.0), -(2.0_f64.ln()));
+        assert_eq!(Pure::BoxCox(2.0).eval(1e300), f64::INFINITY);
     }
 }

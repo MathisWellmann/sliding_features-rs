@@ -211,6 +211,8 @@ pub use polarized_fractal_efficiency::PolarizedFractalEfficiency;
 pub use ppo::Ppo;
 pub use qqe::Qqe;
 pub use quantile_normalizer::QuantileNormalizer;
+// For the pipeline's output range of `QuantileNormalizer`.
+pub(crate) use quantile_normalizer::inverse_normal_cdf;
 pub use r_squared::RSquared;
 pub use re_flex::ReFlex;
 pub use reversion_index::ReversionIndex;

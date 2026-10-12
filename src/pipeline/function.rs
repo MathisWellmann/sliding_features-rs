@@ -33,6 +33,7 @@ use crate::{
         ButterworthPoles,
         CenterOfGravity,
         Cmo,
+        CoefficientOfVariation,
         ConnorsRsi,
         ContinuationIndex,
         Coppock,
@@ -51,6 +52,7 @@ use crate::{
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
+        EwmaVariance,
         GaussianFilter,
         GaussianPoles,
         HighPass,
@@ -60,10 +62,12 @@ use crate::{
         Hma,
         HomodyneDominantCycle,
         InstantaneousTrendline,
+        Iqr,
         Jma,
         Kama,
         KaufmanEfficiencyRatio,
         Kst,
+        Kurtosis,
         Lag,
         LaguerreFilter,
         LaguerreRSI,
@@ -79,18 +83,23 @@ use crate::{
         MinMaxNormalizer,
         MyRSI,
         NoiseEliminationTechnology,
+        PercentileRank,
         PolarizedFractalEfficiency,
         Ppo,
+        QuantileNormalizer,
         RSquared,
         ReFlex,
         ReversionIndex,
         Rma,
         Roc,
+        RollingMedian,
+        RollingQuantile,
         RoofingFilter,
         Rsi,
         Rsx,
         SchaffTrendCycle,
         SineWave,
+        Skewness,
         Sma,
         StandardError,
         StochRsi,
@@ -112,6 +121,7 @@ use crate::{
         Wma,
         ZScoreStandardization,
         Zlema,
+        inverse_normal_cdf,
     },
 };
 
@@ -1172,6 +1182,94 @@ functions! {
         warm_up: |p| p.window(0).get() + 1,
         doc: "Vertical horizontal filter (window): the range of the window over the sum of its absolute changes, in [0, 1]: high in trends, low in ranges; costs O(window) per update.",
     }
+    // Rolling statistics. The order statistics keep a sorted copy of the
+    // window, whose insert and removal move O(window) values per update.
+    Quantile {
+        name: "quantile", params: [Window, Fraction], min_window: 2, requires: Any,
+        // An interpolation between two values of the window.
+        range: |a, _| a,
+        build: |p| RollingQuantile::new(Echo::new(), p.window(0), p.real(1)).into(),
+        doc: "Quantile of the window (window, q fraction, e.g. 0.25), interpolated linearly between order statistics as numpy and R do, within the input range; `min` and `max` give q = 0 and 1; costs O(window) per update.",
+    }
+    Median {
+        name: "median", params: [Window], min_window: 2, requires: Any,
+        range: |a, _| a,
+        build: |p| RollingMedian::new(Echo::new(), p.window(0)).into(),
+        doc: "Median of the window (window; the mean of the two middle values for an even window), robust to outliers, within the input range; costs O(window) per update.",
+    }
+    Iqr {
+        name: "iqr", params: [Window], min_window: 2, requires: Any,
+        // Q3 - Q1 is at most the range of the window.
+        range: |a, _| Domain::closed(0.0, a.hi() - a.lo()),
+        build: |p| Iqr::new(Echo::new(), p.window(0)).into(),
+        doc: "Interquartile range Q3 - Q1 of the window (window; quantiles as `quantile`): a robust dispersion in input units, non-negative and at most the range of the input; costs O(window) per update.",
+    }
+    PercentileRank {
+        name: "percentile_rank", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(0.0, 100.0),
+        build: |p| PercentileRank::new(Echo::new(), p.window(0)).into(),
+        doc: "Percentile rank of the newest value in the window that includes it (window), in [0, 100]: the mean of the shares of values below it and at most it (scipy's `mean` kind), 50 for a flat window; costs O(window) per update.",
+    }
+    GaussianRank {
+        name: "gaussian_rank", params: [Window], min_window: 2, requires: Any,
+        range: |_, p| gaussian_rank_range(p.window(0)),
+        build: |p| QuantileNormalizer::new(Echo::new(), p.window(0)).into(),
+        doc: "Van der Waerden normal score of the newest value in the window that includes it (window): the standard normal quantile of its mid-rank / (window + 1), a robust z-score that is roughly standard normal, within +-Phi^-1(window / (window + 1)) (+-1.7 for 20); costs O(window) per update.",
+    }
+    Skewness {
+        name: "skewness", params: [Window], min_window: 3, requires: Any,
+        // |G1| <= sqrt(window) holds in exact arithmetic only: a window that
+        // is flat up to rounding gives a ratio of round-off errors.
+        range: |_, _| Domain::REAL,
+        build: |p| Skewness::new(Echo::new(), p.window(0)).into(),
+        doc: "Sample skewness G1 of the window (window; bias adjusted, as Excel's SKEW and pandas): 0 for symmetric or flat windows, positive for a long right tail.",
+    }
+    Kurtosis {
+        name: "kurtosis", params: [Window], min_window: 4, requires: Any,
+        // Bounded in exact arithmetic only, like the skewness.
+        range: |_, _| Domain::REAL,
+        build: |p| Kurtosis::new(Echo::new(), p.window(0)).into(),
+        doc: "Sample excess kurtosis G2 of the window (window; bias adjusted, as Excel's KURT and pandas): 0 for normal data and flat windows, -1.2 for uniform, positive for heavy tails.",
+    }
+    CoefficientOfVariation {
+        // A dispersion relative to the level, which only has a meaning on a
+        // ratio scale: near a zero mean it explodes.
+        name: "coefficient_of_variation", params: [Window], min_window: 2, requires: Positive,
+        range: |_, _| Domain::non_negative(),
+        build: |p| CoefficientOfVariation::new(Echo::new(), p.window(0)).into(),
+        doc: "Coefficient of variation of a positive input over the window (window): the sample standard deviation divided by the mean, non-negative and unitless.",
+    }
+    EwmaVariance {
+        name: "ewma_variance", params: [Window], min_window: 2, requires: Any,
+        // A weighted variance of past inputs, at most (range / 2)^2 by
+        // Popoviciu's inequality.
+        range: |a, _| {
+            let half_width = (a.hi() - a.lo()) / 2.0;
+            Domain::closed(0.0, half_width * half_width)
+        },
+        build: |p| EwmaVariance::new(Echo::new(), p.window(0)).into(),
+        doc: "Exponentially weighted variance (window; alpha = 2 / (window + 1) as `ema`, without bias correction, RiskMetrics style): non-negative, in squared input units; ready after window updates.",
+    }
+    // Power transforms: stateless and increasing in the argument for every
+    // lambda.
+    BoxCox {
+        name: "box_cox", params: [Real], min_window: 1, requires: Positive,
+        range: |a, p| {
+            let lambda = p.real(0);
+            a.map_increasing(|v| box_cox(v, lambda))
+        },
+        build: |p| Kind::Pure(Pure::BoxCox(p.real(0))),
+        doc: "Box-Cox transform (a^lambda - 1) / lambda of a positive input (lambda real, usually in [-2, 2]; ln(a) at 0, a - 1 at 1): makes right-skewed data more normal; not ready where the power overflows.",
+    }
+    YeoJohnson {
+        name: "yeo_johnson", params: [Real], min_window: 1, requires: Any,
+        range: |a, p| {
+            let lambda = p.real(0);
+            a.map_increasing(|v| yeo_johnson(v, lambda))
+        },
+        build: |p| Kind::Pure(Pure::YeoJohnson(p.real(0))),
+        doc: "Yeo-Johnson transform (lambda real, usually in [-2, 2]; the identity at 1): `box_cox(a + 1, lambda)` for a >= 0 and its mirror image with 2 - lambda below 0, so it takes signed input such as returns; not ready where the power overflows.",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1372,6 +1470,41 @@ fn ema(window: NonZeroUsize) -> Ema<f64, Echo<f64>> {
 /// The logistic function.
 pub(super) fn sigmoid(v: f64) -> f64 {
     1.0 / (1.0 + (-v).exp())
+}
+
+/// The Box-Cox transform of `v`, as [`crate::pure_functions::BoxCox`]
+/// computes it. Defined at `v = 0` and `v = inf` (as limits) so that it can
+/// map domain bounds; the caller admits only positive `v`.
+pub(super) fn box_cox(v: f64, lambda: f64) -> f64 {
+    if lambda == 0.0 {
+        v.ln()
+    } else {
+        (v.powf(lambda) - 1.0) / lambda
+    }
+}
+
+/// The Yeo-Johnson transform of `v`, as [`crate::pure_functions::YeoJohnson`]
+/// computes it, also at `v = +-inf` to map domain bounds.
+pub(super) fn yeo_johnson(v: f64, lambda: f64) -> f64 {
+    if v >= 0.0 {
+        box_cox(v + 1.0, lambda)
+    } else {
+        -box_cox(-v + 1.0, 2.0 - lambda)
+    }
+}
+
+/// The output range of [`QuantileNormalizer`]: the normal quantiles of the
+/// lowest and highest plotting positions `1 / (n + 1)` and `n / (n + 1)`,
+/// computed as the view does.
+fn gaussian_rank_range(window: NonZeroUsize) -> Domain {
+    let n = window_f64(window);
+    let (lo, hi) = (1.0 / (n + 1.0), n / (n + 1.0));
+    // Beyond about 2^52 values the highest position rounds to 1, where
+    // the quantile is infinite; no window that long fits in memory.
+    if hi >= 1.0 {
+        return Domain::REAL;
+    }
+    Domain::closed(inverse_normal_cdf(lo), inverse_normal_cdf(hi))
 }
 
 /// A window length as `f64`, exact for checked windows (at most 2^53).
@@ -1610,6 +1743,16 @@ mod tests {
             (Function::LinRegSlope, &[1.0]),
             (Function::StandardError, &[2.0]),
             (Function::Vhf, &[1.0]),
+            (Function::Quantile, &[1.0, 0.5]),
+            (Function::Quantile, &[10.0, 0.0]),
+            (Function::Quantile, &[10.0, 1.0]),
+            (Function::Median, &[1.0]),
+            (Function::Iqr, &[1.0]),
+            (Function::Skewness, &[2.0]),
+            (Function::Kurtosis, &[3.0]),
+            (Function::EwmaVariance, &[1.0]),
+            (Function::BoxCox, &[f64::NAN]),
+            (Function::YeoJohnson, &[f64::INFINITY]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1751,6 +1894,8 @@ mod tests {
             (Function::Tsf, &[2.0]),
             (Function::StandardError, &[3.0]),
             (Function::Vhf, &[2.0]),
+            (Function::EwmaVariance, &[huge]),
+            (Function::EwmaVariance, &[2.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
@@ -1804,6 +1949,38 @@ mod tests {
         assert_eq!(
             Function::InverseFisher.output_domain(Domain::closed(0.0, 2.0), &[0.5]),
             Some(Domain::closed(0.0, 1.0_f64.tanh()))
+        );
+        let unit = Domain::closed(0.0, 1.0);
+        assert_eq!(
+            Function::Iqr.output_domain(unit, &[5.0]),
+            Some(Domain::closed(0.0, 1.0))
+        );
+        assert_eq!(
+            Function::EwmaVariance.output_domain(unit, &[5.0]),
+            Some(Domain::closed(0.0, 0.25))
+        );
+        assert_eq!(
+            Function::EwmaVariance.output_domain(real, &[5.0]),
+            Some(Domain::non_negative())
+        );
+        // The extreme ranks of 3 values sit at 1/4 and 3/4: z = -+0.674.
+        let Some(rank) = Function::GaussianRank.output_domain(real, &[3.0]) else {
+            panic!("always admitted");
+        };
+        assert!((rank.lo() + 0.674_489_75).abs() < 1e-8, "{rank}");
+        assert!((rank.hi() - 0.674_489_75).abs() < 1e-8, "{rank}");
+        // Increasing, from the limits at 0 (and infinity for lambda < 0).
+        assert_eq!(
+            Function::BoxCox.output_domain(real, &[2.0]),
+            Some(Domain::closed(-0.5, f64::INFINITY))
+        );
+        assert_eq!(
+            Function::BoxCox.output_domain(real, &[-1.0]),
+            Some(Domain::closed(f64::NEG_INFINITY, 1.0))
+        );
+        assert_eq!(
+            Function::YeoJohnson.output_domain(Domain::closed(-1.0, 3.0), &[0.0]),
+            Some(Domain::closed(-1.5, 4.0_f64.ln()))
         );
     }
 
