@@ -19,6 +19,7 @@ use sliding_features::{
     sliding_windows::{
         Autocorrelation,
         HurstExponent,
+        OuHalfLife,
         PermutationEntropy,
         SampleEntropy,
         ShannonEntropy,
@@ -148,6 +149,19 @@ fn autocorrelation(c: &mut Criterion) {
     });
 }
 
+fn ou_half_life(c: &mut Criterion) {
+    let window = NonZeroUsize::new(1024).unwrap();
+    let mut group = c.benchmark_group("ou_half_life_100k");
+    group.bench_function("f64", |b| {
+        let vals = random_vals::<f64>();
+        b.iter(|| run(OuHalfLife::new(Echo::new(), window), &vals))
+    });
+    group.bench_function("f32", |b| {
+        let vals = random_vals::<f32>();
+        b.iter(|| run(OuHalfLife::new(Echo::new(), window), &vals))
+    });
+}
+
 criterion_group!(
     benches,
     shannon_entropy,
@@ -155,6 +169,7 @@ criterion_group!(
     sample_entropy,
     hurst_exponent,
     variance_ratio,
-    autocorrelation
+    autocorrelation,
+    ou_half_life
 );
 criterion_main!(benches);
