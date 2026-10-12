@@ -14,6 +14,7 @@ mod ehma;
 mod ema;
 mod high_pass;
 mod hma;
+mod kaufman_efficiency_ratio;
 mod lag;
 mod laguerre_filter;
 mod laguerre_rsi;
@@ -60,6 +61,7 @@ pub use high_pass::{
     HighPassPoles,
 };
 pub use hma::Hma;
+pub use kaufman_efficiency_ratio::KaufmanEfficiencyRatio;
 pub use lag::Lag;
 pub use laguerre_filter::LaguerreFilter;
 pub use laguerre_rsi::LaguerreRSI;
