@@ -36,6 +36,7 @@ pub(super) struct LinRegWindow<T> {
     buf: VecDeque<T>,
     sum_y: T,
     sum_xy: T,
+    sum_yy: T,
     /// `sum(x)` for `x in 0..window_len`, constant for a given `window_len`.
     sum_x: T,
     /// `window_len * sum(x^2) - sum_x^2`, constant for a given `window_len`.
@@ -70,6 +71,7 @@ impl<T: Float> LinRegWindow<T> {
             buf: VecDeque::with_capacity(window_len.get()),
             sum_y: T::zero(),
             sum_xy: T::zero(),
+            sum_yy: T::zero(),
             sum_x,
             divisor,
             updates_since_recompute: 0,
@@ -93,6 +95,7 @@ impl<T: Float> LinRegWindow<T> {
         let n_minus_1 = T::from(window_len - 1).expect("can convert");
         self.sum_xy = self.sum_xy - self.sum_y + old + n_minus_1 * val;
         self.sum_y = self.sum_y - old + val;
+        self.sum_yy = self.sum_yy - old * old + val * val;
         self.buf.push_back(val);
 
         self.updates_since_recompute += 1;
@@ -101,18 +104,21 @@ impl<T: Float> LinRegWindow<T> {
         }
     }
 
-    /// Rebuild `sum_y` and `sum_xy` from the raw window buffer, to bound the
-    /// floating-point drift of the O(1) running-sum recurrence.
+    /// Rebuild `sum_y`, `sum_xy` and `sum_yy` from the raw window buffer, to
+    /// bound the floating-point drift of the O(1) running-sum recurrence.
     fn recompute(&mut self) {
         let mut sum_y = T::zero();
         let mut sum_xy = T::zero();
+        let mut sum_yy = T::zero();
         for (i, y) in self.buf.iter().enumerate() {
             let x = T::from(i).expect("can convert");
             sum_y = sum_y + *y;
             sum_xy = sum_xy + x * *y;
+            sum_yy = sum_yy + *y * *y;
         }
         self.sum_y = sum_y;
         self.sum_xy = sum_xy;
+        self.sum_yy = sum_yy;
         self.updates_since_recompute = 0;
     }
 
@@ -137,6 +143,32 @@ impl<T: Float> LinRegWindow<T> {
         debug_assert!(m.is_finite(), "slope must be finite");
         debug_assert!(b.is_finite(), "intercept must be finite");
         Some((m, b))
+    }
+
+    /// Coefficient of determination `R^2` of the fit, in `[0, 1]`, or `None`
+    /// during warmup.
+    ///
+    /// `R^2` of a simple linear regression equals the squared Pearson
+    /// correlation coefficient between `x` and `y`:
+    /// `R^2 = (n*sum_xy - sum_x*sum_y)^2 / (divisor * (n*sum_yy - sum_y^2))`.
+    /// When the window has zero variance (every sample equal), the
+    /// denominator is zero; the fitted line is then a constant that matches
+    /// every sample exactly (zero residuals), so this trivial case is
+    /// defined as `R^2 = 1` rather than left undefined.
+    pub(super) fn r_squared(&self) -> Option<T> {
+        let (m, _) = self.fit()?;
+        let n = T::from(self.window_len.get()).expect("can convert");
+        let y_variance_term = n * self.sum_yy - self.sum_y * self.sum_y;
+        if y_variance_term <= T::zero() {
+            return Some(T::one());
+        }
+        // r^2 = (m * divisor)^2 / (divisor * y_variance_term), with the
+        // common `divisor` factor cancelled to reduce rounding error.
+        let r_squared = (m * m * self.divisor / y_variance_term)
+            .min(T::one())
+            .max(T::zero());
+        debug_assert!(r_squared.is_finite(), "value must be finite");
+        Some(r_squared)
     }
 }
 
@@ -198,5 +230,53 @@ mod tests {
     #[should_panic(expected = "window_len must be at least 2")]
     fn rejects_window_len_one() {
         let _ = LinRegWindow::<f64>::new(NonZeroUsize::new(1).unwrap());
+    }
+
+    #[test]
+    fn r_squared_is_one_for_a_perfect_line() {
+        let mut w = LinRegWindow::new(NonZeroUsize::new(5).unwrap());
+        for v in [1.0_f64, 3.0, 5.0, 7.0, 9.0] {
+            w.update(v);
+        }
+        assert!((w.r_squared().expect("ready") - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn r_squared_is_one_for_zero_variance_window() {
+        let mut w = LinRegWindow::new(NonZeroUsize::new(5).unwrap());
+        for _ in 0..5 {
+            w.update(3.0_f64);
+        }
+        assert_eq!(w.r_squared(), Some(1.0));
+    }
+
+    #[test]
+    fn r_squared_matches_naive_reference_on_random_data() {
+        let r = romu::Rng::from_seed_with_64bit(99);
+        let vals: Vec<f64> = (0..200).map(|_| r.f64() * 100.0).collect();
+        let window_len = 10;
+        let mut w = LinRegWindow::new(NonZeroUsize::new(window_len).unwrap());
+        for (i, v) in vals.iter().enumerate() {
+            w.update(*v);
+            if i + 1 < window_len {
+                continue;
+            }
+            let expected = naive_r_squared(&vals[i + 1 - window_len..=i]);
+            let got = w.r_squared().expect("ready");
+            assert!((expected - got).abs() < 1e-6, "at {i}: {expected} vs {got}");
+        }
+    }
+
+    /// Naive O(n) reference: squared Pearson correlation between x = 0..n-1 and y.
+    fn naive_r_squared(ys: &[f64]) -> f64 {
+        let n = ys.len() as f64;
+        let sum_x: f64 = (0..ys.len()).map(|i| i as f64).sum();
+        let sum_y: f64 = ys.iter().sum();
+        let sum_xy: f64 = ys.iter().enumerate().map(|(i, y)| i as f64 * y).sum();
+        let sum_xsqr: f64 = (0..ys.len()).map(|i| (i as f64).powi(2)).sum();
+        let sum_ysqr: f64 = ys.iter().map(|y| y.powi(2)).sum();
+        let numerator = n * sum_xy - sum_x * sum_y;
+        let denominator = (n * sum_xsqr - sum_x * sum_x) * (n * sum_ysqr - sum_y * sum_y);
+        numerator * numerator / denominator
     }
 }
