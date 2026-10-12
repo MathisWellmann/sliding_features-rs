@@ -18,6 +18,7 @@ use sliding_features::{
     sliding_windows::{
         Apo,
         ConnorsRsi,
+        Coppock,
         Dpo,
         Macd,
         Ppo,
@@ -337,6 +338,33 @@ fn dpo_benchmark(c: &mut Criterion) {
     });
 }
 
+fn coppock_benchmark(c: &mut Criterion) {
+    let mut rng = rng();
+    const N: usize = 100_000;
+
+    let mut group = c.benchmark_group("coppock_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Coppock::<f64, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random()));
+        b.iter(|| {
+            let mut view = Coppock::<f32, _>::new(Echo::new());
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     macd_benchmark,
@@ -349,6 +377,7 @@ criterion_group!(
     schaff_trend_cycle_benchmark,
     qqe_benchmark,
     connors_rsi_benchmark,
-    dpo_benchmark
+    dpo_benchmark,
+    coppock_benchmark
 );
 criterion_main!(benches);
