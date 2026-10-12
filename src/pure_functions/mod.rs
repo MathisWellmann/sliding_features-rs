@@ -3,6 +3,7 @@
 
 mod abs;
 mod add;
+mod box_cox;
 mod constant;
 mod divide;
 mod echo;
@@ -16,6 +17,7 @@ mod tanh;
 
 pub use abs::Abs;
 pub use add::Add;
+pub use box_cox::BoxCox;
 pub use constant::Constant;
 pub use divide::Divide;
 pub use echo::Echo;

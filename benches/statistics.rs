@@ -14,7 +14,10 @@ use rand::{
 };
 use sliding_features::{
     View,
-    pure_functions::Echo,
+    pure_functions::{
+        BoxCox,
+        Echo,
+    },
     sliding_windows::{
         CoefficientOfVariation,
         EwmaVariance,
@@ -271,6 +274,31 @@ fn quantile_normalizer(c: &mut Criterion) {
     });
 }
 
+fn box_cox(c: &mut Criterion) {
+    let mut rng = rng();
+    let mut group = c.benchmark_group("box_cox_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.random::<f64>() + 1.0));
+        b.iter(|| {
+            let mut view = BoxCox::new(Echo::new(), 0.5);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.random::<f32>() + 1.0));
+        b.iter(|| {
+            let mut view = BoxCox::new(Echo::new(), 0.5);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     rolling_quantile,
@@ -281,6 +309,7 @@ criterion_group!(
     rolling_median,
     iqr,
     percentile_rank,
-    quantile_normalizer
+    quantile_normalizer,
+    box_cox
 );
 criterion_main!(benches);
