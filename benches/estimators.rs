@@ -18,6 +18,7 @@ use sliding_features::{
         OneEuroFilter,
     },
     sliding_windows::{
+        HampelFilter,
         LmsFilter,
         NlmsFilter,
         RlsFilter,
@@ -189,6 +190,34 @@ fn benchmark_rls(c: &mut Criterion) {
     });
 }
 
+fn benchmark_hampel(c: &mut Criterion) {
+    let rng = romu::Rng::from_seed_with_64bit(8);
+    const N: usize = 100_000;
+    let window_len = NonZeroUsize::new(11).expect("non zero");
+
+    let mut group = c.benchmark_group("hampel_filter_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.f64()));
+        b.iter(|| {
+            let mut view = HampelFilter::<f64, _>::new(Echo::new(), window_len, 3.0);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.f64() as f32));
+        b.iter(|| {
+            let mut view = HampelFilter::<f32, _>::new(Echo::new(), window_len, 3.0);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 fn benchmark_huber_ema(c: &mut Criterion) {
     let rng = romu::Rng::from_seed_with_64bit(7);
     const N: usize = 100_000;
@@ -224,6 +253,7 @@ criterion_group!(
     benchmark_lms,
     benchmark_nlms,
     benchmark_rls,
-    benchmark_huber_ema
+    benchmark_huber_ema,
+    benchmark_hampel
 );
 criterion_main!(benches);

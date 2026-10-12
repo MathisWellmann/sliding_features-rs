@@ -39,6 +39,7 @@ mod empirical_mode_decomposition;
 mod even_better_sinewave;
 mod ewma_variance;
 mod gaussian_filter;
+mod hampel_filter;
 mod high_pass;
 mod hilbert_phasor;
 mod hilbert_trend_mode;
@@ -161,6 +162,7 @@ pub use gaussian_filter::{
     GaussianFilter,
     GaussianPoles,
 };
+pub use hampel_filter::HampelFilter;
 pub use high_pass::{
     HighPass,
     HighPassPoles,

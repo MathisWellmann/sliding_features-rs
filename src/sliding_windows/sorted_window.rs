@@ -133,7 +133,6 @@ impl<T: Float> SortedWindow<T> {
     }
 
     /// The values of the window in insertion order, oldest first.
-    #[cfg(test)]
     pub(crate) fn iter(&self) -> impl ExactSizeIterator<Item = T> + '_ {
         self.fifo.iter().copied()
     }
