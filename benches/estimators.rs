@@ -1,4 +1,7 @@
-use std::hint::black_box;
+use std::{
+    hint::black_box,
+    num::NonZeroUsize,
+};
 
 use criterion::{
     Criterion,
@@ -13,6 +16,7 @@ use sliding_features::{
         Kalman1d,
         OneEuroFilter,
     },
+    sliding_windows::LmsFilter,
 };
 
 fn benchmark_one_euro(c: &mut Criterion) {
@@ -96,10 +100,39 @@ fn benchmark_kalman1d(c: &mut Criterion) {
     });
 }
 
+fn benchmark_lms(c: &mut Criterion) {
+    let rng = romu::Rng::from_seed_with_64bit(4);
+    const N: usize = 100_000;
+    let order = NonZeroUsize::new(8).expect("non zero");
+
+    let mut group = c.benchmark_group("lms_filter_100k");
+    group.bench_function("f64", |b| {
+        let vals = Vec::<f64>::from_iter((0..N).map(|_| rng.f64()));
+        b.iter(|| {
+            let mut view = LmsFilter::<f64, _>::new(Echo::new(), order, 0.01);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+    group.bench_function("f32", |b| {
+        let vals = Vec::<f32>::from_iter((0..N).map(|_| rng.f64() as f32));
+        b.iter(|| {
+            let mut view = LmsFilter::<f32, _>::new(Echo::new(), order, 0.01);
+            for v in vals.iter() {
+                view.update(*v);
+                let _ = black_box(view.last());
+            }
+        })
+    });
+}
+
 criterion_group!(
     benches,
     benchmark_one_euro,
     benchmark_alpha_beta,
-    benchmark_kalman1d
+    benchmark_kalman1d,
+    benchmark_lms
 );
 criterion_main!(benches);
