@@ -15,6 +15,7 @@ use sliding_features::{
     sliding_windows::{
         HilbertPhasor,
         HomodyneDominantCycle,
+        SineWave,
     },
 };
 
@@ -72,5 +73,14 @@ fn hilbert_phasor(c: &mut Criterion) {
     );
 }
 
-criterion_group!(benches, homodyne_dominant_cycle, hilbert_phasor);
+fn sine_wave(c: &mut Criterion) {
+    bench_100k(
+        c,
+        "sine_wave",
+        || SineWave::<f64, _>::new(Echo::new()),
+        || SineWave::<f32, _>::new(Echo::new()),
+    );
+}
+
+criterion_group!(benches, homodyne_dominant_cycle, hilbert_phasor, sine_wave);
 criterion_main!(benches);

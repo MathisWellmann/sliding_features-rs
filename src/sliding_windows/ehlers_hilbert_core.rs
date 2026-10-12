@@ -156,6 +156,19 @@ impl<T: Float> HilbertCore<T> {
         self.n_inputs
     }
 
+    /// Whether the 4-bar WMA is full, so the Hilbert stage has run at least once
+    /// and [`Self::smooth_period`] is positive.
+    #[inline(always)]
+    pub(super) fn has_output(&self) -> bool {
+        self.n_inputs >= self.prices.len()
+    }
+
+    /// The latest 4-bar WMA smoothed price.
+    #[inline(always)]
+    pub(super) fn smooth(&self) -> T {
+        self.smooth[0]
+    }
+
     /// The latest InPhase component (`Detrender[3]`).
     #[inline(always)]
     pub(super) fn i1(&self) -> T {
