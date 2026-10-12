@@ -21,6 +21,7 @@ use sliding_features::{
         PermutationEntropy,
         SampleEntropy,
         ShannonEntropy,
+        VarianceRatio,
     },
 };
 
@@ -119,11 +120,25 @@ fn hurst_exponent(c: &mut Criterion) {
     });
 }
 
+fn variance_ratio(c: &mut Criterion) {
+    let window = NonZeroUsize::new(1024).unwrap();
+    let mut group = c.benchmark_group("variance_ratio_100k");
+    group.bench_function("f64", |b| {
+        let vals = random_vals::<f64>();
+        b.iter(|| run(VarianceRatio::new(Echo::new(), window, 8), &vals))
+    });
+    group.bench_function("f32", |b| {
+        let vals = random_vals::<f32>();
+        b.iter(|| run(VarianceRatio::new(Echo::new(), window, 8), &vals))
+    });
+}
+
 criterion_group!(
     benches,
     shannon_entropy,
     permutation_entropy,
     sample_entropy,
-    hurst_exponent
+    hurst_exponent,
+    variance_ratio
 );
 criterion_main!(benches);
