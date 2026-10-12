@@ -55,6 +55,10 @@ name = "ehlers_fisher_transform"
 harness = false
 
 [[bench]]
+name = "ehlers_oscillators"
+harness = false
+
+[[bench]]
 name = "ema"
 harness = false
 
