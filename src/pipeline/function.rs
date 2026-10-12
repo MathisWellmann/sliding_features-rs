@@ -41,6 +41,7 @@ use crate::{
         Dsma,
         EhlersFilter,
         EhlersFisherTransform,
+        EhlersStochastic,
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
@@ -64,6 +65,7 @@ use crate::{
         NoiseEliminationTechnology,
         PolarizedFractalEfficiency,
         ReFlex,
+        ReversionIndex,
         Roc,
         RoofingFilter,
         Rsi,
@@ -73,6 +75,7 @@ use crate::{
         TrendFlex,
         UltimateBands,
         UltimateSmoother,
+        UniversalOscillator,
         Vst,
         WelfordOnline,
         ZScoreStandardization,
@@ -848,6 +851,41 @@ functions! {
         warm_up: |_| ADAPTIVE_RMS_LEN.get(),
         doc: "John Ehlers' adaptive super smoother (longest period window, 20 in the paper; RMS length 81): shortens its period on fast moves, can overshoot the input; ready after 81 updates.",
     }
+    // John Ehlers' oscillators.
+    InverseFisher {
+        name: "inverse_fisher", params: [Positive], min_window: 1, requires: Any,
+        range: |a, p| {
+            let gain = p.real(0);
+            a.map_increasing(|v| (gain * v).tanh())
+        },
+        build: |p| Kind::Pure(Pure::InverseFisher(p.real(0))),
+        doc: "John Ehlers' inverse Fisher transform tanh(gain * a) (gain positive): squashes an oscillator into [-1, 1], choose the gain so its typical range maps to about [-2, 2].",
+    }
+    EhlersStochastic {
+        name: "ehlers_stochastic", params: [Window, Window, Window], min_window: 2, requires: Any,
+        // The final super smoother can overshoot [0, 1].
+        range: |_, _| Domain::REAL,
+        build: |p| Box::new(EhlersStochastic::new(Echo::new(), p.window(0), p.window(1), p.window(2))).into(),
+        // The roofing filter, then a full stochastic window, then its
+        // super smoother of the same length.
+        warm_up: |p| p.window(0).get() + p.window(1).get() + 2 * p.window(2).get(),
+        doc: "John Ehlers' stochastic (roofing high-pass window, roofing smoother window, stochastic window): the roofing filtered input's position in its range over the stochastic window, super smoothed; roughly in [0, 1] (can overshoot slightly); costs O(stochastic window) per update.",
+    }
+    UniversalOscillator {
+        name: "universal_oscillator", params: [Window], min_window: 2, requires: Any,
+        range: |_, _| Domain::closed(-1.0, 1.0),
+        build: |p| UniversalOscillator::new(Echo::new(), p.window(0)).into(),
+        // Two inputs for the first momentum, then the super smoother.
+        warm_up: |p| p.window(0).get() + 2,
+        doc: "John Ehlers' universal oscillator (band edge window): super smoothed momentum divided by its decaying peak, in [-1, 1].",
+    }
+    ReversionIndex {
+        name: "reversion_index", params: [Window, Window], min_window: 2, requires: Any,
+        // The super smoother of a ratio in [-1, 1] can overshoot it.
+        range: |_, _| Domain::REAL,
+        build: |p| ReversionIndex::new(Echo::new(), p.window(0), p.window(1)).into(),
+        doc: "John Ehlers' reversion index (length window, about half the dominant cycle; smoother window, 4 or 8 in the article): sum of changes over the sum of their absolute values, super smoothed; roughly in [-1, 1] (can overshoot slightly).",
+    }
 }
 
 /// Updates before the Hilbert transform cycle period settles (see
@@ -1213,6 +1251,12 @@ mod tests {
             (Function::Emd, &[20.0, 0.004]),
             (Function::Mama, &[0.5, 0.51]),
             (Function::AutoTuneFilter, &[101.0]),
+            (Function::InverseFisher, &[0.0]),
+            (Function::InverseFisher, &[-1.0]),
+            (Function::InverseFisher, &[f64::INFINITY]),
+            (Function::EhlersStochastic, &[2.0, 2.0, 1.0]),
+            (Function::UniversalOscillator, &[1.0]),
+            (Function::ReversionIndex, &[1.0, 4.0]),
         ] {
             let Err(err) = function.check_params(params, 100) else {
                 panic!("{function:?}{params:?} passed");
@@ -1318,6 +1362,8 @@ mod tests {
             (Function::AutoTuneFilter, &[100.0]),
             (Function::AdaptiveSuperSmoother, &[huge]),
             (Function::AdaptiveSuperSmoother, &[2.0]),
+            (Function::UniversalOscillator, &[huge]),
+            (Function::UniversalOscillator, &[2.0]),
         ] {
             function
                 .check_params(params, usize::MAX)
@@ -1363,6 +1409,14 @@ mod tests {
         assert_eq!(
             Function::Rsi.output_domain(real, &[14.0]),
             Some(Domain::closed(0.0, 100.0))
+        );
+        assert_eq!(
+            Function::InverseFisher.output_domain(real, &[0.5]),
+            Some(Domain::closed(-1.0, 1.0))
+        );
+        assert_eq!(
+            Function::InverseFisher.output_domain(Domain::closed(0.0, 2.0), &[0.5]),
+            Some(Domain::closed(0.0, 1.0_f64.tanh()))
         );
     }
 

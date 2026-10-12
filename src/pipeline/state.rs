@@ -29,6 +29,7 @@ use crate::{
         Dsma,
         EhlersFilter,
         EhlersFisherTransform,
+        EhlersStochastic,
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
@@ -50,6 +51,7 @@ use crate::{
         NoiseEliminationTechnology,
         PolarizedFractalEfficiency,
         ReFlex,
+        ReversionIndex,
         Roc,
         RoofingFilter,
         Rsi,
@@ -59,6 +61,7 @@ use crate::{
         TrendFlex,
         UltimateBands,
         UltimateSmoother,
+        UniversalOscillator,
         Vst,
         WelfordOnline,
         ZScoreStandardization,
@@ -78,6 +81,9 @@ pub(super) enum Pure {
     Tanh,
     Sigmoid,
     Asinh,
+    /// John Ehlers' inverse Fisher transform `tanh(gain * v)` with the
+    /// gain, as [`crate::pure_functions::InverseFisherTransform`].
+    InverseFisher(f64),
     Gte(f64),
     Lte(f64),
 }
@@ -112,6 +118,7 @@ impl Pure {
             Pure::Tanh => v.tanh(),
             Pure::Sigmoid => sigmoid(v),
             Pure::Asinh => v.asinh(),
+            Pure::InverseFisher(gain) => (gain * v).tanh(),
             Pure::Gte(c) => v.max(c),
             Pure::Lte(c) => v.min(c),
         }
@@ -223,6 +230,9 @@ states! {
     AdaptiveLaguerreFilter(AdaptiveLaguerreFilter<f64, E>),
     AutoTuneFilter(AutoTuneFilter<f64, E>),
     AdaptiveSuperSmoother(AdaptiveSuperSmoother<f64, E>),
+    EhlersStochastic(Box<EhlersStochastic<f64, E>>),
+    UniversalOscillator(UniversalOscillator<f64, E>),
+    ReversionIndex(ReversionIndex<f64, E>),
 }
 
 #[cfg(test)]
@@ -242,6 +252,7 @@ mod tests {
             Pure::Tanh,
             Pure::Sigmoid,
             Pure::Asinh,
+            Pure::InverseFisher(2.0),
             Pure::Gte(0.0),
             Pure::Lte(0.0),
         ] {
@@ -258,5 +269,7 @@ mod tests {
         assert!(Pure::Ln.eval(-1.0).is_nan());
         assert_eq!(Pure::Ln.eval(0.0), f64::NEG_INFINITY);
         assert_eq!(Pure::Square.eval(-3.0), 9.0);
+        assert_eq!(Pure::InverseFisher(2.0).eval(0.5), 1.0_f64.tanh());
+        assert_eq!(Pure::InverseFisher(1e300).eval(1e300), 1.0);
     }
 }

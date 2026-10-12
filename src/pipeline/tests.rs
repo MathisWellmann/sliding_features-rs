@@ -8,6 +8,7 @@ use crate::{
     View,
     pure_functions::{
         Echo,
+        InverseFisherTransform,
         Subtract,
     },
     sliding_windows::{
@@ -24,6 +25,7 @@ use crate::{
         DecyclerOscillator,
         Dsma,
         EhlersFilter,
+        EhlersStochastic,
         Ema,
         EmpiricalModeDecomposition,
         EvenBetterSinewave,
@@ -36,10 +38,12 @@ use crate::{
         HomodyneDominantCycle,
         InstantaneousTrendline,
         Mama,
+        ReversionIndex,
         SineWave,
         Sma,
         UltimateBands,
         UltimateSmoother,
+        UniversalOscillator,
         ZScoreStandardization,
     },
 };
@@ -193,6 +197,22 @@ fn direct_views() -> Vec<(&'static str, Box<dyn View<f64>>)> {
         (
             "adaptive_super_smoother(x, 23)",
             Box::new(AdaptiveSuperSmoother::new(e(), window(23), window(81))),
+        ),
+        (
+            "inverse_fisher(x, 0.02)",
+            Box::new(InverseFisherTransform::new(e(), 0.02)),
+        ),
+        (
+            "ehlers_stochastic(x, 12, 7, 9)",
+            Box::new(EhlersStochastic::new(e(), window(12), window(7), window(9))),
+        ),
+        (
+            "universal_oscillator(x, 11)",
+            Box::new(UniversalOscillator::new(e(), window(11))),
+        ),
+        (
+            "reversion_index(x, 9, 4)",
+            Box::new(ReversionIndex::new(e(), window(9), window(4))),
         ),
     ]
 }
