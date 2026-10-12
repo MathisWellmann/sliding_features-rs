@@ -21,12 +21,14 @@ mod dpo;
 mod dsma;
 mod ehlers_filter;
 mod ehlers_fisher_transform;
+mod ehlers_hilbert_core;
 mod ehma;
 mod ema;
 mod empirical_mode_decomposition;
 mod gaussian_filter;
 mod high_pass;
 mod hma;
+mod homodyne_dominant_cycle;
 mod jma;
 mod kama;
 mod kaufman_efficiency_ratio;
@@ -107,6 +109,7 @@ pub use high_pass::{
     HighPassPoles,
 };
 pub use hma::Hma;
+pub use homodyne_dominant_cycle::HomodyneDominantCycle;
 pub use jma::Jma;
 pub use kama::Kama;
 pub use kaufman_efficiency_ratio::KaufmanEfficiencyRatio;

@@ -149,3 +149,7 @@ harness = false
 [[bench]]
 name = "statistics"
 harness = false
+
+[[bench]]
+name = "ehlers_hilbert"
+harness = false
