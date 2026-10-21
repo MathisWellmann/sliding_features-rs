@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 /// This Example provides a basic overview of chainable View definitions.
 /// Assume you want to first transform your values with a Variance Stabilizing Centering Transform
 //  and after that, smooth the values with an ALMA

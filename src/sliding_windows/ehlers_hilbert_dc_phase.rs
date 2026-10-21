@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! Dominant cycle phase of Ehlers' Sine Wave indicator, shared by `SineWave` and
 //! `HilbertTrendMode`. Reference: "Rocket Science for Traders" (2001), chapter 9,
 //! and TA-Lib's `HT_SINE`.

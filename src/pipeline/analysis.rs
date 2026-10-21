@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! Checks before a pipeline runs: the domain and warm-up of every node,
 //! and what is likely a mistake, worded so the author can fix it.
 

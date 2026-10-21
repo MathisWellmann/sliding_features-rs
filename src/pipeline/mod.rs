@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! Feature pipelines as data: many features over several input series,
 //! written as text (e.g. by an LLM) or assembled by code, checked, and
 //! compiled into one flat program at runtime.

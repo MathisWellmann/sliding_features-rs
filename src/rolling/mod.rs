@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! This module contains `View` implementations that are updated on a rolling basis, but don't maintain a sliding window with history.
 
 mod alpha_beta_filter;

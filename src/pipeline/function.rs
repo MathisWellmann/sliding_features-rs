@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! The operators and functions of a pipeline: one table holds each
 //! function's name, parameters, argument requirement, output range, runtime
 //! form and description, so they cannot drift apart.

@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! Ehlers' instantaneous trendline, shared by `InstantaneousTrendline` and `HilbertTrendMode`.
 //! Reference: "Rocket Science for Traders" (2001), and TA-Lib's `HT_TRENDLINE`.
 
