@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! Shared O(1) sliding least-squares window used by the `LinReg*` regression
 //! indicators (`LinRegSlope`, `LinRegIntercept`, `LinRegAngle`, `RSquared`,
 //! `Tsf`, `StandardError`).

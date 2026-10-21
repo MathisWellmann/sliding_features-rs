@@ -1,3 +1,7 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 //! A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 //! it is also possible to use a custom moving average instead of the default EMA in the original
 
