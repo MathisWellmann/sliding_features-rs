@@ -62,12 +62,14 @@ pub use builder::{
 pub use compiled::{
     Feature,
     Pipeline,
+    PipelineState,
 };
 pub use domain::Domain;
 pub use error::{
     CompileError,
     Diagnostic,
     Location,
+    RestoreError,
     Severity,
 };
 pub use function::{

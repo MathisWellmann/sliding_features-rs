@@ -220,6 +220,7 @@ macro_rules! states {
     ($($variant:ident($ty:ty),)*) => {
         /// The state of a call to a sliding view.
         #[derive(Debug, Clone)]
+        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
         pub(super) enum State {
             $($variant($ty),)*
         }

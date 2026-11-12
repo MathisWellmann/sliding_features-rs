@@ -933,3 +933,189 @@ fn output_domains_and_warm_ups() {
     assert_eq!(p.output_warm_up(2), 100);
     assert_eq!(p.warm_up(), 100);
 }
+
+/// A pipeline that calls every function, at its example and larger
+/// parameters, on arguments of both signs.
+fn every_function() -> Pipeline {
+    let mut b = Builder::new(vec![Input::real("x")], Limits::unbounded()).unwrap();
+    let x = b.lookup("x").unwrap();
+    let args = arguments(&mut b, x);
+    let mut k = 0;
+    for function in Function::ALL {
+        for params in [function.example_params(), function.larger_params()] {
+            for arg in &args {
+                let call = b.call(*function, *arg, &params).unwrap();
+                b.output(&format!("out{k}"), call).unwrap();
+                k += 1;
+            }
+        }
+    }
+    b.build().unwrap()
+}
+
+/// The bits of every output, to compare pipelines exactly.
+fn output_bits(p: &Pipeline) -> Vec<Option<u64>> {
+    Vec::from_iter(p.outputs().map(|o| o.map(f64::to_bits)))
+}
+
+/// Feed `every_function` a random walk that is saved and moved to a pipeline
+/// compiled from its text every `step` updates, through `transport` (e.g.
+/// serialization), and check it against one that runs without a break.
+fn assert_restored_pipelines_continue(transport: impl Fn(PipelineState) -> PipelineState) {
+    let whole = every_function();
+    // A fresh pipeline compiled from the text, as a restarted process has.
+    let fresh = Pipeline::compile(
+        &whole.to_string(),
+        vec![Input::real("x")],
+        Limits::unbounded(),
+    )
+    .unwrap();
+    let walk = random_walk(11, 400);
+    for step in [1, 13, 151] {
+        let mut whole = whole.clone();
+        let mut restored = whole.clone();
+        for (i, v) in walk.iter().enumerate() {
+            if i % step == 0 {
+                let state = transport(restored.save_state());
+                restored = fresh.clone();
+                restored.restore_state(state).unwrap();
+                assert_eq!(
+                    output_bits(&restored),
+                    output_bits(&whole),
+                    "every {step}, at {i}"
+                );
+            }
+            whole.update(&[*v]);
+            restored.update(&[*v]);
+            assert_eq!(
+                output_bits(&restored),
+                output_bits(&whole),
+                "every {step}, after {i}"
+            );
+        }
+        let ready = whole.outputs().filter(Option::is_some).count();
+        assert!(
+            ready > whole.output_count() / 2,
+            "the test needs ready outputs"
+        );
+    }
+}
+
+#[test]
+fn a_restored_state_continues_every_function() {
+    assert_restored_pipelines_continue(|state| state);
+}
+
+/// Bincode stores every `f64` exactly and keeps NaN, so the pipeline
+/// continues to the bit.
+#[cfg(feature = "serde")]
+#[test]
+fn a_state_saved_with_bincode_continues_every_function() {
+    assert_restored_pipelines_continue(|state| {
+        let config = bincode::config::standard();
+        let bytes = bincode::serde::encode_to_vec(&state, config).unwrap();
+        let (restored, read): (PipelineState, usize) =
+            bincode::serde::decode_from_slice(&bytes, config).unwrap();
+        assert_eq!(read, bytes.len(), "the whole state is read");
+        restored
+    });
+}
+
+/// A pipeline over `inputs` warmed up on a random walk.
+fn warmed_up(source: &str, inputs: &[&str]) -> Pipeline {
+    let inputs = Vec::from_iter(inputs.iter().map(|name| Input::real(*name)));
+    let n = inputs.len();
+    let mut p = Pipeline::compile(source, inputs, Limits::default()).unwrap();
+    for v in random_walk(12, 50) {
+        p.update(&vec![v; n]);
+    }
+    p
+}
+
+/// `restore` leaves `p` as it was: the same outputs now and after updates.
+fn assert_unchanged_by(p: &mut Pipeline, restore: impl FnOnce(&mut Pipeline)) {
+    let mut untouched = p.clone();
+    restore(p);
+    for v in random_walk(13, 20) {
+        let values = vec![v; p.inputs().len()];
+        p.update(&values);
+        untouched.update(&values);
+        assert_eq!(output_bits(p), output_bits(&untouched));
+    }
+}
+
+#[test]
+fn a_state_of_another_pipeline_is_rejected() {
+    let saved = warmed_up("ema(x, 10)", &["x"]).save_state();
+    let mut other = warmed_up("ema(x, 11)", &["x"]);
+    assert_unchanged_by(&mut other, |p| {
+        let err = p.restore_state(saved.clone()).unwrap_err();
+        assert_eq!(
+            err,
+            RestoreError::Program {
+                saved: "inputs: x\nema(x, 10)".to_string(),
+                expected: "inputs: x\nema(x, 11)".to_string(),
+            }
+        );
+        assert!(err.to_string().contains("another pipeline"), "{err}");
+    });
+}
+
+#[test]
+fn the_order_of_the_inputs_belongs_to_the_pipeline() {
+    let saved = warmed_up("d = a - b", &["a", "b"]).save_state();
+    assert_eq!(saved.program(), "inputs: a, b\nd = a - b");
+    let mut swapped = warmed_up("d = a - b", &["b", "a"]);
+    assert_unchanged_by(&mut swapped, |p| {
+        assert!(matches!(
+            p.restore_state(saved),
+            Err(RestoreError::Program { .. })
+        ));
+    });
+}
+
+#[test]
+fn a_state_of_another_format_is_rejected() {
+    let saved = warmed_up("ema(x, 10)", &["x"]).save_state();
+    let program = saved.program().to_string();
+    let mut p = warmed_up("ema(x, 10)", &["x"]);
+    assert_unchanged_by(&mut p, |p| {
+        let err = p.restore_state(saved.relabeled(0, program)).unwrap_err();
+        assert_eq!(
+            err,
+            RestoreError::Format {
+                saved: 0,
+                expected: 1
+            }
+        );
+    });
+}
+
+#[test]
+fn a_state_that_does_not_fit_the_operations_is_rejected() {
+    // The label of `ema(x, 10)` on the state of `sma(x, 10)`, as a version
+    // that compiles the text differently could write.
+    let sma = warmed_up("sma(x, 10)", &["x"]).save_state();
+    let mut ema = warmed_up("ema(x, 10)", &["x"]);
+    let label = ema.save_state().program().to_string();
+    assert_unchanged_by(&mut ema, |p| {
+        assert_eq!(
+            p.restore_state(sma.relabeled(1, label)),
+            Err(RestoreError::Layout)
+        );
+    });
+}
+
+#[test]
+fn a_feature_saves_and_restores_its_pipeline() {
+    let mut feature = Feature::try_from(warmed_up("ema(x, 5)", &["x"])).unwrap();
+    let state = feature.save_state();
+    let mut restored = Feature::try_from(warmed_up("ema(x, 5)", &["x"])).unwrap();
+    restored.update(1e6);
+    restored.restore_state(state).unwrap();
+    for v in random_walk(14, 20) {
+        feature.update(v);
+        restored.update(v);
+        assert_eq!(restored.last(), feature.last());
+    }
+}

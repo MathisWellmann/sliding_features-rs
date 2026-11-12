@@ -5,9 +5,12 @@
 //! The runtime form of a pipeline: a flat list of operations evaluated in
 //! one pass, each writing one slot of a value buffer.
 
+use std::mem;
+
 use super::{
     BinaryOp,
     Requirement,
+    RestoreError,
     function::Params,
     graph::{
         Graph,
@@ -115,6 +118,51 @@ impl Program {
     pub(super) fn len(&self) -> usize {
         self.ops.len()
     }
+
+    /// A copy of the states of the views and of the last values.
+    pub(super) fn save(&self) -> (Vec<State>, Vec<f64>) {
+        (self.states.clone(), self.values.clone())
+    }
+
+    /// Continue from what [`Program::save`] returned for the same
+    /// operations. Nothing changes on an error.
+    pub(super) fn restore(
+        &mut self,
+        states: Vec<State>,
+        values: Vec<f64>,
+    ) -> Result<(), RestoreError> {
+        if states.len() != self.states.len() {
+            return Err(RestoreError::Layout);
+        }
+        if values.len() != self.values.len() {
+            return Err(RestoreError::Layout);
+        }
+        let same_views = states
+            .iter()
+            .zip(&self.states)
+            .all(|(saved, own)| mem::discriminant(saved) == mem::discriminant(own));
+        if !same_views {
+            return Err(RestoreError::Layout);
+        }
+        if !self.ops.iter().zip(&values).all(|(op, v)| fits(op, *v)) {
+            return Err(RestoreError::Layout);
+        }
+        self.states = states;
+        self.values = values;
+        Ok(())
+    }
+}
+
+/// Whether `v` can be the last value of `op`: [`run`] writes finite values
+/// or NaN (not ready), and a constant is its value once updated.
+fn fits(op: &Op, v: f64) -> bool {
+    if v.is_nan() {
+        return true;
+    }
+    match op {
+        Op::Const(c) => v.to_bits() == c.to_bits(),
+        _ => v.is_finite(),
+    }
 }
 
 fn to_u32(i: usize) -> u32 {
@@ -200,5 +248,61 @@ mod tests {
         assert_eq!(program.len(), 2);
         assert_eq!(program.states.len(), 1);
         assert_ne!(unused, ema);
+    }
+
+    /// A program of `function(x, 3)`.
+    fn call(function: Function) -> Program {
+        let mut g = Graph::default();
+        let x = g.intern(Node::Input(0), 10).unwrap();
+        let call = g.intern(Node::Call(function, x, [3.0].into()), 10).unwrap();
+        Program::lower(&g, &[call])
+    }
+
+    #[test]
+    fn a_restored_program_continues_where_it_was_saved() {
+        let mut whole = call(Function::Ema);
+        for v in [1.0, 2.0, 3.0] {
+            whole.update(&[v]);
+        }
+        let (states, values) = whole.save();
+        let mut restored = call(Function::Ema);
+        restored.restore(states, values).unwrap();
+        assert_eq!(
+            restored.output(0),
+            whole.output(0),
+            "the last value is kept"
+        );
+        whole.update(&[4.0]);
+        restored.update(&[4.0]);
+        assert_eq!(restored.output(0), whole.output(0));
+        assert!(whole.output(0).is_some());
+    }
+
+    #[test]
+    fn a_state_of_other_operations_does_not_fit() {
+        let mut ema = call(Function::Ema);
+        ema.update(&[1.0]);
+        let before = format!("{ema:?}");
+
+        let (states, values) = call(Function::Sma).save();
+        assert_eq!(ema.restore(states, values), Err(RestoreError::Layout));
+        let (states, mut values) = ema.save();
+        values.push(f64::NAN);
+        assert_eq!(ema.restore(states, values), Err(RestoreError::Layout));
+        let (_, values) = ema.save();
+        assert_eq!(ema.restore(Vec::new(), values), Err(RestoreError::Layout));
+        let (states, mut values) = ema.save();
+        values[0] = f64::INFINITY;
+        assert_eq!(ema.restore(states, values), Err(RestoreError::Layout));
+        assert_eq!(format!("{ema:?}"), before, "nothing changed");
+    }
+
+    #[test]
+    fn a_constant_holds_its_value_or_is_not_ready() {
+        assert!(fits(&Op::Const(2.0), 2.0));
+        assert!(fits(&Op::Const(2.0), f64::NAN));
+        assert!(!fits(&Op::Const(2.0), 3.0));
+        assert!(fits(&Op::Input(0), -1.0));
+        assert!(!fits(&Op::Input(0), f64::NEG_INFINITY));
     }
 }
