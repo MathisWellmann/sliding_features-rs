@@ -17,6 +17,7 @@ use super::{
     Domain,
     Input,
     Limits,
+    RestoreError,
     Severity,
     analysis::Analysis,
     builder::{
@@ -30,8 +31,14 @@ use super::{
     },
     parse::parse,
     program::Program,
+    state::State,
 };
 use crate::View;
+
+/// The layout of the state of the views in a [`PipelineState`]. Bump it when
+/// the fields of a view change, so that a restore rejects an older state
+/// instead of misreading it.
+const STATE_FORMAT: u32 = 1;
 
 /// Features computed from input series by one flat program.
 ///
@@ -42,7 +49,8 @@ use crate::View;
 /// logarithm of a non-positive value). Ready outputs are always finite.
 ///
 /// Clone a warmed-up pipeline to branch it; [`Pipeline::reset`] starts it
-/// over.
+/// over. [`Pipeline::save_state`] and [`Pipeline::restore_state`] continue
+/// it in another pipeline compiled from the same text, e.g. after a restart.
 ///
 /// The [`fmt::Display`] form is canonical: compiling it yields the same
 /// pipeline, so two pipelines that print the same compute the same.
@@ -185,6 +193,53 @@ impl Pipeline {
         self.program = Program::lower(&self.graph, &output_nodes(&self.bindings));
     }
 
+    /// What the pipeline has seen, to continue later with
+    /// [`Pipeline::restore_state`]. With the `serde` feature the state can be
+    /// saved, e.g. with the input position of a live process.
+    pub fn save_state(&self) -> PipelineState {
+        let (states, values) = self.program.save();
+        PipelineState {
+            format: STATE_FORMAT,
+            program: self.identity(),
+            states,
+            values,
+        }
+    }
+
+    /// Continue from `state`, which [`Pipeline::save_state`] returned for the
+    /// same pipeline: the same inputs in the same order and the same
+    /// canonical text. The outputs are then those of the saved pipeline, and
+    /// every update gives the same bits as it would have given.
+    ///
+    /// # Errors
+    ///
+    /// [`RestoreError`] if the state is of another pipeline, of another
+    /// format, or does not fit the operations. The pipeline is then
+    /// unchanged.
+    pub fn restore_state(&mut self, state: PipelineState) -> Result<(), RestoreError> {
+        if state.format != STATE_FORMAT {
+            return Err(RestoreError::Format {
+                saved: state.format,
+                expected: STATE_FORMAT,
+            });
+        }
+        let expected = self.identity();
+        if state.program != expected {
+            return Err(RestoreError::Program {
+                saved: state.program,
+                expected,
+            });
+        }
+        self.program.restore(state.states, state.values)
+    }
+
+    /// The inputs in order and the canonical text: what a saved state must
+    /// match. The text alone does not say which input comes first.
+    fn identity(&self) -> String {
+        let names = Vec::from_iter(self.inputs.iter().map(Input::name));
+        format!("inputs: {}\n{self}", names.join(", "))
+    }
+
     fn output_bindings(&self) -> impl Iterator<Item = &Binding> {
         self.bindings.iter().filter(|b| b.is_output())
     }
@@ -229,6 +284,47 @@ fn output_nodes(bindings: &[Binding]) -> Vec<NodeId> {
     Vec::from_iter(bindings.iter().filter(|b| b.is_output()).map(Binding::node))
 }
 
+/// What a [`Pipeline`] has seen: the state of its views and its last
+/// values, from [`Pipeline::save_state`].
+///
+/// With the `serde` feature it can be saved and restored after a restart.
+/// Use a format that stores every `f64` exactly and keeps NaN, e.g.
+/// bincode. JSON writes NaN (a value that is not ready) as `null`, and
+/// without its `float_roundtrip` feature serde_json reads some numbers 1 ulp
+/// off, so the restored pipeline would compute other values.
+///
+/// Deserialize only states that this crate serialized: a restore checks that
+/// the state is of the same pipeline and fits its operations, but not every
+/// invariant inside a view.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PipelineState {
+    format: u32,
+    /// The inputs in order and the canonical text of the pipeline.
+    program: String,
+    states: Vec<State>,
+    values: Vec<f64>,
+}
+
+impl PipelineState {
+    /// The pipeline the state was saved from: its inputs in order, then its
+    /// canonical text.
+    pub fn program(&self) -> &str {
+        &self.program
+    }
+
+    /// The state with another format and program, to test the checks of a
+    /// restore.
+    #[cfg(test)]
+    pub(super) fn relabeled(self, format: u32, program: String) -> Self {
+        Self {
+            format,
+            program,
+            ..self
+        }
+    }
+}
+
 /// A pipeline with one input and one output, used as a [`View`], e.g. to
 /// chain it with other views.
 #[derive(Debug, Clone)]
@@ -238,6 +334,21 @@ impl Feature {
     /// The pipeline behind the view.
     pub fn pipeline(&self) -> &Pipeline {
         &self.0
+    }
+
+    /// See [`Pipeline::save_state`].
+    pub fn save_state(&self) -> PipelineState {
+        self.0.save_state()
+    }
+
+    /// See [`Pipeline::restore_state`].
+    ///
+    /// # Errors
+    ///
+    /// [`RestoreError`] if the state does not fit, see
+    /// [`Pipeline::restore_state`]. The feature is then unchanged.
+    pub fn restore_state(&mut self, state: PipelineState) -> Result<(), RestoreError> {
+        self.0.restore_state(state)
     }
 }
 

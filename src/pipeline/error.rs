@@ -167,6 +167,53 @@ impl fmt::Display for CompileError {
 
 impl std::error::Error for CompileError {}
 
+/// Why a [`PipelineState`](super::PipelineState) does not fit a pipeline.
+/// The pipeline is unchanged.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum RestoreError {
+    /// The state was saved by a version of this crate with another layout
+    /// of the state of the views.
+    Format {
+        /// The format of the saved state.
+        saved: u32,
+        /// The format this version of the crate reads.
+        expected: u32,
+    },
+    /// The state was saved from another pipeline: other inputs, functions,
+    /// parameters or outputs. Both are the inputs in order and the
+    /// canonical text.
+    Program {
+        /// The pipeline the state was saved from.
+        saved: String,
+        /// The pipeline the state was restored into.
+        expected: String,
+    },
+    /// The same pipeline, but the state does not fit its operations, e.g.
+    /// from a version of this crate that compiles it into other operations.
+    Layout,
+}
+
+impl fmt::Display for RestoreError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RestoreError::Format { saved, expected } => write!(
+                f,
+                "the state has format {saved}, this version of sliding_features reads format {expected}"
+            ),
+            RestoreError::Program { saved, expected } => write!(
+                f,
+                "the state is of another pipeline:\n{saved}\nand cannot continue:\n{expected}"
+            ),
+            RestoreError::Layout => {
+                f.write_str("the state does not fit the operations of the pipeline")
+            }
+        }
+    }
+}
+
+impl std::error::Error for RestoreError {}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -91,6 +91,43 @@ assert_eq!(pipeline.output(0), None, "warming up");
 - `pipeline::Builder` assembles the same pipelines from code, and
   `pipeline::Feature` turns a one-input, one-output pipeline into a `View`.
 
+### Save and restore the state
+A live process that restarts must continue its features where it stopped.
+Replaying recent history is not enough: filters with infinite memory (`ema`,
+`kalman`, `cusum`, ...) and running sums then give other values than a run
+without the restart.
+
+`Pipeline::save_state` returns a `PipelineState`, and `Pipeline::restore_state`
+continues from it in a pipeline compiled from the same text and inputs. Every
+later update gives the same bits as without the restart. A state of another
+pipeline is rejected and leaves the pipeline unchanged.
+
+```rust
+use sliding_features::pipeline::Pipeline;
+
+let mut live: Pipeline = "sma(x, 2)".parse().unwrap();
+for v in [1.0, 2.0, 3.0] {
+    live.update(&[v]);
+}
+let state = live.save_state();
+
+// After a restart: compile the same text and continue from the state.
+let mut restarted: Pipeline = "sma(x, 2)".parse().unwrap();
+restarted.restore_state(state).unwrap();
+live.update(&[4.0]);
+restarted.update(&[4.0]);
+assert_eq!(restarted.output(0), Some(3.5));
+assert_eq!(restarted.output(0), live.output(0));
+```
+
+With the `serde` feature, `PipelineState` and every view implement `Serialize`
+and `Deserialize`. Save them in a format that stores every `f64` exactly and
+keeps NaN (a value that is not ready), e.g. [bincode](https://crates.io/crates/bincode).
+JSON writes NaN as `null`, and without its `float_roundtrip` feature
+`serde_json` reads some numbers 1 ulp off. Deserialize only states that this
+crate serialized: a restore checks that the state belongs to the pipeline, not
+every invariant inside a view.
+
 ### Examples
 See examples folder for some code ideas
 ```shell 
