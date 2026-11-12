@@ -8,6 +8,7 @@ use crate::View;
 
 /// Applies the Tanh function to the output of its View component
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tanh<T, V> {
     view: V,
     _marker: std::marker::PhantomData<T>,

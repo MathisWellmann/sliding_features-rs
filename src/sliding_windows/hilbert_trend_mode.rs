@@ -63,6 +63,7 @@ fn is_trend<T: Float>(
 /// Output: 1 for trend mode, 0 for cycle mode. Ready after 63 inputs.
 /// Complexity: O(P) per update, where P <= 50 is the rounded dominant cycle period.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HilbertTrendMode<T, V> {
     view: V,
     core: HilbertCore<T>,

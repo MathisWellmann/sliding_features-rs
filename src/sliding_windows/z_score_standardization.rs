@@ -27,6 +27,7 @@ use crate::{
 /// not leak information from the current/future sample into the rolling mean or
 /// standard deviation.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ZScoreStandardization<T: Float, V> {
     view: V,
     welford_online: WelfordOnline<T, Echo<T>>,

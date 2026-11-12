@@ -16,6 +16,7 @@ use crate::View;
 
 /// Rate of Change Indicator
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Roc<T, V> {
     view: V,
     /// The sliding window length

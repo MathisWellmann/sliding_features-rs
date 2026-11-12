@@ -17,6 +17,7 @@ use crate::View;
 /// Kept separate from the [`UltimateSmoother`] view, because other indicators
 /// need a fractional period (e.g. `Length / 2`) or the value during warm-up.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct UltimateCore<T> {
     /// Coefficient of `x`, `1 - c1`.
     c_x0: T,
@@ -121,6 +122,7 @@ impl<T: Float> UltimateCore<T> {
 /// Output range: unbounded, follows the input. Constant input yields the constant.
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UltimateSmoother<T, V> {
     view: V,
     /// The critical period: shorter periods are attenuated.

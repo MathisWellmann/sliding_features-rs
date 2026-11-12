@@ -9,6 +9,7 @@ use crate::View;
 /// Greater Than or Equal
 /// Will allow values >= clipping_point through and clip other values to the clipping point
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GTE<T, V> {
     view: V,
     clipping_point: T,

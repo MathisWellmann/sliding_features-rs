@@ -29,6 +29,7 @@ use crate::View;
 /// sorted `Vec` (fast for typical window sizes); O(log n) for `last()`
 /// (two binary searches); O(n) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PercentileRank<T, V> {
     view: V,
     window: SortedWindow<T>,

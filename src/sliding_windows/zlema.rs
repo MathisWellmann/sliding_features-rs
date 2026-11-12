@@ -32,6 +32,7 @@ use crate::{
 /// Complexity: O(1) per update (a fixed-size lag buffer plus one EMA
 /// update); O(lag) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Zlema<T, V> {
     view: V,
     /// The non-zero window length of the inner EMA.

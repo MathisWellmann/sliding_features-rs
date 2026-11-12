@@ -48,6 +48,7 @@ use crate::View;
 /// Complexity: amortized O(1) per update (running sum of `Filt^2`, recomputed
 /// every `period` updates to stop floating point drift), O(period) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Dsma<T, V> {
     view: V,
     /// The critical period; the SuperSmoother uses half of it.

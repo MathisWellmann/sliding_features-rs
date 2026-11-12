@@ -44,6 +44,7 @@ use crate::{
 /// Complexity: O(1) per update, O(`roc4 + sma4 + signal_period`) memory
 /// (the slowest leg dominates).
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Kst<T, V> {
     view: V,
     /// The fastest rate-of-change period (weight `1`).

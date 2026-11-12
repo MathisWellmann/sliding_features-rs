@@ -41,6 +41,7 @@ use num::Float;
 /// Sliding window of the running mean and second/third/fourth central sums,
 /// used to derive the mean and the population central moments in O(1).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(crate) struct StatisticsMoments<T> {
     window_len: NonZeroUsize,
     /// Raw values in insertion order, needed to know which value to remove

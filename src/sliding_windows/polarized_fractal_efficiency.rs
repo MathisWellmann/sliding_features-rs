@@ -18,6 +18,7 @@ use crate::View;
 #[derive(Debug, Clone, CopyGetters)]
 /// A PolarizedFractalEfficiency indicator with output range [-1.0 and 1.0] rather than [-100, 100]
 /// it is also possible to use a custom moving average instead of the default EMA in the original
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PolarizedFractalEfficiency<T, V, M> {
     view: V,
     moving_average: M, // defines which moving average to use, default is EMA

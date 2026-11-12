@@ -46,6 +46,7 @@ use crate::View;
 /// `Smooth^2` exists but cancels catastrophically for prices far from 0,
 /// especially with `f32`.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EhlersFilter<T, V> {
     view: V,
     /// The number of weights `L` and the lookback of each weight.

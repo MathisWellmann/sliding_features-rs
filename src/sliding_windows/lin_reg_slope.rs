@@ -26,6 +26,7 @@ use crate::View;
 /// using a fixed-window recurrence and are periodically re-derived from the
 /// raw window buffer to bound floating-point drift.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LinRegSlope<T, V> {
     view: V,
     window: LinRegWindow<T>,

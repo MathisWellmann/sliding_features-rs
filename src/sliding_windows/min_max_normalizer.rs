@@ -24,6 +24,7 @@ use crate::View;
 /// No output is emitted until the sliding window is completely filled.
 /// During warm-up `last()` returns `None`.
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MinMaxNormalizer<T, V> {
     view: V,
     /// The sliding window length

@@ -12,6 +12,7 @@ use crate::View;
 /// John Ehlers Laguerre Filter
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LaguerreFilter<T, V>
 where
     V: View<T>,

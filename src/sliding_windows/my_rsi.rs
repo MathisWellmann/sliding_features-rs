@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers MyRSI
 /// from: <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MyRSI<T, V> {
     view: V,
     /// The sliding window length.

@@ -44,6 +44,7 @@ use crate::View;
 /// Complexity: amortized O(1) per update (the running sum of squares is
 /// recomputed every `period` updates to stop floating point drift), O(period) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UltimateBands<T, V> {
     view: V,
     /// The period of the smoother and of the deviation window.

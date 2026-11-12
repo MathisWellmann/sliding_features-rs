@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers TrendFlex Indicators
 /// from: <https://financial-hacker.com/petra-on-programming-a-new-zero-lag-indicator/>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TrendFlex<T, V> {
     view: V,
     /// The sliding window length.

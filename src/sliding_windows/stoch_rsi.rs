@@ -41,6 +41,7 @@ use crate::{
 /// Complexity: O(1) amortized per update (RSI, the monotonic min/max deques
 /// and the SMA are all O(1) amortized), O(stoch_period + d_period) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StochRsi<T, V> {
     view: V,
     /// The RSI period.

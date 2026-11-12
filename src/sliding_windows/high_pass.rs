@@ -14,6 +14,7 @@ use crate::View;
 
 /// Number of poles of a [`HighPass`] filter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum HighPassPoles {
     /// First order filter: 6 dB per octave attenuation below the cutoff period.
     One,
@@ -45,6 +46,7 @@ pub enum HighPassPoles {
 /// Output range: unbounded, oscillates around 0. Constant input yields 0.
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HighPass<T, V> {
     view: V,
     /// Periods longer than this are attenuated.

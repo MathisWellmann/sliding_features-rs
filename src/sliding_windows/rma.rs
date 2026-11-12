@@ -31,6 +31,7 @@ use crate::View;
 /// Complexity: O(1) per update once warmed up (O(window_len) total for the
 /// warm-up sum); O(window_len) memory during warm-up, O(1) after.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rma<T, V> {
     view: V,
     /// The non-zero window length.

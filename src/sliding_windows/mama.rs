@@ -34,6 +34,7 @@ const WARM_UP: usize = 32;
 /// Output range: within the range of the inputs. Ready after 32 inputs.
 /// Complexity: O(1) per update.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mama<T, V> {
     view: V,
     core: HilbertCore<T>,

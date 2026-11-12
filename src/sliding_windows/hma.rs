@@ -32,6 +32,7 @@ use crate::{
 /// Complexity: O(1) per update (three WMA updates, each O(1) amortized);
 /// O(n) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Hma<T, V> {
     view: V,
     /// The non-zero window length `n`.

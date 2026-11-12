@@ -16,6 +16,7 @@ use crate::{
 
 /// Variance Stabilizing Transform uses the standard deviation to normalize values
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vst<T: Float, V> {
     view: V,
     last: T,

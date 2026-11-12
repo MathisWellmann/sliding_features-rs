@@ -56,6 +56,7 @@ const PEAK_AVG_LEN: usize = 50;
 /// Constant input yields 0.
 /// Complexity: O(1) per update, O(period) memory (moving average windows).
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EmpiricalModeDecomposition<T, V> {
     view: V,
     /// The center period of the band-pass.

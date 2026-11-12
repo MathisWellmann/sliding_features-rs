@@ -16,6 +16,7 @@ const MIN_REFRESH_INTERVAL: usize = 64;
 /// The Shannon entropy of the empirical distribution is `H = ln(n) - S / n`,
 /// so both `add`, `remove` and `entropy` are O(1) (amortized, see `tick`).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct ComplexityHistogram<T> {
     counts: Vec<usize>,
     total: usize,

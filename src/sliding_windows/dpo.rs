@@ -38,6 +38,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update, O(`period`) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Dpo<T, V> {
     view: V,
     /// The look-back period of the simple moving average.

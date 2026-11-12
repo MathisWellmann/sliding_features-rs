@@ -30,6 +30,7 @@ use crate::View;
 ///
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Kalman1d<T: Float, V> {
     view: V,
     /// The process variance: expected squared drift of the state per time step.

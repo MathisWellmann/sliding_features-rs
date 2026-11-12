@@ -29,6 +29,7 @@ use crate::View;
 ///
 /// Complexity: O(order) per update, O(order) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NlmsFilter<T, V> {
     view: V,
     order: NonZeroUsize,

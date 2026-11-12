@@ -30,6 +30,7 @@ const WARM_UP: usize = 50;
 ///
 /// Complexity: O(1) per update. Ready after 50 inputs.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HilbertPhasor<T, V> {
     view: V,
     core: HilbertCore<T>,

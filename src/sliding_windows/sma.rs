@@ -16,6 +16,7 @@ use crate::View;
 
 #[derive(Debug, Clone, CopyGetters)]
 /// SMA - Simple Moving Average
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Sma<T, V> {
     view: V,
     /// The non-zero window length.

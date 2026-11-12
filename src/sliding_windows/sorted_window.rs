@@ -23,6 +23,7 @@ use num::Float;
 /// Methods that are not used by library code yet are `#[cfg(test)]` to avoid
 /// `dead_code` warnings; remove the attribute when using one.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(crate) struct SortedWindow<T> {
     window_len: NonZeroUsize,
     /// Values in insertion order, oldest at the front.

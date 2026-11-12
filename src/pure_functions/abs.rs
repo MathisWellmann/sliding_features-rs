@@ -9,6 +9,7 @@ use crate::View;
 /// The absolute value of the output of its View component, e.g. the size of
 /// a return regardless of its direction.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Abs<T, V> {
     view: V,
     _marker: std::marker::PhantomData<T>,

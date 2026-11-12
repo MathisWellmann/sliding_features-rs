@@ -6,6 +6,7 @@ use crate::View;
 
 /// Provides a float value to other views
 #[derive(Default, Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Constant<T> {
     val: T,
 }

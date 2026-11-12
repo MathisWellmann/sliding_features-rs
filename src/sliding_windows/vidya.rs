@@ -32,6 +32,7 @@ use crate::{
 /// Complexity: O(1) per update (the inner `CMO` is O(1)); O(window_len)
 /// memory for its window.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vidya<T, V> {
     view: V,
     /// The non-zero window length, used both for `alpha` and for the inner

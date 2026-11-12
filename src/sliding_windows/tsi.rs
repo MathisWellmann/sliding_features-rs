@@ -37,6 +37,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update (four chained EMAs plus the signal EMA), O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tsi<T, V> {
     view: V,
     /// The long (first-stage) smoothing period.

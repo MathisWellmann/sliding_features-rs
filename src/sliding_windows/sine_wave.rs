@@ -29,6 +29,7 @@ const WARM_UP: usize = 63;
 /// Output range: `[-1, 1]` for both lines. Ready after 63 inputs.
 /// Complexity: O(P) per update, where P <= 50 is the rounded dominant cycle period.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SineWave<T, V> {
     view: V,
     core: HilbertCore<T>,

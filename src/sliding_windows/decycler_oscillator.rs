@@ -17,6 +17,7 @@ use crate::View;
 /// The crate's [`HighPass`](super::HighPass) only accepts integer periods and
 /// hides its value during warm-up, both of which the oscillator needs.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct HighPass2Core<T> {
     /// `(1 - a1/2)^2`.
     c_in: T,
@@ -106,6 +107,7 @@ impl<T: Float> HighPass2Core<T> {
 /// # Panics
 /// `update` panics if the input is not positive, as the output divides by it.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DecyclerOscillator<T, V> {
     view: V,
     /// Cutoff period of the decycler; the oscillator uses half of it.

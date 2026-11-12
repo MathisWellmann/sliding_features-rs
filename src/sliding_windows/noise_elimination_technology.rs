@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers Noise elimination technology using kendall correlation
 /// from <http://www.mesasoftware.com/papers/Noise%20Elimination%20Technology.pdf>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NoiseEliminationTechnology<T, V> {
     view: V,
     /// The sliding window length.

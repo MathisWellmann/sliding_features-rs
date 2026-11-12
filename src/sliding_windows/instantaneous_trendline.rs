@@ -28,6 +28,7 @@ const WARM_UP: usize = 63;
 /// Output range: within the range of the inputs. Ready after 63 inputs.
 /// Complexity: O(P) per update, where P <= 50 is the rounded dominant cycle period.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct InstantaneousTrendline<T, V> {
     view: V,
     core: HilbertCore<T>,

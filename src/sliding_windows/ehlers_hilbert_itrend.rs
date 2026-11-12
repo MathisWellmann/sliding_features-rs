@@ -27,8 +27,10 @@ fn sum_last<T: Float>(buf: &[T; SIZE], head: usize, bars: usize) -> T {
 /// dominant cycle (which cancels that cycle), smoothed by a 4-bar WMA.
 /// O(dominant cycle) <= O(50) per update.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct ITrend<T> {
     /// Ring buffer of raw prices.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_array"))]
     prices: [T; SIZE],
     /// Index of the newest value in `prices`.
     head: usize,

@@ -39,6 +39,7 @@ use crate::{
 /// Complexity: amortized O(1) per update (`Wma`'s periodic resync),
 /// O(`long_period.max(short_period) + wma_period`) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Coppock<T, V> {
     view: V,
     /// The longer rate-of-change period.

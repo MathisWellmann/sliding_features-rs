@@ -8,6 +8,7 @@ use crate::View;
 
 /// Retains the first value it ever sees and never updates it again.
 #[derive(Default, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct First<T> {
     out: Option<T>,
 }

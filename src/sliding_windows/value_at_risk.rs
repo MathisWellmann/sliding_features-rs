@@ -30,6 +30,7 @@ use crate::View;
 /// Complexity per update: O(log n) binary search plus an O(n) `memmove` in a sorted `Vec`
 /// (fast for typical window sizes); O(1) for `last()`; O(n) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ValueAtRisk<T, V> {
     view: V,
     confidence: T,

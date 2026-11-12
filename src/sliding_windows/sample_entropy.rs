@@ -33,6 +33,7 @@ use crate::View;
 /// Complexity per update: O(N^2 * m) worst case (all pairwise template comparisons, early exit
 /// on the first mismatching element), no allocations.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SampleEntropy<T: Float, V> {
     view: V,
     /// The sliding window length N.

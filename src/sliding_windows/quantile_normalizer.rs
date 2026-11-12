@@ -34,6 +34,7 @@ use crate::View;
 /// sorted `Vec` (fast for typical window sizes); O(log n) for `last()` (two
 /// binary searches plus the O(1) inverse normal CDF approximation); O(n) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct QuantileNormalizer<T, V> {
     view: V,
     window: SortedWindow<T>,

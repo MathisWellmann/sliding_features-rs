@@ -43,6 +43,7 @@ use crate::{
 /// O(`stochastic_len`) per update: the highest/lowest filtered values are
 /// recomputed from the raw window buffer every step.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EhlersStochastic<T, V> {
     view: V,
     roofing_filter: RoofingFilter<T, Echo<T>>,

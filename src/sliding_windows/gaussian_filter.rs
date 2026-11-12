@@ -14,6 +14,7 @@ use crate::View;
 
 /// Number of poles of a [`GaussianFilter`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum GaussianPoles {
     /// One pole, identical to an EMA with the Gaussian `alpha`.
     One,
@@ -75,6 +76,7 @@ const MAX_POLES: usize = 4;
 /// Constant input yields the constant.
 /// Complexity: O(N) = O(1) per update (`N <= 4`), O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GaussianFilter<T, V> {
     view: V,
     /// The critical period at which the gain is -3 dB.

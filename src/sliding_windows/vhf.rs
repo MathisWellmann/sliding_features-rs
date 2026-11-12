@@ -32,6 +32,7 @@ use crate::View;
 /// O(`window_len`) per update: the range and the sum of changes are
 /// recomputed from the raw window buffer every step.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vhf<T, V> {
     view: V,
     window_len: NonZeroUsize,

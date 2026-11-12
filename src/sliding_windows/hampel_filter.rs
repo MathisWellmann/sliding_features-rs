@@ -37,6 +37,7 @@ const MAD_SCALE: f64 = 1.4826;
 /// O(n log n) to sort the absolute deviations for the MAD (a preallocated
 /// buffer, so no per-update allocation); O(n) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HampelFilter<T, V> {
     view: V,
     t: T,

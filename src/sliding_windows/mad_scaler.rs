@@ -43,6 +43,7 @@ use crate::View;
 /// values of the sorted window (none for monotone input such as
 /// timestamps).
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MadScaler<T: Float + FromPrimitive + AddAssign + SubAssign, V> {
     view: V,
     /// Sliding window length (for warm-up tracking).

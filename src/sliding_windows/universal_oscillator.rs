@@ -33,6 +33,7 @@ const AGC_DECAY: f64 = 0.991;
 /// # Complexity
 /// O(1) amortized per update.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UniversalOscillator<T, V> {
     view: V,
     smoother: SuperSmoother<T, Echo<T>>,

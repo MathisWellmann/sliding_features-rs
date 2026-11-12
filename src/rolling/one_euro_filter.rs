@@ -16,6 +16,7 @@ use crate::View;
 /// last fed (`y`) and the smoothed value it last produced (`s`), as the 1€
 /// Filter needs the raw value to estimate the derivative.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct LowPassFilter<T> {
     y: Option<T>,
     s: Option<T>,
@@ -63,6 +64,7 @@ impl<T: Float> LowPassFilter<T> {
 ///
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OneEuroFilter<T: Float, V> {
     view: V,
     /// The minimum cutoff frequency, applied when the signal is not moving.

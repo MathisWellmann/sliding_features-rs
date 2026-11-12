@@ -32,6 +32,7 @@ const WARM_UP: usize = 50;
 /// Output range: `[6, 50]` bars once warmed up (50 inputs).
 /// Complexity: O(1) per update.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HomodyneDominantCycle<T, V> {
     view: V,
     core: HilbertCore<T>,

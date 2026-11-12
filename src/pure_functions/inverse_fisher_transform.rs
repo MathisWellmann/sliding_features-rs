@@ -26,6 +26,7 @@ use crate::View;
 /// Reference: John Ehlers, "Using The Fisher Transform",
 /// <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct InverseFisherTransform<T, V> {
     view: V,
     gain: T,

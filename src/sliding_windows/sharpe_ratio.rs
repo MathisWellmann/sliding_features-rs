@@ -36,6 +36,7 @@ use crate::View;
 /// recomputed from the window every `window_len` updates to bound floating point drift
 /// (amortized O(1)). O(n) memory, preallocated.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SharpeRatio<T, V> {
     view: V,
     /// The sliding window length.

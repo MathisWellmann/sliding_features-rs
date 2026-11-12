@@ -41,6 +41,7 @@ const MAX_ORDER: usize = 7;
 /// Complexity per update: O(m^2) to find the pattern plus O(1) (amortized) for the
 /// incremental pattern counts and entropy.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PermutationEntropy<T: Float, V> {
     view: V,
     /// The number of ordinal patterns in the sliding window.

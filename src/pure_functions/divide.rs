@@ -8,6 +8,7 @@ use crate::View;
 
 /// Divide View a by b
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Divide<T, A, B> {
     a: A,
     b: B,

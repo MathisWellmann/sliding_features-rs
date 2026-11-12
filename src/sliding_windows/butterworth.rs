@@ -14,6 +14,7 @@ use crate::View;
 
 /// Number of poles of a [`Butterworth`] filter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ButterworthPoles {
     /// Two poles: 12 dB per octave attenuation above the cutoff frequency.
     Two,
@@ -52,6 +53,7 @@ const HIST: usize = 3;
 /// Output range: unbounded, follows the input. Constant input yields the constant.
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Butterworth<T, V> {
     view: V,
     /// The critical period: shorter periods are attenuated.

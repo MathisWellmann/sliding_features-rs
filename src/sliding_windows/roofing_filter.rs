@@ -16,6 +16,7 @@ use crate::{
 /// Roofing Filter by John Ehlers
 /// From paper: <http://www.stockspotter.com/files/PredictiveIndicators.pdf>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RoofingFilter<T, V> {
     view: V,
     super_smoother: SuperSmoother<T, Echo<T>>,

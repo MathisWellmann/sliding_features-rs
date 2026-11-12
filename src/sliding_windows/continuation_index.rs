@@ -61,6 +61,7 @@ const NOISE_ULPS: f64 = 64.0;
 /// the moving average of `|US - LG|` (running sum, recomputed every `length`
 /// updates to stop floating point drift); O(length) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ContinuationIndex<T, V> {
     view: V,
     gamma: T,

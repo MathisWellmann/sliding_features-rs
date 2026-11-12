@@ -8,6 +8,7 @@ use crate::View;
 
 #[derive(Default, Clone, Debug)]
 /// Echo always return the last value just like an echo
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Echo<T> {
     out: Option<T>,
 }

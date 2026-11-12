@@ -87,8 +87,10 @@ fn resolve_phase<T: Float>(real: T, imag: T, prev_phase: T, smooth_period: T) ->
 
 /// Streaming dominant cycle phase. O(dominant cycle) <= O(50) per update.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct DcPhase<T> {
     /// Ring buffer of smoothed prices.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_array"))]
     smooth_prices: [T; SIZE],
     /// Index of the newest value in `smooth_prices`.
     head: usize,

@@ -26,6 +26,7 @@ use crate::View;
 /// negative. `last` is also `None` where the power overflows (e.g.
 /// `1e12^30`).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BoxCox<T, V> {
     view: V,
     lambda: T,

@@ -14,6 +14,7 @@ use crate::View;
 
 /// Lags a value such that it appears n ticks later.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Lag<T, V> {
     view: V,
     buffer: VecDeque<T>,

@@ -32,6 +32,7 @@ use crate::View;
 /// O(1) amortized per update (see the crate-private `StatisticsMoments`
 /// helper); O(1) for `last()`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Skewness<T, V> {
     view: V,
     moments: StatisticsMoments<T>,
