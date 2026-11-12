@@ -63,6 +63,7 @@ const MIN_SUB_WINDOW: usize = 5;
 /// Placed in `sliding_windows`, because it maintains a (compressed, adaptive) window
 /// of history, unlike the constant-state detectors in `rolling`.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Adwin<T, V> {
     view: V,
     delta: T,

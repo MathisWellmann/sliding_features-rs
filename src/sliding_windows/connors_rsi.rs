@@ -43,6 +43,7 @@ use crate::{
 /// Complexity per update: O(log n) (the `PercentRank` sorted window
 /// dominates; the two `Rsi` legs are O(1)). Memory: O(`percent_rank_period`).
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConnorsRsi<T: Float, V> {
     view: V,
     /// The RSI period applied directly to the input.

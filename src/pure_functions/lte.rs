@@ -9,6 +9,7 @@ use crate::View;
 /// Lower Than or Equal filter,
 /// which only allows values lower than the specified clipping point through
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LTE<T, V> {
     view: V,
     clipping_value: T,

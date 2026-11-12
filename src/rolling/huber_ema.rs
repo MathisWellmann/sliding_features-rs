@@ -32,6 +32,7 @@ use crate::View;
 ///
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HuberEma<T: Float, V> {
     view: V,
     /// The smoothing factor for the level, in `(0, 1]`.

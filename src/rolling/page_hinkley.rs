@@ -13,6 +13,7 @@ use crate::View;
 
 /// The direction of mean shifts that a [`PageHinkley`] test detects.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PageHinkleyDirection {
     /// Detect increases of the mean (the classic one-sided test).
     Increase,
@@ -55,6 +56,7 @@ pub enum PageHinkleyDirection {
 /// always `Some` (also during the re-estimation after a reset, where alarms are suppressed).
 /// Complexity: O(1) time per update and O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PageHinkley<T, V> {
     view: V,
     /// The direction of mean shifts that are detected.

@@ -38,6 +38,7 @@ use crate::View;
 /// Warm-up: `None` until the chained `View` yields its first value.
 /// Complexity: O(1) time per update and O(1) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cusum<T, V> {
     view: V,
     target_mean: T,

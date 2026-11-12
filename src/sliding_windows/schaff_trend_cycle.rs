@@ -44,6 +44,7 @@ use crate::{
 /// Complexity: O(1) amortized per update (two chained EMAs and four
 /// monotonic min/max deques), O(cycle_period) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SchaffTrendCycle<T, V> {
     view: V,
     /// The fast EMA period.

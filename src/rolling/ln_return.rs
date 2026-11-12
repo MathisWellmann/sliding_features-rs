@@ -12,6 +12,7 @@ use crate::{
 /// Computes the natural logarithm and keep track of the last value.
 /// Usually applied to price data.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LnReturn<T, V> {
     view: V,
     last_val: T,

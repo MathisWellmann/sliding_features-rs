@@ -28,6 +28,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update (two chained EMA updates); O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Dema<T, V> {
     view: V,
     /// The non-zero window length shared by both inner EMAs.

@@ -32,6 +32,7 @@ use crate::View;
 /// Complexity per update: O(log n) binary search plus an O(n) `memmove` in a sorted `Vec`
 /// and an O(n (1 - c)) sum over the tail; O(1) for `last()`; O(n) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConditionalValueAtRisk<T, V> {
     view: V,
     confidence: T,

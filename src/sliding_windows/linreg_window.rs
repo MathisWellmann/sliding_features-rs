@@ -35,6 +35,7 @@ use num::Float;
 
 /// Sliding least-squares window shared by the `LinReg*` regression indicators.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct LinRegWindow<T> {
     window_len: NonZeroUsize,
     buf: VecDeque<T>,

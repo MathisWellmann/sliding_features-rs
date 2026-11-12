@@ -34,6 +34,7 @@ use crate::{
 /// # Complexity
 /// O(1) per update (see [`WelfordOnline`]); O(1) for `last()`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CoefficientOfVariation<T: Float, V> {
     view: V,
     welford: WelfordOnline<T, Echo<T>>,

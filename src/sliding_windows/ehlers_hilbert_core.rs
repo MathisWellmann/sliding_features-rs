@@ -60,6 +60,7 @@ fn constrain_period<T: Float>(measured: T, prev: T) -> T {
 /// The shared Hilbert transform and homodyne discriminator state.
 /// Every update is O(1).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub(super) struct HilbertCore<T> {
     /// Raw prices, newest first, for the 4-bar WMA.
     prices: [T; 4],

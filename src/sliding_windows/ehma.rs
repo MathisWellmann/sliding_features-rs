@@ -34,6 +34,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update (three chained EMA updates); O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ehma<T, V> {
     view: V,
     /// The non-zero window length `n`.

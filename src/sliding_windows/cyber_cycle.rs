@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers Cyber Cycle Indicator
 /// from: <https://www.mesasoftware.com/papers/TheInverseFisherTransform.pdf>
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CyberCycle<T, V> {
     view: V,
     /// The sliding window length

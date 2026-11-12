@@ -35,6 +35,7 @@ use crate::View;
 ///
 /// Complexity per update: O(1) (amortized, see the shared histogram).
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ShannonEntropy<T: Float, V> {
     view: V,
     /// The sliding window length.

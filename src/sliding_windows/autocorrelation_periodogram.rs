@@ -28,6 +28,7 @@ const FIRST_DFT_LAG: usize = 3;
 /// The number of bars over which the Pearson correlation of each lag is computed
 /// in an [`AutocorrelationPeriodogram`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum AutocorrelationAveraging {
     /// A fixed number of bars, which must be at least 2.
     /// The book uses 3 (`AvgLength = 3`), which gives the most responsive measurement.
@@ -70,6 +71,7 @@ pub enum AutocorrelationAveraging {
 /// for the spectrum, i.e. O(L^2) with the maximum lag `L = max_period` and averaging length `M`.
 /// Memory: O(L * (max_period - min_period)) for the precomputed cosine and sine tables.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AutocorrelationPeriodogram<T, V> {
     /// Roofing filter, with the inner view chained into the high-pass filter.
     filter: SuperSmoother<T, HighPass<T, V>>,

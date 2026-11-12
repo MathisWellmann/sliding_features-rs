@@ -13,6 +13,7 @@ use crate::View;
 /// input, `last` is `None` rather than a non-finite value that would poison
 /// every window downstream.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ln<T, V> {
     view: V,
     _marker: std::marker::PhantomData<T>,

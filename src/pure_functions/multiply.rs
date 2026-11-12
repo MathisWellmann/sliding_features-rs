@@ -8,6 +8,7 @@ use crate::View;
 
 /// Multiply View a by b
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Multiply<T, A, B> {
     a: A,
     b: B,

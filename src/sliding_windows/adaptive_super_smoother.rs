@@ -49,6 +49,7 @@ const MIN_PERIOD: f64 = 2.0;
 /// as the ROC is measured in standard deviations, the period then follows the rounding noise.
 /// Complexity: O(rms_len) per update for the RMS (as in the paper), O(rms_len) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AdaptiveSuperSmoother<T, V> {
     view: V,
     /// The longest tuning period `Period0`, used in quiet markets.

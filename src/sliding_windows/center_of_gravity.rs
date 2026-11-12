@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers Center of Gravity Indicator
 /// from: <https://mesasoftware.com/papers/TheCGOscillator.pdf>
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CenterOfGravity<T, V> {
     view: V,
     /// The length of the sliding window.

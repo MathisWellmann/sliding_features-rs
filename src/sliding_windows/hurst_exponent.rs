@@ -44,6 +44,7 @@ const MIN_WINDOW: usize = 4 * MIN_SUB_WINDOW;
 /// Complexity per update: O(window_len * log(window_len)) (every size level touches the window
 /// twice), allocation-free.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HurstExponent<T: Float, V> {
     view: V,
     /// The sliding window length.

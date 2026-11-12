@@ -16,6 +16,7 @@ use crate::View;
 
 /// Relative Strength Index Indicator
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rsi<T, V> {
     view: V,
     /// The sliding window length.

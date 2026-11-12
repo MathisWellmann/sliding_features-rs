@@ -41,6 +41,7 @@ use crate::{
 /// Output range: unbounded, follows the input. Constant input yields the constant.
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Decycler<T, V> {
     view: V,
     high_pass: HighPass<T, Echo<T>>,

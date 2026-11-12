@@ -40,6 +40,7 @@ use crate::View;
 /// `window_len` updates to bound floating point drift (amortized O(1)). O(n) memory,
 /// preallocated.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SortinoRatio<T, V> {
     view: V,
     /// The sliding window length.

@@ -45,6 +45,7 @@ use crate::{
 /// # Complexity
 /// O(1) amortized per update.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReversionIndex<T, V> {
     view: V,
     smoother: SuperSmoother<T, Echo<T>>,

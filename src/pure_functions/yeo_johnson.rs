@@ -23,6 +23,7 @@ use crate::View;
 /// without first shifting the data to be positive. `last` is `None` where
 /// the power overflows (e.g. `(1e12 + 1)^30`).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct YeoJohnson<T, V> {
     view: V,
     lambda: T,

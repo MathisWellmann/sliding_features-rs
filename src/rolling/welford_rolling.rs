@@ -16,6 +16,7 @@ use crate::{
 /// Welford online algorithm for computing mean and variance on-the-fly
 /// over a sliding window
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WelfordRolling<T: Float, V> {
     view: V,
     /// The mean of the observed samples

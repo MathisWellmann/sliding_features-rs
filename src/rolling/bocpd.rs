@@ -10,6 +10,7 @@ use crate::View;
 
 /// Normal-Inverse-Gamma posterior parameters of one run length.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct NigStats<T> {
     mu: T,
     kappa: T,
@@ -117,6 +118,7 @@ fn log_sum_exp<T: Float>(vals: impl Iterator<Item = T> + Clone) -> T {
 /// Complexity: O(`max_run_length`) time per update, O(`max_run_length`) memory,
 /// preallocated in `new`, so updates never allocate.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Bocpd<T, V> {
     view: V,
     lambda: T,

@@ -33,6 +33,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update (six chained EMA updates); O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct T3<T, V> {
     view: V,
     /// The non-zero window length shared by all six inner EMAs.

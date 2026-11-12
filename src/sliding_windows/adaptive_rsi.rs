@@ -52,6 +52,7 @@ use crate::View;
 /// Complexity per update: O(L^2) for the periodogram (see [`AutocorrelationPeriodogram`])
 /// plus O(L) for the RSI, with `L = max_period`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AdaptiveRsi<T, V> {
     periodogram: AutocorrelationPeriodogram<T, V>,
     /// SuperSmoother coefficients.

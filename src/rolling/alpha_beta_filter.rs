@@ -31,6 +31,7 @@ use crate::View;
 ///
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AlphaBetaFilter<T: Float, V> {
     view: V,
     /// The position gain in `(0, 1]`.

@@ -52,6 +52,7 @@ const MAX_DC_STEP: usize = 2;
 /// Output range: unbounded, oscillates around 0 with roughly the amplitude of the input cycle.
 /// Complexity: O(window^2) per update for the correlations, O(window) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AutoTuneFilter<T, V> {
     view: V,
     /// The correlation window and maximum lag.

@@ -18,6 +18,7 @@ use crate::View;
 /// Shannon entropy sliding window over values,
 /// where a positive / negative values are interpreted as true / false
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BinaryEntropy<T, V> {
     view: V,
     /// The length of the sliding window.

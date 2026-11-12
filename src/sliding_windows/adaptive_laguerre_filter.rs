@@ -45,6 +45,7 @@ const MEDIAN_LEN: usize = 5;
 /// Output range: follows the input; for `alpha` in `[0, 1]`.
 /// Complexity: O(length) per update for the highest and lowest `Diff`, O(length) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AdaptiveLaguerreFilter<T, V> {
     view: V,
     /// The number of bars over which the tracking error is normalized.

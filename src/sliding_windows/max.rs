@@ -25,6 +25,7 @@ use crate::View;
 /// Each value is pushed and popped at most once, giving amortized O(1)
 /// (worst case O(window_len)) per update and O(window_len) memory.
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Max<T, V> {
     view: V,
     /// Candidates `(index, value)`, values strictly decreasing from front to back.

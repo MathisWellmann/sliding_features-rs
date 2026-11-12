@@ -43,6 +43,7 @@ const SMOOTHER_LEN: usize = 10;
 /// Output range: `[-1, 1]`.
 /// Complexity: O(1) per update, O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EvenBetterSinewave<T, V> {
     /// High-pass filter followed by the SuperSmoother, with the inner view chained in.
     filter: SuperSmoother<T, HighPass<T, V>>,

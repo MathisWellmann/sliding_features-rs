@@ -33,6 +33,7 @@ use crate::View;
 /// Complexity: O(1) per update (two bounded `VecDeque`s); O(window_len)
 /// memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KaufmanEfficiencyRatio<T, V> {
     view: V,
     /// The non-zero window length.

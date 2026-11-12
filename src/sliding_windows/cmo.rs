@@ -30,6 +30,7 @@ use crate::View;
 /// Complexity: O(1) per update (one bounded `VecDeque` of `(up, down)`
 /// pairs); O(window_len) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cmo<T, V> {
     view: V,
     /// The non-zero window length.

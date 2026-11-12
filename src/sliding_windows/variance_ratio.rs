@@ -35,6 +35,7 @@ use crate::View;
 /// value (against cancellation); the sums are rebuilt exactly every `window_len` updates,
 /// which bounds floating point drift.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VarianceRatio<T: Float, V> {
     view: V,
     /// The number of returns in the sliding window.
@@ -54,6 +55,7 @@ pub struct VarianceRatio<T: Float, V> {
 
 /// Running sums of the shifted returns `y = r - shift` and q-sums `Q - q * shift`.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Sums<T> {
     shift: T,
     s1: T,

@@ -40,6 +40,7 @@ use crate::View;
 /// # Complexity
 /// O(1) per update; O(1) for `last()`.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EwmaVariance<T, V> {
     view: V,
     window_len: usize,

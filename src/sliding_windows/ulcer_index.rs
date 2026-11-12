@@ -36,6 +36,7 @@ use crate::View;
 /// `n` updates to bound floating point drift, and reset to exactly zero without drawdowns);
 /// O(n) memory, preallocated.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UlcerIndex<T, V> {
     view: V,
     /// The sliding window length.

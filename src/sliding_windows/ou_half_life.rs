@@ -38,6 +38,7 @@ use crate::View;
 /// Complexity per update: O(1) amortized via running sums over levels shifted by a reference
 /// value (against cancellation), rebuilt exactly every `window_len` updates to bound drift.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OuHalfLife<T: Float, V> {
     view: V,
     /// The number of `(x_{t-1}, dx_t)` pairs in the sliding window.
@@ -51,6 +52,7 @@ pub struct OuHalfLife<T: Float, V> {
 
 /// Running regression sums over `u = x_{t-1} - shift` and `dx`.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Sums<T> {
     shift: T,
     su: T,

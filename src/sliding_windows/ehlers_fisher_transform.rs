@@ -19,6 +19,7 @@ use crate::View;
 /// John Ehlers Fisher Transform Indicator
 /// from: <http://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf>
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EhlersFisherTransform<T, V, M> {
     view: V,
     moving_average: M,

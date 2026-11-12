@@ -15,6 +15,7 @@ use crate::View;
 /// John Ehlers SuperSmoother filter
 /// from <https://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SuperSmoother<T, V> {
     view: V,
     /// The sliding window length.

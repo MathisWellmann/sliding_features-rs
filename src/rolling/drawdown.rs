@@ -14,6 +14,7 @@ use crate::{
 
 /// Keep track of the current peak to valley.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Drawdown<T, V> {
     view: V,
     max_drawdown: T,

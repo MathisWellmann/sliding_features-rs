@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers Correlation Trend Indicator
 /// from: <https://financial-hacker.com/petra-on-programming-a-unique-trend-indicator/>
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CorrelationTrendIndicator<T, V> {
     view: V,
     /// The sliding window length.

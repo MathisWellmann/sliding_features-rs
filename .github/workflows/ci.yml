@@ -34,6 +34,8 @@ jobs:
         run: nix develop --command cargo check
       - name: cargo-test
         run: nix develop --command cargo test
+      - name: cargo-test-all-features
+        run: nix develop --command cargo test --all-features # The save and restore tests need serde.
       # TODO: make clippy work
       # - name: cargo-clippy
       #   run: nix develop --command cargo clippy

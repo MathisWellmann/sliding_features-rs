@@ -14,6 +14,9 @@ pub mod pure_functions;
 pub mod rolling;
 pub mod sliding_windows;
 
+#[cfg(feature = "serde")]
+mod serde_array;
+
 #[cfg(test)]
 mod plot;
 #[cfg(test)]

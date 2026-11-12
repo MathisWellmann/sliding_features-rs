@@ -37,6 +37,7 @@ use crate::View;
 ///
 /// Complexity: O(1) per update; O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct McGinleyDynamic<T, V> {
     view: V,
     /// The non-zero window length `n`.

@@ -32,6 +32,7 @@ use crate::View;
 /// reference value (against cancellation); the sums are rebuilt exactly every `window_len`
 /// updates to bound floating point drift.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Autocorrelation<T: Float, V> {
     view: V,
     /// The sliding window length.
@@ -47,6 +48,7 @@ pub struct Autocorrelation<T: Float, V> {
 
 /// Running sums over the shifted values `y = x - shift`.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Sums<T> {
     shift: T,
     s1: T,

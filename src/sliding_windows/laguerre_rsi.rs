@@ -18,6 +18,7 @@ use crate::View;
 /// John Ehlers LaguerreRSI
 /// from: <http://mesasoftware.com/papers/TimeWarp.pdf>
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LaguerreRSI<T, V> {
     view: V,
     value: Option<T>,

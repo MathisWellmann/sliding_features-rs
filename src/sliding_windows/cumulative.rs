@@ -16,6 +16,7 @@ use crate::View;
 
 /// Cumulative Sliding Window with a chained view
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cumulative<T, V> {
     view: V,
     /// The length of the sliding window.

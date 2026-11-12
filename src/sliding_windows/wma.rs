@@ -29,6 +29,7 @@ use crate::View;
 /// rounding errors from accumulating, both sums are recomputed from the window
 /// every `window_len` updates, which costs O(1) amortized.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Wma<T, V> {
     view: V,
     /// The non-zero window length.

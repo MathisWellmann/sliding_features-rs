@@ -13,6 +13,7 @@ use crate::View;
 
 #[derive(Clone, Debug, CopyGetters)]
 /// EMA - Exponential Moving Average
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ema<T, V> {
     view: V,
     /// The non-zero window length.

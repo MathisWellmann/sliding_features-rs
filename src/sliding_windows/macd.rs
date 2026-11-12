@@ -29,6 +29,7 @@ use crate::{
 ///
 /// Complexity: O(1) per update (three chained EMAs), O(1) memory.
 #[derive(Debug, Clone, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Macd<T, V> {
     view: V,
     /// The fast EMA period.

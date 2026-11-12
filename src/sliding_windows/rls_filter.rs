@@ -43,6 +43,7 @@ use crate::View;
 /// `delta (1 - lambda) / 1e6` never trigger it; with `lambda = 1`, `P`
 /// only shrinks.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RlsFilter<T, V> {
     view: V,
     order: NonZeroUsize,

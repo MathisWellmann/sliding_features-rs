@@ -8,6 +8,7 @@ use crate::View;
 
 /// Add View a to b
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Add<T, A, B> {
     a: A,
     b: B,

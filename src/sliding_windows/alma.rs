@@ -18,6 +18,7 @@ use crate::View;
 /// ALMA - Arnaud Legoux Moving Average
 /// reference: <https://forex-station.com/download/file.php?id=3326661&sid=d6b440bfbba5e1905b4c75188c2797ce>
 #[derive(Clone, Debug, CopyGetters)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Alma<T, V> {
     view: V,
     /// The configured window length.

@@ -8,6 +8,7 @@ use crate::View;
 
 /// Subtract View a from b
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Subtract<T, A, B> {
     a: A,
     b: B,
